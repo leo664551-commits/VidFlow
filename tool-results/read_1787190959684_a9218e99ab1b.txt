@@ -1,0 +1,1123 @@
+     1→# PRODUCTION IMPLEMENTATION MASTER PROMPT
+     2→## TikTok-Like Video Sharing Platform
+     3→## Execute the Approved Architecture — Do Not Redesign It
+     4→
+     5→You are now entering the PRODUCTION IMPLEMENTATION PHASE.
+     6→
+     7→The architecture and requirements specification provided with this prompt is the authoritative source of truth for this project.
+     8→
+     9→Your task is no longer to analyze, propose, brainstorm, or write another architecture document.
+    10→
+    11→Your task is to IMPLEMENT THE ACTUAL APPLICATION.
+    12→
+    13→============================================================
+    14→1. PROJECT OBJECTIVE
+    15→============================================================
+    16→
+    17→Build the production-ready TikTok-like video sharing web application defined in the approved architecture.
+    18→
+    19→The system has exactly three primary roles:
+    20→
+    21→1. ADMIN
+    22→2. CREATOR
+    23→3. CONSUMER
+    24→
+    25→Core capabilities include:
+    26→
+    27→- Consumer registration and authentication
+    28→- Consumer video browsing
+    29→- Video search
+    30→- Video playback
+    31→- Comments
+    32→- Ratings
+    33→- View counting
+    34→- Creator video upload
+    35→- Creator video management
+    36→- Admin creator management
+    37→- Admin video moderation
+    38→- Admin comment moderation
+    39→- Role-based dashboards
+    40→- Audit logging
+    41→- Secure video storage
+    42→- Responsive UI
+    43→- Production-grade API
+    44→- PostgreSQL database
+    45→- Blob/object storage
+    46→- Production authentication
+    47→- Secure secrets management
+    48→
+    49→DO NOT turn this into a generic social-media platform.
+    50→
+    51→DO NOT add features that are outside the approved MVP unless explicitly requested.
+    52→
+    53→============================================================
+    54→2. AUTHORITATIVE DOCUMENT
+    55→============================================================
+    56→
+    57→Treat the supplied architecture/requirements document as the
+    58→SOURCE OF TRUTH.
+    59→
+    60→It defines:
+    61→
+    62→- Functional requirements
+    63→- Non-functional requirements
+    64→- Roles and permissions
+    65→- Database model
+    66→- API contracts
+    67→- Routes
+    68→- Authentication
+    69→- Authorization
+    70→- Storage architecture
+    71→- Upload lifecycle
+    72→- Security requirements
+    73→- Testing requirements
+    74→- Deployment architecture
+    75→- Production technology stack
+    76→- Assumptions
+    77→- Approved architectural decisions
+    78→
+    79→Do not silently replace technologies or architectural decisions.
+    80→
+    81→If the existing repository conflicts with the architecture document,
+    82→the architecture document wins unless changing it is absolutely
+    83→necessary for the application to function.
+    84→
+    85→If a conflict is discovered:
+    86→
+    87→1. STOP that specific implementation decision.
+    88→2. Explain the conflict.
+    89→3. Identify the affected requirement.
+    90→4. Propose the smallest possible resolution.
+    91→5. Do not silently redesign the architecture.
+    92→
+    93→============================================================
+    94→3. APPROVED ARCHITECTURE
+    95→============================================================
+    96→
+    97→Use the approved architecture.
+    98→
+    99→Production target:
+   100→
+   101→- Next.js
+   102→- React
+   103→- TypeScript
+   104→- Next.js App Router
+   105→- REST API
+   106→- Prisma ORM
+   107→- PostgreSQL
+   108→- Azure Blob Storage
+   109→- Microsoft Entra External ID
+   110→- Azure Key Vault
+   111→- Azure Application Insights
+   112→- Azure App Service
+   113→
+   114→The approved architecture uses a single Next.js application for the
+   115→MVP, hosted on Azure App Service.
+   116→
+   117→Do not unnecessarily split the application into multiple services.
+   118→
+   119→Use the approved service abstraction architecture:
+   120→
+   121→- IAuthService
+   122→- IStorageService
+   123→- IAuditService
+   124→
+   125→Use:
+   126→
+   127→- Zustand for client-side state where appropriate
+   128→- TanStack Query for server state where appropriate
+   129→- Zod for request/input validation
+   130→- Prisma for database access
+   131→
+   132→============================================================
+   133→4. IMPLEMENTATION RULE
+   134→============================================================
+   135→
+   136→IMPLEMENT, DO NOT JUST DOCUMENT.
+   137→
+   138→You must:
+   139→
+   140→- inspect the repository
+   141→- understand the existing project
+   142→- create missing files
+   143→- modify incorrect files
+   144→- install required dependencies
+   145→- implement database schema
+   146→- implement migrations
+   147→- implement authentication
+   148→- implement authorization
+   149→- implement APIs
+   150→- implement services
+   151→- implement UI
+   152→- implement upload flow
+   153→- implement video playback
+   154→- implement comments
+   155→- implement ratings
+   156→- implement view counting
+   157→- implement admin functionality
+   158→- implement creator functionality
+   159→- implement consumer functionality
+   160→- implement audit logging
+   161→- implement tests
+   162→- fix build errors
+   163→- fix type errors
+   164→- fix runtime errors
+   165→- verify production build
+   166→
+   167→Do not stop after creating scaffolding.
+   168→
+   169→Do not provide pseudocode where real implementation is required.
+   170→
+   171→Do not leave TODO placeholders for core MVP functionality.
+   172→
+   173→============================================================
+   174→5. FIRST ACTION — REPOSITORY AUDIT
+   175→============================================================
+   176→
+   177→Before modifying code:
+   178→
+   179→1. Inspect the complete repository structure.
+   180→2. Identify:
+   181→   - package.json
+   182→   - Next.js version
+   183→   - TypeScript configuration
+   184→   - Prisma configuration
+   185→   - existing database schema
+   186→   - existing routes
+   187→   - existing components
+   188→   - existing authentication
+   189→   - existing API implementation
+   190→   - existing styling system
+   191→   - existing tests
+   192→   - environment configuration
+   193→3. Determine what already exists.
+   194→4. Determine what is missing.
+   195→5. Determine what is incorrect relative to the approved architecture.
+   196→
+   197→Then produce a SHORT implementation status report:
+   198→
+   199→IMPLEMENTED
+   200→PARTIALLY IMPLEMENTED
+   201→MISSING
+   202→CONFLICTING
+   203→
+   204→Do not redesign the architecture during this audit.
+   205→
+   206→After the audit, begin implementation.
+   207→
+   208→============================================================
+   209→6. IMPLEMENTATION ORDER
+   210→============================================================
+   211→
+   212→Implement in dependency order.
+   213→
+   214→PHASE A — PROJECT FOUNDATION
+   215→
+   216→- Verify Next.js configuration
+   217→- Verify TypeScript
+   218→- Verify package dependencies
+   219→- Establish directory structure
+   220→- Establish environment configuration
+   221→- Establish error handling
+   222→- Establish logging
+   223→- Establish validation utilities
+   224→- Establish shared types
+   225→- Establish API response conventions
+   226→
+   227→PHASE B — DATABASE
+   228→
+   229→Implement the complete Prisma schema.
+   230→
+   231→Implement:
+   232→
+   233→- User
+   234→- CreatorProfile
+   235→- Video
+   236→- Comment
+   237→- Rating
+   238→- VideoView
+   239→- AuditLog
+   240→
+   241→and every other entity explicitly defined in the architecture.
+   242→
+   243→Requirements:
+   244→
+   245→- Correct relations
+   246→- Correct indexes
+   247→- Correct unique constraints
+   248→- Correct enums
+   249→- Correct cascade behavior
+   250→- Correct nullable/non-nullable fields
+   251→- Correct timestamps
+   252→- Correct ownership relationships
+   253→
+   254→Do not use the database as a place to store video binary files.
+   255→
+   256→Videos belong in object storage.
+   257→
+   258→Database stores metadata.
+   259→
+   260→Generate and apply development migrations.
+   261→
+   262→Verify the schema against the approved API requirements.
+   263→
+   264→PHASE C — AUTHENTICATION
+   265→
+   266→Implement the authentication abstraction.
+   267→
+   268→Development authentication:
+   269→
+   270→- NextAuth Credentials Provider
+   271→- Local development accounts
+   272→
+   273→Production authentication:
+   274→
+   275→- Microsoft Entra External ID
+   276→
+   277→Do not couple business logic directly to NextAuth.
+   278→
+   279→Business/service layers must depend on the authentication abstraction.
+   280→
+   281→Implement secure session/token validation.
+   282→
+   283→Never trust a role supplied by the client.
+   284→
+   285→Never accept:
+   286→
+   287→{
+   288→  "role": "ADMIN"
+   289→}
+   290→
+   291→from consumer registration requests.
+   292→
+   293→The server determines the user's role.
+   294→
+   295→============================================================
+   296→7. RBAC / AUTHORIZATION
+   297→============================================================
+   298→
+   299→Implement server-side RBAC.
+   300→
+   301→Roles:
+   302→
+   303→ADMIN
+   304→CREATOR
+   305→CONSUMER
+   306→
+   307→Authorization must be enforced on the server.
+   308→
+   309→Never rely only on UI restrictions.
+   310→
+   311→At minimum enforce:
+   312→
+   313→CONSUMER:
+   314→- register
+   315→- login
+   316→- browse videos
+   317→- search
+   318→- watch videos
+   319→- comment
+   320→- rate
+   321→- manage own comments
+   322→
+   323→CREATOR:
+   324→- login
+   325→- view own videos
+   326→- upload videos
+   327→- edit own videos where permitted
+   328→- cannot modify another creator's videos
+   329→- cannot comment
+   330→- cannot rate
+   331→
+   332→ADMIN:
+   333→- manage creators
+   334→- manage users
+   335→- manage videos
+   336→- moderate comments
+   337→- upload videos where approved
+   338→- access admin dashboard
+   339→- perform administrative actions
+   340→- generate audit records
+   341→
+   342→Protect every protected API endpoint.
+   343→
+   344→============================================================
+   345→8. API IMPLEMENTATION
+   346→============================================================
+   347→
+   348→Implement every API endpoint defined by the architecture.
+   349→
+   350→Do not invent incompatible endpoint contracts.
+   351→
+   352→Use:
+   353→
+   354→- correct HTTP methods
+   355→- correct status codes
+   356→- Zod validation
+   357→- authentication checks
+   358→- authorization checks
+   359→- consistent error responses
+   360→- pagination
+   361→- filtering
+   362→- search
+   363→- ownership checks
+   364→
+   365→Examples include:
+   366→
+   367→POST /api/users/register
+   368→
+   369→POST /api/videos/upload-session
+   370→
+   371→POST /api/videos/[id]/upload-complete
+   372→
+   373→GET /api/videos
+   374→
+   375→GET /api/videos/[id]
+   376→
+   377→GET /api/videos/search
+   378→
+   379→POST /api/videos/[id]/comments
+   380→
+   381→PATCH /api/videos/[id]/comments/[commentId]
+   382→
+   383→DELETE /api/videos/[id]/comments/[commentId]
+   384→
+   385→POST /api/videos/[id]/rating
+   386→
+   387→PATCH /api/videos/[id]/rating
+   388→
+   389→DELETE /api/videos/[id]/rating
+   390→
+   391→GET /api/admin/users
+   392→
+   393→PATCH /api/admin/users/[id]/status
+   394→
+   395→GET /api/admin/videos
+   396→
+   397→PATCH /api/admin/videos/[id]/status
+   398→
+   399→DELETE /api/admin/videos/[id]
+   400→
+   401→GET /api/admin/comments
+   402→
+   403→PATCH /api/admin/comments/[id]/status
+   404→
+   405→DELETE /api/admin/comments/[id]
+   406→
+   407→Implement the complete endpoint set defined by the architecture
+   408→rather than only these examples.
+   409→
+   410→============================================================
+   411→9. VIDEO STORAGE
+   412→============================================================
+   413→
+   414→NEVER store video files in PostgreSQL.
+   415→
+   416→Use Azure Blob Storage for production video storage.
+   417→
+   418→Upload architecture:
+   419→
+   420→Browser
+   421→→ API
+   422→→ authentication/RBAC
+   423→→ metadata validation
+   424→→ generate short-lived write SAS
+   425→→ browser uploads directly to Blob
+   426→→ upload-complete API
+   427→→ database record
+   428→→ PROCESSING
+   429→→ READY / FAILED
+   430→
+   431→Playback architecture:
+   432→
+   433→Browser
+   434→→ authenticated API
+   435→→ authorization
+   436→→ database metadata
+   437→→ generate short-lived read SAS
+   438→→ browser streams video directly from Blob Storage
+   439→
+   440→Do not proxy large video files through the Next.js server.
+   441→
+   442→Validate:
+   443→
+   444→- MIME type
+   445→- extension
+   446→- file size
+   447→- duration where technically available/appropriate
+   448→
+   449→MVP:
+   450→
+   451→- .mp4
+   452→- .webm
+   453→- maximum duration: 10 minutes
+   454→- maximum file size: 500MB
+   455→
+   456→Keep these limits configurable.
+   457→
+   458→============================================================
+   459→10. VIDEO LIFECYCLE
+   460→============================================================
+   461→
+   462→Implement:
+   463→
+   464→UPLOADING
+   465→↓
+   466→PROCESSING
+   467→↓
+   468→READY
+   469→
+   470→or
+   471→
+   472→PROCESSING
+   473→↓
+   474→FAILED
+   475→
+   476→Also support:
+   477→
+   478→UNPUBLISHED
+   479→
+   480→For MVP there is no full transcoding pipeline.
+   481→
+   482→Do not pretend transcoding exists.
+   483→
+   484→If the upload succeeds and no processing pipeline is implemented,
+   485→transition appropriately to READY according to the approved design.
+   486→
+   487→============================================================
+   488→11. VIDEO FEATURES
+   489→============================================================
+   490→
+   491→Implement:
+   492→
+   493→- video title
+   494→- publisher
+   495→- producer
+   496→- genre
+   497→- age rating
+   498→- description
+   499→- creator
+   500→- thumbnail
+   501→- upload date
+   502→- views
+   503→- ratings
+   504→- comments
+   505→- publication status
+   506→
+   507→Consumer browsing:
+   508→
+   509→- latest
+   510→- most viewed
+   511→- highest rated
+   512→- genre filtering
+   513→- pagination
+   514→- search
+   515→
+   516→Default pagination:
+   517→
+   518→20 items per page.
+   519→
+   520→============================================================
+   521→12. VIEW COUNTING
+   522→============================================================
+   523→
+   524→Implement the approved view-counting rule:
+   525→
+   526→One view per authenticated user per video per calendar day.
+   527→
+   528→Prevent duplicate counting using both:
+   529→
+   530→- application logic
+   531→- database constraints where appropriate
+   532→
+   533→Do not increment views blindly on every API request.
+   534→
+   535→============================================================
+   536→13. COMMENTS
+   537→============================================================
+   538→
+   539→Consumers may comment.
+   540→
+   541→Creators cannot comment.
+   542→
+   543→Admins may moderate comments.
+   544→
+   545→Implement:
+   546→
+   547→- create
+   548→- read
+   549→- edit own comment
+   550→- delete own comment
+   551→- admin hide/unhide
+   552→- admin delete
+   553→
+   554→Maximum comment length:
+   555→
+   556→1000 characters.
+   557→
+   558→Prevent:
+   559→
+   560→- unauthorized modification
+   561→- XSS
+   562→- empty comments
+   563→- excessive input
+   564→- cross-user editing
+   565→
+   566→============================================================
+   567→14. RATINGS
+   568→============================================================
+   569→
+   570→Consumers can rate videos.
+   571→
+   572→Creators cannot rate.
+   573→
+   574→Use:
+   575→
+   576→1–5 rating.
+   577→
+   578→One rating per consumer per video.
+   579→
+   580→Enforce uniqueness at database level AND application level.
+   581→
+   582→Implement:
+   583→
+   584→- create rating
+   585→- update rating
+   586→- delete rating
+   587→- average rating
+   588→- rating count
+   589→
+   590→Handle zero-rating cases correctly.
+   591→
+   592→============================================================
+   593→15. ADMIN SYSTEM
+   594→============================================================
+   595→
+   596→Build a complete admin dashboard.
+   597→
+   598→Admin functionality:
+   599→
+   600→CREATOR MANAGEMENT
+   601→
+   602→- create creator
+   603→- edit creator
+   604→- activate/deactivate creator
+   605→- view creator
+   606→- search creators
+   607→- paginate creators
+   608→
+   609→USER MANAGEMENT
+   610→
+   611→- view users
+   612→- search users
+   613→- filter by role/status
+   614→- activate/deactivate users
+   615→- never allow disabling the last admin
+   616→
+   617→VIDEO MANAGEMENT
+   618→
+   619→- list videos
+   620→- search
+   621→- filter
+   622→- publish
+   623→- unpublish
+   624→- delete
+   625→- view metadata
+   626→
+   627→COMMENT MODERATION
+   628→
+   629→- list comments
+   630→- filter
+   631→- hide
+   632→- unhide
+   633→- delete
+   634→
+   635→Every administrative mutation must create an AuditLog entry.
+   636→
+   637→============================================================
+   638→16. CREATOR DASHBOARD
+   639→============================================================
+   640→
+   641→Build creator-facing functionality.
+   642→
+   643→Creator must be able to:
+   644→
+   645→- see their videos
+   646→- upload video
+   647→- provide metadata
+   648→- upload thumbnail where supported
+   649→- see video status
+   650→- see views
+   651→- see ratings
+   652→- edit permitted metadata
+   653→- manage their own content
+   654→
+   655→Creator must NEVER be able to modify another creator's content.
+   656→
+   657→============================================================
+   658→17. CONSUMER EXPERIENCE
+   659→============================================================
+   660→
+   661→Build a polished consumer-facing experience.
+   662→
+   663→Required:
+   664→
+   665→- home/video discovery
+   666→- video grid/feed
+   667→- search
+   668→- genre filtering
+   669→- video detail/player
+   670→- comments
+   671→- rating
+   672→- pagination
+   673→- authentication
+   674→- registration
+   675→- responsive navigation
+   676→
+   677→The UI should feel like a modern video platform.
+   678→
+   679→Do not blindly copy TikTok branding, logos, or copyrighted assets.
+   680→
+   681→Create an original visual identity.
+   682→
+   683→Prioritize:
+   684→
+   685→- mobile responsiveness
+   686→- desktop responsiveness
+   687→- accessibility
+   688→- fast navigation
+   689→- loading states
+   690→- empty states
+   691→- error states
+   692→- skeleton states where useful
+   693→
+   694→============================================================
+   695→18. SECURITY
+   696→============================================================
+   697→
+   698→Treat security as a production requirement.
+   699→
+   700→Implement:
+   701→
+   702→- server-side RBAC
+   703→- authentication on protected routes
+   704→- ownership checks
+   705→- Zod validation
+   706→- secure password handling for local auth
+   707→- secure cookies/session handling
+   708→- CSRF protections where applicable
+   709→- XSS-safe rendering
+   710→- SQL injection protection through Prisma
+   711→- file type validation
+   712→- file size validation
+   713→- short-lived SAS URLs
+   714→- no storage credentials in frontend
+   715→- no database credentials in frontend
+   716→- no secrets committed to Git
+   717→- restrictive CORS where applicable
+   718→- secure HTTP headers where applicable
+   719→
+   720→Never trust:
+   721→
+   722→- client role
+   723→- client user ID
+   724→- client creator ID
+   725→- client video ownership
+   726→- client authorization state
+   727→
+   728→Always derive security-sensitive identity from authenticated server context.
+   729→
+   730→============================================================
+   731→19. SECRETS AND ENVIRONMENT VARIABLES
+   732→============================================================
+   733→
+   734→Create a clear environment-variable strategy.
+   735→
+   736→Development:
+   737→
+   738→.env.local
+   739→
+   740→Production:
+   741→
+   742→Azure Key Vault / Azure App Service configuration according to the
+   743→approved architecture.
+   744→
+   745→Never expose server-only secrets through NEXT_PUBLIC_* variables.
+   746→
+   747→Document required environment variables.
+   748→
+   749→Provide an example environment file containing variable NAMES only,
+   750→not real secrets.
+   751→
+   752→============================================================
+   753→20. ERROR HANDLING
+   754→============================================================
+   755→
+   756→Implement consistent API errors.
+   757→
+   758→Use predictable status codes:
+   759→
+   760→401 — UNAUTHORIZED
+   761→403 — FORBIDDEN
+   762→404 — NOT_FOUND
+   763→409 — CONFLICT
+   764→413 — PAYLOAD_TOO_LARGE
+   765→422 — VALIDATION_ERROR
+   766→500 — INTERNAL_SERVER_ERROR
+   767→
+   768→Never expose:
+   769→
+   770→- database credentials
+   771→- stack traces
+   772→- storage keys
+   773→- authentication secrets
+   774→- internal infrastructure details
+   775→
+   776→in production responses.
+   777→
+   778→============================================================
+   779→21. TESTING
+   780→============================================================
+   781→
+   782→Do not consider implementation complete until tests exist.
+   783→
+   784→Implement:
+   785→
+   786→UNIT TESTS
+   787→
+   788→- validation
+   789→- authorization
+   790→- rating calculations
+   791→- pagination
+   792→- search
+   793→- file validation
+   794→- view counting
+   795→
+   796→API TESTS
+   797→
+   798→- registration
+   799→- authentication
+   800→- upload authorization
+   801→- comments
+   802→- ratings
+   803→- admin APIs
+   804→- creator APIs
+   805→- ownership enforcement
+   806→
+   807→SECURITY TESTS
+   808→
+   809→Verify:
+   810→
+   811→CONSUMER → upload-session = 403
+   812→
+   813→CREATOR → admin creator management = 403
+   814→
+   815→CREATOR → modify another creator's video = 403
+   816→
+   817→CONSUMER → modify another user's comment = 403
+   818→
+   819→Unauthenticated → protected endpoint = 401
+   820→
+   821→role="ADMIN" in registration body → ignored
+   822→
+   823→.exe upload → 422
+   824→
+   825→1GB upload → 413
+   826→
+   827→SQL injection → safely handled
+   828→
+   829→XSS comment → safely rendered/escaped
+   830→
+   831→Do not mark tests as passing unless they actually run.
+   832→
+   833→============================================================
+   834→22. BUILD VALIDATION
+   835→============================================================
+   836→
+   837→After implementation:
+   838→
+   839→Run:
+   840→
+   841→- type checking
+   842→- linting
+   843→- unit tests
+   844→- API tests
+   845→- production build
+   846→
+   847→Fix every error.
+   848→
+   849→Do not hide errors using:
+   850→
+   851→- ignoreBuildErrors
+   852→- disabling TypeScript
+   853→- disabling ESLint
+   854→- suppressing compiler errors
+   855→- arbitrary `any`
+   856→- empty catch blocks
+   857→
+   858→Do not weaken validation simply to make the build pass.
+   859→
+   860→============================================================
+   861→23. PRODUCTION CONFIGURATION
+   862→============================================================
+   863→
+   864→Prepare the application for:
+   865→
+   866→Azure App Service
+   867→Azure PostgreSQL
+   868→Azure Blob Storage
+   869→Microsoft Entra External ID
+   870→Azure Key Vault
+   871→Application Insights
+   872→
+   873→The implementation must preserve the development/production
+   874→separation defined in the architecture.
+   875→
+   876→Development should remain usable locally.
+   877→
+   878→Production must use the Azure implementations.
+   879→
+   880→Do not hard-code development storage/auth/database behavior into
+   881→production.
+   882→
+   883→============================================================
+   884→24. DATABASE MIGRATIONS
+   885→============================================================
+   886→
+   887→Create proper Prisma migrations.
+   888→
+   889→Do not manually modify the production database schema without
+   890→corresponding migration history.
+   891→
+   892→Verify:
+   893→
+   894→- migrations apply cleanly
+   895→- schema is consistent
+   896→- seed/admin initialization works
+   897→- indexes exist
+   898→- constraints exist
+   899→- relations work
+   900→
+   901→============================================================
+   902→25. ADMIN SEED / INITIALIZATION
+   903→============================================================
+   904→
+   905→Implement the approved initial admin provisioning strategy.
+   906→
+   907→Do not hard-code a real production password.
+   908→
+   909→Use environment configuration or a secure initialization procedure.
+   910→
+   911→Document exactly how the first administrator is created.
+   912→
+   913→============================================================
+   914→26. OBSERVABILITY
+   915→============================================================
+   916→
+   917→Implement structured application logging.
+   918→
+   919→Production should integrate with:
+   920→
+   921→Azure Application Insights
+   922→
+   923→Log useful events such as:
+   924→
+   925→- authentication failures
+   926→- API errors
+   927→- upload failures
+   928→- authorization failures
+   929→- important admin actions
+   930→- storage failures
+   931→- database failures
+   932→
+   933→Never log secrets, passwords, tokens, SAS URLs, or sensitive credentials.
+   934→
+   935→============================================================
+   936→27. UI QUALITY REQUIREMENT
+   937→============================================================
+   938→
+   939→Do not build a collection of crude forms.
+   940→
+   941→The final application should look like a real production web product.
+   942→
+   943→Requirements:
+   944→
+   945→- consistent design system
+   946→- responsive layouts
+   947→- mobile-first consumer experience
+   948→- professional admin dashboard
+   949→- professional creator dashboard
+   950→- accessible forms
+   951→- clear feedback
+   952→- loading states
+   953→- error states
+   954→- empty states
+   955→- confirmation dialogs for destructive actions
+   956→- pagination controls
+   957→- search/filter UX
+   958→- video player UX
+   959→
+   960→Do not sacrifice functionality for visual polish, but do not ignore UI quality.
+   961→
+   962→============================================================
+   963→28. NO FEATURE DRIFT
+   964→============================================================
+   965→
+   966→Do NOT add these unless explicitly requested later:
+   967→
+   968→- live streaming
+   969→- direct messaging
+   970→- private chat
+   971→- WebSockets
+   972→- recommendation AI
+   973→- social following
+   974→- notifications
+   975→- video transcoding pipeline
+   976→- captions
+   977→- chapters
+   978→- multi-language video support
+   979→- user reporting
+   980→- Azure AI moderation
+   981→- CDN/Front Door
+   982→- unnecessary microservices
+   983→
+   984→These are outside the approved MVP.
+   985→
+   986→============================================================
+   987→29. IMPLEMENTATION DISCIPLINE
+   988→============================================================
+   989→
+   990→Work incrementally.
+   991→
+   992→After each major subsystem:
+   993→
+   994→1. Implement it.
+   995→2. Run relevant tests.
+   996→3. Fix errors.
+   997→4. Verify integration.
+   998→5. Continue.
+   999→
+  1000→Do not build the entire application blindly and test only at the end.
+  1001→
+  1002→Maintain backward compatibility with already-working functionality.
+  1003→
+  1004→Do not delete existing working features unless they conflict with
+  1005→the approved architecture.
+  1006→
+  1007→============================================================
+  1008→30. REQUIRED IMPLEMENTATION REPORT
+  1009→============================================================
+  1010→
+  1011→After implementation, provide:
+  1012→
+  1013→1. Files created
+  1014→2. Files modified
+  1015→3. Dependencies added
+  1016→4. Database schema implemented
+  1017→5. Migrations created
+  1018→6. API endpoints implemented
+  1019→7. Authentication implementation
+  1020→8. RBAC implementation
+  1021→9. Storage implementation
+  1022→10. UI routes implemented
+  1023→11. Tests implemented
+  1024→12. Security tests executed
+  1025→13. Build result
+  1026→14. Remaining issues
+  1027→15. Required environment variables
+  1028→16. Local development instructions
+  1029→17. Azure deployment instructions
+  1030→18. Production deployment checklist
+  1031→
+  1032→Do not claim something is implemented if it is only scaffolded.
+  1033→
+  1034→Use these statuses:
+  1035→
+  1036→✅ IMPLEMENTED AND VERIFIED
+  1037→⚠️ IMPLEMENTED BUT NOT FULLY VERIFIED
+  1038→❌ NOT IMPLEMENTED
+  1039→🚫 BLOCKED
+  1040→
+  1041→============================================================
+  1042→31. DEFINITION OF DONE
+  1043→============================================================
+  1044→
+  1045→The implementation is DONE only when:
+  1046→
+  1047→[ ] Application starts locally
+  1048→[ ] TypeScript passes
+  1049→[ ] Lint passes
+  1050→[ ] Unit tests pass
+  1051→[ ] API tests pass
+  1052→[ ] Security tests pass
+  1053→[ ] Production build passes
+  1054→[ ] Prisma migrations work
+  1055→[ ] Authentication works
+  1056→[ ] RBAC works
+  1057→[ ] Consumer workflow works
+  1058→[ ] Creator workflow works
+  1059→[ ] Admin workflow works
+  1060→[ ] Video upload works
+  1061→[ ] Video playback works
+  1062→[ ] Comments work
+  1063→[ ] Ratings work
+  1064→[ ] View counting works
+  1065→[ ] Search works
+  1066→[ ] Pagination works
+  1067→[ ] Moderation works
+  1068→[ ] Audit logging works
+  1069→[ ] Storage abstraction works
+  1070→[ ] Production environment configuration exists
+  1071→[ ] No secrets are exposed
+  1072→[ ] No core TODOs remain
+  1073→[ ] No fake/mock implementation remains in production paths
+  1074→[ ] Azure deployment configuration is documented
+  1075→[ ] Final production build succeeds
+  1076→
+  1077→============================================================
+  1078→32. CRITICAL RULE
+  1079→============================================================
+  1080→
+  1081→DO NOT STOP AT ARCHITECTURE.
+  1082→
+  1083→DO NOT RETURN ANOTHER DESIGN DOCUMENT.
+  1084→
+  1085→DO NOT GIVE ME PSEUDOCODE.
+  1086→
+  1087→DO NOT SIMULATE IMPLEMENTATION.
+  1088→
+  1089→DO NOT CLAIM SUCCESS WITHOUT RUNNING VERIFICATION.
+  1090→
+  1091→ACTUALLY IMPLEMENT THE APPLICATION.
+  1092→
+  1093→If something is missing from the repository, create it.
+  1094→
+  1095→If something is incorrect, fix it.
+  1096→
+  1097→If something fails, debug it.
+  1098→
+  1099→If an architectural conflict is discovered, stop only that decision
+  1100→and report it rather than silently redesigning the system.
+  1101→
+  1102→Continue until the application reaches the Definition of Done.
+  1103→
+  1104→============================================================
+  1105→33. START NOW
+  1106→============================================================
+  1107→
+  1108→First:
+  1109→
+  1110→1. Inspect the repository.
+  1111→2. Compare the current codebase against the approved architecture.
+  1112→3. Produce the short implementation gap report.
+  1113→4. Begin Phase A.
+  1114→5. Continue through implementation in dependency order.
+  1115→6. Test continuously.
+  1116→7. Fix failures.
+  1117→8. Finish with the complete implementation report.
+  1118→
+  1119→DO NOT ASK ME TO RE-APPROVE THE ARCHITECTURE.
+  1120→
+  1121→THE ARCHITECTURE HAS ALREADY BEEN APPROVED.
+  1122→
+  1123→YOUR JOB NOW IS EXECUTION.

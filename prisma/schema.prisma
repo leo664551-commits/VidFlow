@@ -1,9 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -14,19 +8,102 @@ datasource db {
 }
 
 model User {
-  id        String   @id @default(cuid())
-  email     String   @unique
-  name      String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id          String   @id @default(cuid())
+  email       String   @unique
+  displayName String   @default("")
+  password    String   @default("")
+  role        String   @default("CONSUMER")
+  status      String   @default("ACTIVE")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  creatorProfile CreatorProfile?
+  comments      Comment[]
+  ratings       Rating[]
+  videoViews    VideoView[]
+  auditLogs     AuditLog[]
 }
 
-model Post {
+model CreatorProfile {
+  id          String   @id @default(cuid())
+  userId      String   @unique
+  creatorName String
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  videos Video[]
+}
+
+model Video {
+  id                String   @id @default(cuid())
+  creatorId         String
+  title             String
+  publisher         String
+  producer          String
+  genre             String
+  ageRating         String   @default("PG")
+  description       String?
+  storageBlobName   String?
+  thumbnailBlobName String?
+  duration          Int?
+  status            String   @default("UPLOADING")
+  viewCount         Int      @default(0)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  creator  CreatorProfile @relation(fields: [creatorId], references: [userId], onDelete: Cascade)
+  comments Comment[]
+  ratings  Rating[]
+  views    VideoView[]
+}
+
+model Comment {
   id        String   @id @default(cuid())
-  title     String
-  content   String?
-  published Boolean  @default(false)
-  authorId  String
+  videoId   String
+  userId    String
+  content   String
+  status    String   @default("VISIBLE")
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  video Video @relation(fields: [videoId], references: [id], onDelete: Cascade)
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Rating {
+  id        String   @id @default(cuid())
+  videoId   String
+  userId    String
+  rating    Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  video Video @relation(fields: [videoId], references: [id], onDelete: Cascade)
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([videoId, userId])
+}
+
+model VideoView {
+  id       String   @id @default(cuid())
+  videoId  String
+  userId   String?
+  viewedAt DateTime @default(now())
+
+  video Video @relation(fields: [videoId], references: [id], onDelete: Cascade)
+  user  User?  @relation(fields: [userId], references: [id], onDelete: SetNull)
+}
+
+model AuditLog {
+  id            String   @id @default(cuid())
+  actorUserId   String
+  action        String
+  entityType    String
+  entityId      String
+  metadata      String?
+  createdAt     DateTime @default(now())
+
+  actor User @relation(fields: [actorUserId], references: [id], onDelete: Cascade)
 }
