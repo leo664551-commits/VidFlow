@@ -21,6 +21,7 @@ model User {
   comments      Comment[]
   ratings       Rating[]
   videoViews    VideoView[]
+  videoLikes    VideoLike[]
   auditLogs     AuditLog[]
 }
 
@@ -53,23 +54,27 @@ model Video {
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
 
-  creator  CreatorProfile @relation(fields: [creatorId], references: [userId], onDelete: Cascade)
-  comments Comment[]
-  ratings  Rating[]
-  views    VideoView[]
+  creator    CreatorProfile @relation(fields: [creatorId], references: [userId], onDelete: Cascade)
+  comments   Comment[]
+  ratings    Rating[]
+  views      VideoView[]
+  likes      VideoLike[]
 }
 
 model Comment {
-  id        String   @id @default(cuid())
-  videoId   String
-  userId    String
-  content   String
-  status    String   @default("VISIBLE")
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id              String   @id @default(cuid())
+  videoId         String
+  userId          String
+  parentCommentId String?
+  content         String
+  status          String   @default("VISIBLE")
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 
-  video Video @relation(fields: [videoId], references: [id], onDelete: Cascade)
-  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  video         Video         @relation(fields: [videoId], references: [id], onDelete: Cascade)
+  user          User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  parentComment Comment?       @relation("CommentReplies", fields: [parentCommentId], references: [id], onDelete: Cascade)
+  replies       Comment[]     @relation("CommentReplies")
 }
 
 model Rating {
@@ -79,6 +84,18 @@ model Rating {
   rating    Int
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  video Video @relation(fields: [videoId], references: [id], onDelete: Cascade)
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([videoId, userId])
+}
+
+model VideoLike {
+  id        String   @id @default(cuid())
+  videoId   String
+  userId    String
+  createdAt DateTime @default(now())
 
   video Video @relation(fields: [videoId], references: [id], onDelete: Cascade)
   user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
