@@ -1,117 +1,132 @@
 'use client'
 
 import { useState } from 'react'
-import { signIn } from 'next-auth/react'
+import { useForm } from 'react-hook-form'
+import { z } from 'zod'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { motion } from 'framer-motion'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { useAppStore } from '@/store/app-store'
-import { useToast } from '@/hooks/use-toast'
-import { LogIn, Loader2 } from 'lucide-react'
+import { login, getAuthUser } from '@/lib/api'
+import { Loader2, ArrowLeft } from 'lucide-react'
+import { toast } from 'sonner'
+
+const loginSchema = z.object({
+  email: z.string().email('Invalid email address'),
+  password: z.string().min(6, 'Password must be at least 6 characters'),
+})
+
+type LoginValues = z.infer<typeof loginSchema>
 
 export function LoginView() {
   const navigate = useAppStore((s) => s.navigate)
   const setUser = useAppStore((s) => s.setUser)
-  const { toast } = useToast()
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
-  const [error, setError] = useState('')
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setError('')
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<LoginValues>({
+    resolver: zodResolver(loginSchema),
+  })
+
+  const onSubmit = async (values: LoginValues) => {
     setLoading(true)
-
     try {
-      const res = await signIn('credentials', {
-        email,
-        password,
-        redirect: false,
-      })
-
-      if (res?.error) {
-        setError('Invalid email or password')
-        return
-      }
-
-      const meRes = await fetch('/api/auth/me')
-      if (meRes.ok) {
-        const user = await meRes.json()
-        setUser(user)
-        toast({ title: 'Welcome back!', description: `Signed in as ${user.displayName}` })
-        const view =
-          user.role === 'ADMIN'
-            ? 'admin-dashboard' as const
-            : user.role === 'CREATOR'
-              ? 'creator-dashboard' as const
-              : 'consumer-home' as const
-        navigate(view)
-      }
-    } catch {
-      setError('Something went wrong. Please try again.')
+      await login(values.email, values.password)
+      const user = await getAuthUser()
+      setUser(user)
+      toast.success('Welcome back!')
+      navigate('feed')
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Login failed')
     } finally {
       setLoading(false)
     }
   }
 
   return (
-    <div className="flex items-center justify-center py-16 px-4">
-      <Card className="w-full max-w-md">
-        <CardHeader className="text-center">
-          <CardTitle className="text-2xl flex items-center justify-center gap-2">
-            <LogIn className="h-5 w-5" />
-            Sign In
-          </CardTitle>
-          <CardDescription>
-            Enter your credentials to access your account
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+    <div className="min-h-screen bg-black flex flex-col">
+      {/* Back arrow */}
+      <div className="px-4 pt-4">
+        <button
+          onClick={() => navigate('landing')}
+          className="w-9 h-9 flex items-center justify-center text-white hover:bg-white/10 rounded-full transition-colors"
+          aria-label="Go back"
+        >
+          <ArrowLeft className="h-5 w-5" />
+        </button>
+      </div>
+
+      <motion.div
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, ease: 'easeOut' }}
+        className="flex-1 flex flex-col items-center justify-center px-6 -mt-8"
+      >
+        <div className="w-full max-w-sm space-y-8">
+          <div className="text-center">
+            <h1 className="text-2xl font-bold text-white">Sign in to VidFlow</h1>
+          </div>
+
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+            <div className="space-y-1.5">
+              <Label htmlFor="email" className="text-gray-300 text-sm">
+                Email
+              </Label>
               <Input
                 id="email"
                 type="email"
                 placeholder="you@example.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
+                className="bg-white/10 border-white/10 text-white placeholder-gray-500 h-11 focus-visible:ring-white/20"
+                {...register('email')}
               />
+              {errors.email && (
+                <p className="text-red-400 text-xs">{errors.email.message}</p>
+              )}
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
+
+            <div className="space-y-1.5">
+              <Label htmlFor="password" className="text-gray-300 text-sm">
+                Password
+              </Label>
               <Input
                 id="password"
                 type="password"
                 placeholder="Enter your password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
+                className="bg-white/10 border-white/10 text-white placeholder-gray-500 h-11 focus-visible:ring-white/20"
+                {...register('password')}
               />
+              {errors.password && (
+                <p className="text-red-400 text-xs">{errors.password.message}</p>
+              )}
             </div>
-            {error && (
-              <p className="text-sm text-destructive">{error}</p>
-            )}
-            <Button type="submit" className="w-full" disabled={loading}>
+
+            <Button
+              type="submit"
+              className="w-full h-11 bg-white text-black hover:bg-white/90 font-semibold rounded-lg"
+              disabled={loading}
+            >
               {loading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
               Sign In
             </Button>
-            <p className="text-center text-sm text-muted-foreground">
-              Don&apos;t have an account?{' '}
-              <button
-                type="button"
-                className="text-primary underline underline-offset-4 hover:text-primary/80"
-                onClick={() => navigate('register')}
-              >
-                Register
-              </button>
-            </p>
           </form>
-        </CardContent>
-      </Card>
+
+          <p className="text-center text-sm text-gray-400">
+            Don&apos;t have an account?{' '}
+            <button
+              type="button"
+              className="text-white font-medium hover:underline"
+              onClick={() => navigate('register')}
+            >
+              Register
+            </button>
+          </p>
+        </div>
+      </motion.div>
     </div>
   )
 }

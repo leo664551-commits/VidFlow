@@ -4,6 +4,9 @@ import type {
   VideoWithCreator,
   VideoDetail,
   VideoUploadSession,
+  FeedVideo,
+  CommentWithUser,
+  CreatorPublicProfile,
   Genre,
   AgeRating,
   VideoStatus,
@@ -480,4 +483,59 @@ export async function updateCommentStatus(
 
 export async function adminDeleteComment(id: string): Promise<void> {
   await request<void>(`/api/admin/comments/${id}`, { method: 'DELETE' })
+}
+
+// Feed
+export async function getFeedVideos(params?: {
+  page?: number
+  limit?: number
+  genre?: string
+}): Promise<PaginatedResponse<FeedVideo>> {
+  const searchParams = new URLSearchParams()
+  if (params?.page) searchParams.set('page', String(params.page))
+  if (params?.limit) searchParams.set('limit', String(params.limit))
+  if (params?.genre) searchParams.set('genre', params.genre)
+  const qs = searchParams.toString()
+  return request<PaginatedResponse<FeedVideo>>(
+    `/api/videos/feed${qs ? `?${qs}` : ''}`
+  )
+}
+
+// Like
+export async function toggleLike(
+  videoId: string
+): Promise<{ liked: boolean; likeCount: number }> {
+  return request<{ liked: boolean; likeCount: number }>(
+    `/api/videos/${videoId}/like`,
+    { method: 'POST' }
+  )
+}
+
+export async function getLikeStatus(
+  videoId: string
+): Promise<{ liked: boolean; likeCount: number }> {
+  return request<{ liked: boolean; likeCount: number }>(
+    `/api/videos/${videoId}/like`
+  )
+}
+
+// Comment Replies
+export async function getCommentReplies(
+  commentId: string,
+  params?: { page?: number; limit?: number }
+): Promise<PaginatedResponse<CommentWithUser>> {
+  const searchParams = new URLSearchParams()
+  if (params?.page) searchParams.set('page', String(params.page))
+  if (params?.limit) searchParams.set('limit', String(params.limit))
+  const qs = searchParams.toString()
+  return request<PaginatedResponse<CommentWithUser>>(
+    `/api/comments/${commentId}/replies${qs ? `?${qs}` : ''}`
+  )
+}
+
+// Public Creator
+export async function getCreatorProfile(
+  creatorId: string
+): Promise<CreatorPublicProfile> {
+  return request<CreatorPublicProfile>(`/api/creators/${creatorId}`)
 }

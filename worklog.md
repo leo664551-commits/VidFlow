@@ -1,149 +1,66 @@
-# Video Platform Worklog
+# Project Worklog
 
 ---
-Task ID: audit
+Task ID: 1
 Agent: Main
-Task: Repository audit against approved architecture
+Task: Set up Prisma schema with all entities
 
 Work Log:
-- Inspected existing project structure
-- Found: Next.js 16, TypeScript, Tailwind CSS 4, shadcn/ui, Prisma (SQLite), Zustand, TanStack Query, Zod
-- Identified conflicts: wrong Prisma schema (Post/User), ignoreBuildErrors in next.config
-- Created directory structure for services, types, middleware, config, components
+- Updated prisma/schema.prisma: added VideoLike model, parentCommentId on Comment for threading
+- Ran `bun run db:push` to sync schema to SQLite
+- Updated prisma/seed.ts with 12 sample videos, likes, threaded comments, ratings
+- Ran seed successfully
 
 Stage Summary:
-- Existing scaffold needs complete replacement of business logic
-- All shadcn/ui components available
-- Dependencies already include all needed packages
+- Database has: User, CreatorProfile, Video, Comment (with threading), Rating, VideoLike, VideoView, AuditLog
+- 12 sample videos seeded across 2 creators
+- 5 consumers with comments, ratings, likes
 
 ---
-Task ID: phase-a
-Agent: Main
-Task: Project foundation
+Task ID: 4a
+Agent: Backend API Agent
+Task: Add missing API routes (feed, likes, comment replies, public creator profile)
 
 Work Log:
-- Created src/types/index.ts with all shared types
-- Created src/config/index.ts with app config, genres, age ratings
-- Created src/lib/api-response.ts with apiSuccess, apiError, apiPaginated helpers
-- Created src/lib/validation.ts with Zod schemas for all inputs
-- Created src/lib/logger.ts with structured JSON logging
-- Created .env.example with all env vars documented
-- Fixed next.config.ts (removed ignoreBuildErrors)
-- Created .env.local with dev credentials
+- Created GET /api/videos/feed — public paginated feed with likeCount, commentCount, avgRating, userLiked, userRating
+- Created POST/GET /api/videos/[id]/like — toggle like, get like status. CONSUMER/ADMIN only (CREATOR blocked)
+- Created GET /api/comments/[id]/replies — paginated replies for a comment. CONSUMER/ADMIN only
+- Created GET /api/creators/[id] — public creator profile with stats and videos
+- Updated GET /api/videos/[id]/comments — top-level only, added replyCount, supports parentCommentId on POST
+- Updated GET /api/videos/[id] — added likeCount, commentCount, userLiked
+- Updated src/types/index.ts with FeedVideo, CommentWithUser, FeedComment, CreatorPublicProfile types
+- Updated src/store/app-store.ts with commentPanelOpen, selectedCreatorId states
+- Updated src/lib/api.ts with getFeedVideos, toggleLike, getLikeStatus, getCommentReplies, getCreatorProfile
 
 Stage Summary:
-- Foundation complete: types, config, validation, error handling, logging
+- All feed/like/reply/creator-profile APIs working and tested via curl
+- RBAC enforced: CREATOR cannot like/comment/reply
+- Feed returns 12 videos with full engagement data
 
 ---
-Task ID: phase-b
-Agent: Main
-Task: Database schema and migrations
+Task ID: 4b
+Agent: Main + Frontend Agents (3 parallel)
+Task: Rewrite entire frontend to TikTok/Reels style
 
 Work Log:
-- Replaced prisma/schema.prisma with complete Video Platform schema
-- Models: User, CreatorProfile, Video, Comment, Rating, VideoView, AuditLog
-- All relations, cascades, unique constraints in place
-- Pushed schema to SQLite, generated Prisma client
+- Created /src/components/layout/bottom-tab-bar.tsx — 5-tab bar (Home, Discover, +Upload for CREATOR, Inbox, Profile)
+- Rewrote /src/app/page.tsx — dark container, ViewRouter, no header/footer, conditional tab bar and comment panel
+- Created /src/components/views/feed-view.tsx — fullscreen vertical video feed with scroll snap, infinite query, genre-colored placeholders, right-side action bar (like, comment, share, rating), bottom-left info overlay
+- Created /src/components/feed/comment-panel.tsx — TikTok-style right-side slide-in panel (40% width), header with close, scrollable comments with avatars/replies/threading, pill-shaped input at bottom, framer-motion animation
+- Created /src/components/views/discover-view.tsx — Instagram Explore style: search bar, genre pills, 2-column masonry grid
+- Rewrote /src/components/views/video-detail-view.tsx — single video fullscreen with action bar
+- Rewrote /src/components/views/landing-view.tsx — dark landing with VidFlow branding
+- Rewrote /src/components/views/login-view.tsx — dark login with RHF+Zod validation
+- Rewrote /src/components/views/register-view.tsx — dark registration
+- Rewrote /src/components/views/profile-view.tsx — dark profile with stats, role-based dashboard links
+- Created /src/components/views/notifications-view.tsx — dark notifications list
+- Created /src/components/views/creator-profile-view.tsx — TikTok-style public profile with 3-column video grid
+- Updated 4 creator views to dark theme with back-to-feed navigation
+- Updated 6 admin views to dark theme with back-to-feed navigation
+- Emptied app-header.tsx and app-footer.tsx (no longer needed)
 
 Stage Summary:
-- Database schema complete and applied
-- Prisma client generated
-
----
-Task ID: phase-cde
-Agent: Backend Agent
-Task: Auth, services, API endpoints, seed
-
-Work Log:
-- Created src/lib/auth.ts - Auth abstraction with getSession (NextAuth session parsing + DB lookup), hashPassword, comparePassword using bcryptjs
-- Created src/app/api/auth/[...nextauth]/route.ts - NextAuth config with CredentialsProvider, JWT/session callbacks for role persistence
-- Created src/services/storage.ts - Local filesystem storage service with generateUploadUrl, getDownloadUrl, deleteBlob, exists, saveFile (files in public/uploads/videos/)
-- Created src/services/audit.ts - Audit logging service using db.auditLog.create
-- Created POST /api/auth/logout - Clears next-auth session cookie
-- Created POST /api/users/register - Validates with registerSchema, hashes password, creates CONSUMER user, returns 201
-- Created GET/PATCH /api/users/me - Returns current user profile, updates displayName
-- Created GET /api/videos - Lists videos with role-based filtering (CONSUMER: READY only, CREATOR: own+READY, ADMIN: all), genre filter, paginated
-- Created GET /api/videos/latest - Returns latest 10 READY videos
-- Created GET /api/videos/search - Full-text search with videoSearchSchema validation, sortable, paginated
-- Created POST /api/videos/upload-raw - Multipart upload proxy for local dev, validates file type/size, saves to public/uploads/videos/
-- Created POST /api/videos/upload-session - CREATOR/ADMIN only, validates metadata + file info, creates Video record with UPLOADING status
-- Created POST /api/videos/[id]/upload-complete - CREATOR/ADMIN own videos, verifies file exists, updates to READY
-- Created GET /api/videos/[id] - Video detail with creator, rating stats, comment count, deduplicated view tracking by user+video+day
-- Created PATCH /api/videos/[id] - CREATOR own videos or ADMIN, validates metadata update
-- Created DELETE /api/videos/[id] - CREATOR own or ADMIN, deletes blobs + video (cascade)
-- Created GET/POST /api/videos/[id]/comments - List (VISIBLE for non-admin, all for admin) and create (CONSUMER/ADMIN only)
-- Created PATCH/DELETE /api/comments/[id] - Own comment or admin
-- Created GET/POST/PATCH/DELETE /api/videos/[id]/rating - CONSUMER/ADMIN only, 409 on duplicate rating, one rating per user per video enforced
-- Created GET /api/creator/dashboard - CREATOR only, stats + recent videos
-- Created GET /api/creator/videos - CREATOR only, own videos paginated with status filter
-- Created GET /api/admin/dashboard - ADMIN only, platform-wide stats + recent users/videos
-- Created GET/POST /api/admin/creators - List with search/pagination, create User+CreatorProfile in transaction
-- Created GET/PATCH/DELETE /api/admin/creators/[id] - Creator details, update, disable (unpublishes videos)
-- Created GET /api/admin/users - List users with search/role/status filters
-- Created PATCH /api/admin/users/[id]/status - Enable/disable, prevents disabling last admin
-- Created GET /api/admin/videos - List all videos with filters
-- Created PATCH /api/admin/videos/[id]/status - Change video status
-- Created DELETE /api/admin/videos/[id] - Delete video and blobs
-- Created GET /api/admin/comments - List all comments with filters
-- Created PATCH /api/admin/comments/[id]/status - Hide/unhide comments
-- Created DELETE /api/admin/comments/[id] - Delete comment
-- Created prisma/seed.ts - Seeds admin, 2 creators, 5 consumers, 10 sample videos across genres, 28 comments, 34 ratings
-- Every API route independently verifies auth and role
-- Consumer cannot upload (403), Creator cannot comment or rate (403)
-- Registration always assigns CONSUMER role
-- One rating per user per video enforced at DB (unique constraint) + API level
-
-Stage Summary:
-- Complete backend API layer with 30+ endpoints implemented
-- Auth system with NextAuth CredentialsProvider, JWT strategy, role-based access
-- Local filesystem storage service for video uploads
-- Audit logging for all admin/creator mutations
-- Seed data with 8 users and 10 sample videos ready for development
----
-## Frontend Complete Build - StreamVault Video Sharing Platform
-
-### Files Created (25 files)
-
-**Core Infrastructure:**
-- `/src/store/app-store.ts` — Zustand store with currentView, user, selectedVideoId, searchQuery state and navigation/actions
-- `/src/lib/api.ts` — Complete API client with 35+ functions covering auth, videos, comments, ratings, creator, and admin endpoints
-
-**Layout Components:**
-- `/src/components/layout/app-header.tsx` — Sticky header with StreamVault logo, role-based nav links, search bar (consumer), user dropdown, mobile sheet menu
-- `/src/components/layout/app-footer.tsx` — Simple sticky footer with copyright
-
-**Common Components:**
-- `/src/components/common/video-card.tsx` — Reusable card with gray bg Play icon placeholder, title, creator, genre badge, views, date
-- `/src/components/common/pagination-controls.tsx` — Pagination with ellipsis, prev/next, active state
-- `/src/components/common/empty-state.tsx` — Icon + title + description empty state
-- `/src/components/common/loading-skeleton.tsx` — VideoGridSkeleton, TableSkeleton, DashboardSkeleton, DetailSkeleton
-
-**View Components (17 views):**
-1. `landing-view.tsx` — Hero section + latest videos grid
-2. `login-view.tsx` — Email/password form with next-auth signIn
-3. `register-view.tsx` — Registration with role selection (Consumer/Creator)
-4. `consumer-home-view.tsx` — Video grid with genre tabs, sort options, pagination
-5. `search-view.tsx` — Search bar + genre/publisher/producer filters, result grid
-6. `video-detail-view.tsx` — Video player placeholder, metadata sidebar, 5-star rating, comments with pagination
-7. `creator-dashboard-view.tsx` — Stats cards + recent videos table + upload CTA
-8. `creator-videos-view.tsx` — Videos table with status filter, edit/delete actions, confirm dialog
-9. `creator-upload-view.tsx` — 3-step flow: select file → fill metadata → uploading → complete
-10. `creator-edit-video-view.tsx` — Pre-filled form using react-hook-form values prop
-11. `admin-dashboard-view.tsx` — 6 stat cards + 4 mini-tables (uploads, users, comments, most viewed)
-12. `admin-creators-view.tsx` — Table with search, activate/deactivate, delete, pagination
-13. `admin-creator-new-view.tsx` — Form to create creator account
-14. `admin-users-view.tsx` — Table with search, role/status filters, enable/disable
-15. `admin-videos-view.tsx` — Table with search, status/genre filters, publish/unpublish, delete
-16. `admin-comments-view.tsx` — Table with status filter, show/hide, delete
-17. `profile-view.tsx` — View/edit display name, show email/role/status (read-only)
-
-**Updated:**
-- `/src/app/page.tsx` — Single-page app with QueryClientProvider, auth check on mount, AnimatePresence view router
-
-### Architecture
-- All navigation via Zustand `currentView` state (no Next.js routing)
-- TanStack Query for all server state with proper cache keys
-- Framer Motion for view transitions
-- All forms use controlled components or react-hook-form
-- Responsive mobile-first design with shadcn/ui components
-- 0 lint errors, 1 warning (React Compiler compatibility with react-hook-form watch)
+- Complete TikTok/Reels UI: dark theme, fullscreen video feed, scroll snap, bottom tab bar, right-side comment panel
+- All views (feed, discover, profile, creator, admin) rewritten with consistent dark theme
+- Zero lint errors (1 pre-existing React Hook Form warning)
+- Feed API confirmed working with 12 videos via curl

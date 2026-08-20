@@ -17,7 +17,10 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       include: {
         creator: { select: { id: true, creatorName: true } },
         _count: {
-          select: { comments: true, ratings: true },
+          select: {
+            likes: true,
+            ratings: true,
+          },
         },
         ratings: {
           select: { rating: true },
@@ -71,13 +74,25 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       ? video.ratings.reduce((sum, r) => sum + r.rating, 0) / totalRatings
       : 0;
 
-    // Get user's rating
+    // Count visible top-level comments
+    const commentCount = await db.comment.count({
+      where: { videoId: id, status: 'VISIBLE', parentCommentId: null },
+    });
+
+    // Get user's rating and like status
     let userRating: number | null = null;
+    let userLiked = false;
     if (user) {
-      const userRatingRecord = await db.rating.findUnique({
-        where: { videoId_userId: { videoId: id, userId: user.id } },
-      });
+      const [userRatingRecord, userLikeRecord] = await Promise.all([
+        db.rating.findUnique({
+          where: { videoId_userId: { videoId: id, userId: user.id } },
+        }),
+        db.videoLike.findUnique({
+          where: { videoId_userId: { videoId: id, userId: user.id } },
+        }),
+      ]);
       if (userRatingRecord) userRating = userRatingRecord.rating;
+      if (userLikeRecord) userLiked = true;
     }
 
     return apiSuccess({
@@ -99,7 +114,9 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       averageRating: Math.round(averageRating * 100) / 100,
       totalRatings,
       userRating,
-      commentCount: video._count.comments,
+      likeCount: video._count.likes,
+      commentCount,
+      ...(user && (user.role === 'CONSUMER' || user.role === 'ADMIN') ? { userLiked } : {}),
     });
   } catch (error) {
     logger.error('Get video failed', { error: (error as Error).message, videoId: id });

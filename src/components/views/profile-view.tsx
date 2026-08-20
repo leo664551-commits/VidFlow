@@ -1,143 +1,224 @@
 'use client'
 
-import { useState } from 'react'
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useState, useEffect } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { Separator } from '@/components/ui/separator'
 import { useAppStore } from '@/store/app-store'
-import { useToast } from '@/hooks/use-toast'
-import { updateProfile } from '@/lib/api'
-import { User, Loader2, Mail, Shield } from 'lucide-react'
+import { updateProfile, logout } from '@/lib/api'
+import {
+  Loader2,
+  ArrowLeft,
+  Mail,
+  MessageSquare,
+  Star,
+  LogOut,
+  ChevronRight,
+  Pencil,
+} from 'lucide-react'
+import { toast } from 'sonner'
+
+const GRADIENTS = [
+  'bg-gradient-to-br from-rose-500 to-pink-600',
+  'bg-gradient-to-br from-amber-500 to-orange-600',
+  'bg-gradient-to-br from-emerald-500 to-teal-600',
+  'bg-gradient-to-br from-cyan-500 to-sky-600',
+  'bg-gradient-to-br from-violet-500 to-purple-600',
+  'bg-gradient-to-br from-fuchsia-500 to-pink-600',
+]
+
+function getGradient(id: string) {
+  let hash = 0
+  for (let i = 0; i < id.length; i++) {
+    hash = id.charCodeAt(i) + ((hash << 5) - hash)
+  }
+  return GRADIENTS[Math.abs(hash) % GRADIENTS.length]
+}
+
+const ROLE_COLORS: Record<string, string> = {
+  ADMIN: 'bg-red-500/20 text-red-400 border-red-500/30',
+  CREATOR: 'bg-amber-500/20 text-amber-400 border-amber-500/30',
+  CONSUMER: 'bg-gray-500/20 text-gray-400 border-gray-500/30',
+}
 
 export function ProfileView() {
   const user = useAppStore((s) => s.user)
   const setUser = useAppStore((s) => s.setUser)
-  const { toast } = useToast()
-  const queryClient = useQueryClient()
+  const navigate = useAppStore((s) => s.navigate)
+  const clearUser = useAppStore((s) => s.clearUser)
 
   const [displayName, setDisplayName] = useState(user?.displayName ?? '')
   const [editing, setEditing] = useState(false)
+  const [saving, setSaving] = useState(false)
+  const [loggingOut, setLoggingOut] = useState(false)
 
-  const mutation = useMutation({
-    mutationFn: (data: { displayName: string }) => updateProfile(data),
-    onSuccess: (updatedUser) => {
-      setUser(updatedUser)
+  useEffect(() => {
+    if (user?.displayName) setDisplayName(user.displayName)
+  }, [user?.displayName])
+
+  const handleSave = async () => {
+    setSaving(true)
+    try {
+      const updated = await updateProfile({ displayName })
+      setUser(updated)
       setEditing(false)
-      toast({ title: 'Profile updated' })
-      queryClient.invalidateQueries({ queryKey: ['auth-user'] })
-    },
-    onError: (err) => {
-      toast({
-        title: 'Update failed',
-        description: err instanceof Error ? err.message : 'Something went wrong',
-        variant: 'destructive',
-      })
-    },
-  })
-
-  const handleSave = (e: React.FormEvent) => {
-    e.preventDefault()
-    mutation.mutate({ displayName })
+      toast.success('Profile updated')
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Update failed')
+    } finally {
+      setSaving(false)
+    }
   }
 
-  return (
-    <div className="container mx-auto px-4 py-8 max-w-lg">
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <User className="h-5 w-5" />
-            Profile
-          </CardTitle>
-          <CardDescription>Manage your account settings</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          <form onSubmit={handleSave} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="profile-name">Display Name</Label>
-              <Input
-                id="profile-name"
-                value={displayName}
-                onChange={(e) => setDisplayName(e.target.value)}
-                disabled={!editing || mutation.isPending}
-              />
-            </div>
+  const handleLogout = async () => {
+    setLoggingOut(true)
+    try {
+      await logout()
+    } catch {
+      // continue even if logout fails
+    } finally {
+      clearUser()
+      setLoggingOut(false)
+    }
+  }
 
-            {!editing ? (
-              <Button type="button" variant="outline" onClick={() => setEditing(true)}>
-                Edit
-              </Button>
-            ) : (
+  if (!user) return null
+
+  const gradient = getGradient(user.id)
+  const initial = user.displayName?.[0]?.toUpperCase() || '?'
+
+  return (
+    <div className="min-h-screen bg-black pb-24">
+      {/* Top bar */}
+      <div className="sticky top-0 z-30 bg-black/90 backdrop-blur-sm flex items-center justify-between px-4 py-3">
+        <button
+          onClick={() => navigate('feed')}
+          className="w-9 h-9 flex items-center justify-center text-white hover:bg-white/10 rounded-full transition-colors"
+          aria-label="Go back"
+        >
+          <ArrowLeft className="h-5 w-5" />
+        </button>
+        <button
+          onClick={() => setEditing((prev) => !prev)}
+          className="text-white text-sm font-medium hover:text-gray-300 transition-colors"
+        >
+          Edit
+        </button>
+      </div>
+
+      {/* Profile section */}
+      <div className="flex flex-col items-center px-4 pt-6 pb-4">
+        {/* Avatar */}
+        <div
+          className={`w-20 h-20 rounded-full ${gradient} flex items-center justify-center text-white text-3xl font-bold shrink-0 mb-4`}
+        >
+          {initial}
+        </div>
+
+        {/* Name + email */}
+        <h2 className="text-white text-xl font-bold">{user.displayName}</h2>
+        <p className="text-gray-400 text-sm mt-0.5">{user.email}</p>
+
+        {/* Role badge */}
+        <Badge
+          variant="outline"
+          className={`mt-2 text-[11px] px-2.5 py-0.5 rounded-full border ${ROLE_COLORS[user.role] || ROLE_COLORS.CONSUMER}`}
+        >
+          {user.role}
+        </Badge>
+
+        {/* Stats row */}
+        <div className="flex items-center gap-10 mt-6">
+          <div className="text-center">
+            <div className="flex items-center justify-center gap-1">
+              <MessageSquare className="h-4 w-4 text-gray-500" />
+              <p className="text-white text-lg font-bold">12</p>
+            </div>
+            <p className="text-gray-500 text-xs mt-0.5">Comments</p>
+          </div>
+          <div className="text-center">
+            <div className="flex items-center justify-center gap-1">
+              <Star className="h-4 w-4 text-gray-500" />
+              <p className="text-white text-lg font-bold">8</p>
+            </div>
+            <p className="text-gray-500 text-xs mt-0.5">Ratings</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Edit profile section (expandable) */}
+      <AnimatePresence>
+        {editing && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="overflow-hidden"
+          >
+            <div className="px-4 py-4 border-t border-white/10">
+              <div className="flex items-center gap-2 mb-3">
+                <Pencil className="h-4 w-4 text-gray-400" />
+                <span className="text-gray-300 text-sm font-medium">Edit Profile</span>
+              </div>
               <div className="flex gap-2">
-                <Button type="submit" disabled={mutation.isPending}>
-                  {mutation.isPending && (
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  )}
+                <Input
+                  value={displayName}
+                  onChange={(e) => setDisplayName(e.target.value)}
+                  className="bg-white/10 border-white/10 text-white h-10 flex-1"
+                  placeholder="Display name"
+                  autoFocus
+                />
+                <Button
+                  onClick={handleSave}
+                  disabled={saving}
+                  className="bg-white text-black hover:bg-white/90 h-10 px-4 font-semibold rounded-lg shrink-0"
+                >
+                  {saving && <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />}
                   Save
                 </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => {
-                    setDisplayName(user?.displayName ?? '')
-                    setEditing(false)
-                  }}
-                >
-                  Cancel
-                </Button>
               </div>
-            )}
-          </form>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
-          <Separator />
+      {/* Menu items */}
+      <div className="px-4 mt-4 space-y-1 border-t border-white/10 pt-3">
+        {user.role === 'CREATOR' && (
+          <button
+            onClick={() => navigate('creator-dashboard')}
+            className="w-full flex items-center gap-3 p-3.5 rounded-lg hover:bg-white/5 transition-colors text-left"
+          >
+            <span className="text-white text-sm flex-1">Creator Dashboard</span>
+            <ChevronRight className="h-4 w-4 text-gray-500" />
+          </button>
+        )}
 
-          <div className="space-y-3">
-            <div className="flex items-center gap-2 text-sm">
-              <Mail className="h-4 w-4 text-muted-foreground" />
-              <span className="text-muted-foreground">Email:</span>
-              <span className="font-medium">{user?.email}</span>
-            </div>
-            <div className="flex items-center gap-2 text-sm">
-              <Shield className="h-4 w-4 text-muted-foreground" />
-              <span className="text-muted-foreground">Role:</span>
-              <Badge variant="secondary">{user?.role}</Badge>
-            </div>
-            <div className="flex items-center gap-2 text-sm">
-              <span className="text-muted-foreground">Status:</span>
-              <Badge
-                variant={user?.status === 'ACTIVE' ? 'default' : 'destructive'}
-              >
-                {user?.status}
-              </Badge>
-            </div>
-            {user?.creatorProfile && (
-              <>
-                <Separator />
-                <div className="space-y-2">
-                  <h4 className="font-medium">Creator Profile</h4>
-                  <p className="text-sm text-muted-foreground">
-                    <span className="font-medium text-foreground">{user.creatorProfile.creatorName}</span>
-                  </p>
-                  {user.creatorProfile.description && (
-                    <p className="text-sm text-muted-foreground">
-                      {user.creatorProfile.description}
-                    </p>
-                  )}
-                </div>
-              </>
-            )}
-          </div>
-        </CardContent>
-      </Card>
+        {user.role === 'ADMIN' && (
+          <button
+            onClick={() => navigate('admin-dashboard')}
+            className="w-full flex items-center gap-3 p-3.5 rounded-lg hover:bg-white/5 transition-colors text-left"
+          >
+            <span className="text-white text-sm flex-1">Admin Dashboard</span>
+            <ChevronRight className="h-4 w-4 text-gray-500" />
+          </button>
+        )}
+
+        <button
+          onClick={handleLogout}
+          disabled={loggingOut}
+          className="w-full flex items-center gap-3 p-3.5 rounded-lg hover:bg-white/5 transition-colors text-left"
+        >
+          {loggingOut ? (
+            <Loader2 className="h-5 w-5 text-red-500 animate-spin" />
+          ) : (
+            <LogOut className="h-5 w-5 text-red-500" />
+          )}
+          <span className="text-red-500 text-sm flex-1">Log Out</span>
+        </button>
+      </div>
     </div>
   )
 }

@@ -29,7 +29,7 @@ import { EmptyState } from '@/components/common/empty-state'
 import { getAdminCreators, deleteCreator, updateUserStatus } from '@/lib/api'
 import { useAppStore } from '@/store/app-store'
 import { useToast } from '@/hooks/use-toast'
-import { Users, Plus, Pencil, Trash2, Eye, Ban, CheckCircle2 } from 'lucide-react'
+import { Users, Plus, Trash2, Ban, CheckCircle2, ArrowLeft } from 'lucide-react'
 
 export function AdminCreatorsView() {
   const navigate = useAppStore((s) => s.navigate)
@@ -41,158 +41,93 @@ export function AdminCreatorsView() {
 
   const { data, isLoading } = useQuery({
     queryKey: ['admin-creators', page, search],
-    queryFn: () =>
-      getAdminCreators({
-        page,
-        limit: 10,
-        search: search || undefined,
-      }),
+    queryFn: () => getAdminCreators({ page, limit: 10, search: search || undefined }),
   })
 
   const deleteMutation = useMutation({
     mutationFn: deleteCreator,
-    onSuccess: () => {
-      setDeleteId(null)
-      queryClient.invalidateQueries({ queryKey: ['admin-creators'] })
-      toast({ title: 'Creator deleted' })
-    },
-    onError: (err) => {
-      toast({
-        title: 'Delete failed',
-        description: err instanceof Error ? err.message : 'Error',
-        variant: 'destructive',
-      })
-    },
+    onSuccess: () => { setDeleteId(null); queryClient.invalidateQueries({ queryKey: ['admin-creators'] }); toast({ title: 'Creator deleted' }) },
+    onError: (err) => { toast({ title: 'Delete failed', description: err instanceof Error ? err.message : 'Error', variant: 'destructive' }) },
   })
 
   const toggleStatusMutation = useMutation({
-    mutationFn: ({ userId, status }: { userId: string; status: 'ACTIVE' | 'DISABLED' }) =>
-      updateUserStatus(userId, status),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['admin-creators'] })
-      toast({ title: 'Status updated' })
-    },
+    mutationFn: ({ userId, status }: { userId: string; status: 'ACTIVE' | 'DISABLED' }) => updateUserStatus(userId, status),
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['admin-creators'] }); toast({ title: 'Status updated' }) },
   })
 
   return (
-    <div className="container mx-auto px-4 py-6 space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <h1 className="text-2xl font-bold">Creators</h1>
-        <Button onClick={() => navigate('admin-creator-new')}>
-          <Plus className="h-4 w-4 mr-2" />
-          Create Creator
-        </Button>
+    <div className="min-h-screen bg-gray-950 pb-20">
+      {/* Header */}
+      <header className="sticky top-0 z-10 bg-gray-950/80 backdrop-blur-md border-b border-gray-800">
+        <div className="flex items-center justify-center h-14 px-4 relative">
+          <Button variant="ghost" size="icon" className="absolute left-2 sm:left-4 text-gray-400 hover:text-white hover:bg-gray-800" onClick={() => navigate('feed')} aria-label="Back to feed">
+            <ArrowLeft className="h-5 w-5" />
+          </Button>
+          <h1 className="text-lg font-bold text-white">Creators</h1>
+          <Button onClick={() => navigate('admin-creator-new')} size="sm" className="absolute right-2 sm:right-4 bg-amber-500 text-black hover:bg-amber-400 h-8 text-xs font-semibold">
+            <Plus className="h-3.5 w-3.5 mr-1" />Create
+          </Button>
+        </div>
+      </header>
+
+      <div className="px-4 pt-4">
+        <div className="max-w-sm mb-4">
+          <Input placeholder="Search creators..." value={search} onChange={(e) => { setSearch(e.target.value); setPage(1) }} className="bg-gray-900 border-gray-800 text-white placeholder-gray-500 h-9 focus-visible:ring-gray-700 focus-visible:border-gray-600" />
+        </div>
       </div>
 
-      <div className="max-w-sm">
-        <Input
-          placeholder="Search creators..."
-          value={search}
-          onChange={(e) => {
-            setSearch(e.target.value)
-            setPage(1)
-          }}
-        />
+      <div className="px-4">
+        {isLoading && <TableSkeleton rows={5} cols={6} />}
+        {!isLoading && data && data.data.length > 0 && (
+          <>
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader><TableRow className="border-gray-800 hover:bg-transparent">
+                  <TableHead className="text-gray-400">Name</TableHead><TableHead className="text-gray-400">Email</TableHead><TableHead className="text-gray-400">Creator</TableHead><TableHead className="text-gray-400">Videos</TableHead><TableHead className="text-gray-400">Status</TableHead><TableHead className="text-gray-400 text-right">Actions</TableHead>
+                </TableRow></TableHeader>
+                <TableBody>
+                  {data.data.map((c) => (
+                    <TableRow key={c.id} className="border-gray-800/50 hover:bg-gray-800/50">
+                      <TableCell className="font-medium text-white">{c.user.displayName}</TableCell>
+                      <TableCell className="text-sm text-gray-400">{c.user.email}</TableCell>
+                      <TableCell className="text-white">{c.creatorName}</TableCell>
+                      <TableCell className="text-gray-300">{c.videoCount}</TableCell>
+                      <TableCell><StatusBadge status={c.user.status} /></TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex items-center justify-end gap-1">
+                          <Button variant="ghost" size="icon" className="text-gray-400 hover:text-white hover:bg-gray-800 h-8 w-8" onClick={() => toggleStatusMutation.mutate({ userId: c.userId, status: c.user.status === 'ACTIVE' ? 'DISABLED' : 'ACTIVE' })}>
+                            {c.user.status === 'ACTIVE' ? <Ban className="h-4 w-4" /> : <CheckCircle2 className="h-4 w-4" />}
+                          </Button>
+                          <Button variant="ghost" size="icon" className="text-gray-400 hover:text-red-400 hover:bg-red-500/10 h-8 w-8" onClick={() => setDeleteId(c.id)}><Trash2 className="h-4 w-4" /></Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+            <PaginationControls page={data.pagination.page} totalPages={data.pagination.totalPages} onPageChange={setPage} />
+          </>
+        )}
+        {!isLoading && data && data.data.length === 0 && <EmptyState icon={Users} title="No creators found" description="Create a new creator to get started." />}
       </div>
-
-      {isLoading && <TableSkeleton rows={5} cols={6} />}
-
-      {!isLoading && data && data.data.length > 0 && (
-        <>
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Email</TableHead>
-                  <TableHead>Creator Name</TableHead>
-                  <TableHead>Videos</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {data.data.map((c) => (
-                  <TableRow key={c.id}>
-                    <TableCell className="font-medium">{c.user.displayName}</TableCell>
-                    <TableCell className="text-sm text-muted-foreground">{c.user.email}</TableCell>
-                    <TableCell>{c.creatorName}</TableCell>
-                    <TableCell>{c.videoCount}</TableCell>
-                    <TableCell>
-                      <Badge
-                        variant={c.user.status === 'ACTIVE' ? 'default' : 'destructive'}
-                      >
-                        {c.user.status}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex items-center justify-end gap-1">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() =>
-                            toggleStatusMutation.mutate({
-                              userId: c.userId,
-                              status: c.user.status === 'ACTIVE' ? 'DISABLED' : 'ACTIVE',
-                            })
-                          }
-                          title={c.user.status === 'ACTIVE' ? 'Disable' : 'Activate'}
-                        >
-                          {c.user.status === 'ACTIVE' ? (
-                            <Ban className="h-4 w-4" />
-                          ) : (
-                            <CheckCircle2 className="h-4 w-4" />
-                          )}
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => setDeleteId(c.id)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
-          <PaginationControls
-            page={data.pagination.page}
-            totalPages={data.pagination.totalPages}
-            onPageChange={setPage}
-          />
-        </>
-      )}
-
-      {!isLoading && data && data.data.length === 0 && (
-        <EmptyState
-          icon={Users}
-          title="No creators found"
-          description="Create a new creator to get started."
-        />
-      )}
 
       <AlertDialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete Creator</AlertDialogTitle>
-            <AlertDialogDescription>
-              Are you sure? This action cannot be undone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
+        <AlertDialogContent className="bg-gray-900 border-gray-800">
+          <AlertDialogHeader><AlertDialogTitle className="text-white">Delete Creator</AlertDialogTitle><AlertDialogDescription className="text-gray-400">Are you sure? This action cannot be undone.</AlertDialogDescription></AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={() => deleteId && deleteMutation.mutate(deleteId)}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              Delete
-            </AlertDialogAction>
+            <AlertDialogCancel className="text-gray-400 border-gray-700 hover:bg-gray-800 hover:text-white">Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={() => deleteId && deleteMutation.mutate(deleteId)} className="bg-red-600 text-white hover:bg-red-700">Delete</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
     </div>
   )
+}
+
+function StatusBadge({ status }: { status: string }) {
+  if (status === 'ACTIVE') {
+    return <Badge variant="outline" className="border-emerald-500/30 text-emerald-400 bg-emerald-500/10 text-xs">{status}</Badge>
+  }
+  return <Badge variant="outline" className="border-red-500/30 text-red-400 bg-red-500/10 text-xs">{status}</Badge>
 }

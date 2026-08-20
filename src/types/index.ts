@@ -79,14 +79,82 @@ export interface VideoDetail extends VideoWithCreator {
   averageRating: number;
   totalRatings: number;
   userRating: number | null;
+  likeCount?: number;
+  commentCount?: number;
+  userLiked?: boolean;
+}
+
+export interface FeedVideo {
+  id: string;
+  title: string;
+  publisher: string;
+  producer: string;
+  genre: Genre;
+  ageRating: AgeRating;
+  description: string | null;
+  duration: number | null;
+  status: VideoStatus;
+  viewCount: number;
+  createdAt: string;
+  updatedAt: string;
+  likeCount: number;
+  commentCount: number;
+  avgRating: number;
+  userLiked: boolean;
+  userRating: number | null;
+  creator: {
+    id: string;
+    creatorName: string;
+    displayName: string;
+  };
+}
+
+export interface CommentWithUser {
+  id: string;
+  content: string;
+  status: CommentStatus;
+  createdAt: string;
+  updatedAt: string;
+  user: {
+    id: string;
+    displayName: string;
+  };
+  replyCount: number;
+  videoId: string;
+  parentCommentId: string | null;
+}
+
+export interface FeedComment {
+  id: string;
+  content: string;
+  createdAt: string;
+  user: {
+    id: string;
+    displayName: string;
+  };
+  replyCount: number;
+  likeCount?: number;
+}
+
+export interface CreatorPublicProfile {
+  id: string;
+  creatorName: string;
+  displayName: string;
+  description: string | null;
+  videoCount: number;
+  totalViews: number;
+  videos: FeedVideo[];
 }
 
 export type AppView =
   | 'landing'
   | 'login'
   | 'register'
-  | 'consumer-home'
-  | 'search'
+  | 'feed'
+  | 'discover'
+  | 'notifications'
+  | 'profile'
+  | 'creator-profile'
   | 'video-detail'
   | 'creator-dashboard'
   | 'creator-videos'
@@ -97,5 +165,4 @@ export type AppView =
   | 'admin-creator-new'
   | 'admin-users'
   | 'admin-videos'
-  | 'admin-comments'
-  | 'profile';
+  | 'admin-comments';
