@@ -26,9 +26,10 @@ async function main() {
   console.log('Seeding database...');
 
   await prisma.auditLog.deleteMany();
+  await prisma.commentLike.deleteMany();
+  await prisma.creatorRating.deleteMany();
   await prisma.videoView.deleteMany();
   await prisma.videoLike.deleteMany();
-  await prisma.rating.deleteMany();
   await prisma.comment.deleteMany();
   await prisma.video.deleteMany();
   await prisma.creatorProfile.deleteMany();
@@ -45,14 +46,14 @@ async function main() {
   const creator1User = await prisma.user.create({
     data: { email: 'creator1@platform.com', displayName: 'James Chen', password: creatorPassword, role: 'CREATOR', status: 'ACTIVE' },
   });
-  await prisma.creatorProfile.create({
+  const creator1Profile = await prisma.creatorProfile.create({
     data: { userId: creator1User.id, creatorName: 'Stellar Studios', description: 'Award-winning science fiction and action film studio.' },
   });
 
   const creator2User = await prisma.user.create({
     data: { email: 'creator2@platform.com', displayName: 'Sarah Miller', password: creatorPassword, role: 'CREATOR', status: 'ACTIVE' },
   });
-  await prisma.creatorProfile.create({
+  const creator2Profile = await prisma.creatorProfile.create({
     data: { userId: creator2User.id, creatorName: 'Comedy Central Studios', description: 'Making the world laugh, one video at a time.' },
   });
 
@@ -63,6 +64,8 @@ async function main() {
     });
     consumers.push(c);
   }
+
+  const creatorProfiles = [creator1Profile, creator2Profile];
 
   const videos = [];
   for (let i = 0; i < sampleVideos.length; i++) {
@@ -88,28 +91,38 @@ async function main() {
   }
 
   const commentTexts = [
-    'This was amazing! Really enjoyed it 😲',
+    'This was amazing! Really enjoyed it',
     'Great content, looking forward to more!',
-    'The production quality is outstanding 🤯',
+    'The production quality is outstanding',
     'Interesting perspective, made me think.',
-    'One of the best I\'ve seen this year!',
+    "One of the best I've seen this year!",
     'The story was captivating from start to finish.',
     'Shared this with all my friends.',
     'The visuals were absolutely stunning.',
     'Would love to see a sequel!',
-    'This deserves way more views 🔥',
+    'This deserves way more views',
   ];
 
   const replyTexts = [
     'Totally agree with this!',
-    'Facts! 💯',
+    'Facts!',
     'I was thinking the same thing',
     'Well said!',
     'Need more content like this',
   ];
 
+  const creatorComments = [
+    'Thanks for watching! More coming soon.',
+    'Glad you enjoyed it! We put a lot of effort into this one.',
+    'Appreciate the support! Stay tuned for part 2.',
+  ];
+
+  // Create comments, replies, and pinned comments
   for (let v = 0; v < videos.length; v++) {
     const numComments = randomInt(2, 5);
+    let pinnedCommentId: string | null = null;
+    const videoCreatorUser = v < 6 ? creator1User : creator2User;
+
     for (let c = 0; c < numComments; c++) {
       const consumer = consumers[randomInt(0, consumers.length - 1)];
       const comment = await prisma.comment.create({
@@ -120,44 +133,79 @@ async function main() {
           status: 'VISIBLE',
         },
       });
-      // Add replies to some comments
-      if (Math.random() > 0.5) {
+
+      // Like some comments by other users
+      const numCommentLikes = randomInt(0, 3);
+      const usedUsers = new Set<string>();
+      for (let cl = 0; cl < numCommentLikes; cl++) {
+        let liker = consumers[randomInt(0, consumers.length - 1)];
+        let attempts = 0;
+        while ((usedUsers.has(liker.id) || liker.id === consumer.id) && attempts < 10) {
+          liker = consumers[randomInt(0, consumers.length - 1)];
+          attempts++;
+        }
+        if (usedUsers.has(liker.id) || liker.id === consumer.id) continue;
+        usedUsers.add(liker.id);
+        await prisma.commentLike.create({
+          data: { commentId: comment.id, userId: liker.id },
+        });
+      }
+
+      // Add replies to some comments (including creator replies)
+      if (Math.random() > 0.4) {
         const numReplies = randomInt(1, 3);
         for (let r = 0; r < numReplies; r++) {
-          const replier = consumers[randomInt(0, consumers.length - 1)];
+          // Mix in creator replies
+          const isCreatorReply = r === 0 && Math.random() > 0.4;
+          const replier = isCreatorReply ? videoCreatorUser : consumers[randomInt(0, consumers.length - 1)];
           await prisma.comment.create({
             data: {
               videoId: videos[v].id,
               userId: replier.id,
               parentCommentId: comment.id,
-              content: replyTexts[randomInt(0, replyTexts.length - 1)],
+              content: isCreatorReply
+                ? creatorComments[randomInt(0, creatorComments.length - 1)]
+                : replyTexts[randomInt(0, replyTexts.length - 1)],
               status: 'VISIBLE',
             },
           });
         }
       }
     }
-  }
 
-  for (let v = 0; v < videos.length; v++) {
-    const usedConsumers = new Set<string>();
-    const numRatings = randomInt(2, 5);
-    for (let r = 0; r < numRatings; r++) {
-      let consumer = consumers[randomInt(0, consumers.length - 1)];
-      let attempts = 0;
-      while (usedConsumers.has(consumer.id) && attempts < 10) {
-        consumer = consumers[randomInt(0, consumers.length - 1)];
-        attempts++;
+    // Creator comments on their own video (and pin one)
+    if (Math.random() > 0.3) {
+      const creatorComment = await prisma.comment.create({
+        data: {
+          videoId: videos[v].id,
+          userId: videoCreatorUser.id,
+          content: creatorComments[randomInt(0, creatorComments.length - 1)],
+          status: 'VISIBLE',
+        },
+      });
+      pinnedCommentId = creatorComment.id;
+    }
+
+    // Pin the first comment if no creator comment was created
+    if (!pinnedCommentId && Math.random() > 0.5) {
+      const firstComment = await prisma.comment.findFirst({
+        where: { videoId: videos[v].id, parentCommentId: null },
+      });
+      if (firstComment) {
+        pinnedCommentId = firstComment.id;
       }
-      if (usedConsumers.has(consumer.id)) continue;
-      usedConsumers.add(consumer.id);
-      await prisma.rating.create({
-        data: { videoId: videos[v].id, userId: consumer.id, rating: randomInt(1, 5) },
+    }
+
+    // Update video with pinned comment
+    if (pinnedCommentId) {
+      await prisma.video.update({
+        where: { id: videos[v].id },
+        data: { pinnedCommentId },
       });
     }
   }
 
-  // Create likes
+  // Create video likes
   for (let v = 0; v < videos.length; v++) {
     const numLikes = randomInt(2, 5);
     const usedConsumers = new Set<string>();
@@ -172,6 +220,25 @@ async function main() {
       usedConsumers.add(consumer.id);
       await prisma.videoLike.create({
         data: { videoId: videos[v].id, userId: consumer.id },
+      });
+    }
+  }
+
+  // Create creator ratings (consumers rate creators)
+  for (const cp of creatorProfiles) {
+    const usedConsumers = new Set<string>();
+    const numRatings = randomInt(3, 5);
+    for (let r = 0; r < numRatings; r++) {
+      let consumer = consumers[randomInt(0, consumers.length - 1)];
+      let attempts = 0;
+      while (usedConsumers.has(consumer.id) && attempts < 10) {
+        consumer = consumers[randomInt(0, consumers.length - 1)];
+        attempts++;
+      }
+      if (usedConsumers.has(consumer.id)) continue;
+      usedConsumers.add(consumer.id);
+      await prisma.creatorRating.create({
+        data: { creatorId: cp.id, userId: consumer.id, rating: randomInt(3, 5) },
       });
     }
   }
