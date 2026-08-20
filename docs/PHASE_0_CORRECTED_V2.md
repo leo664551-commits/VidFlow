@@ -14,7 +14,7 @@
 | **Navigation** | Sidebar, horizontal lists, click-to-navigate | Swipe/scroll up-down, bottom tab bar |
 | **Video discovery** | Thumbnail grid with metadata cards | Immersive full-screen feed, "For You" stream |
 | **Video player** | Dedicated page with description below | Video IS the page — overlay UI on top |
-| **Comments** | Separate section below video | Bottom sheet overlay |
+| **Comments** | Separate section below video | **Right-side slide-in panel** (TikTok-style, ~40% viewport width) |
 | **Search** | Top bar, search results as grid | Dedicated "Discover" tab, hashtag grid |
 | **Background** | White/light, content cards on white | Dark/black, video fills entire viewport |
 | **Chrome** | Headers, sidebars, nav bars visible | Minimal overlay — video is the hero |
@@ -134,7 +134,7 @@ Positioned on the right edge of the video, vertically centered.
 ```
     [Avatar]        ← Creator's profile pic (circular, tappable → /profile/:creatorId)
     [♥ 1.2K]       ← Like button + count (animated heart on tap)
-    [💬 342]        ← Comment button + count (opens comment bottom sheet)
+    [💬 342]        ← Comment button + count (opens right-side comment panel)
     [↗ Share]       ← Share button (copy link / native share)
     [⭐ 4.2]        ← Star rating display / tap to rate (1-5)
     [⋯ More]        ← More options (report, not interested)
@@ -143,7 +143,7 @@ Positioned on the right edge of the video, vertically centered.
 - Icons are white with subtle text-shadow for readability over video.
 - Counts below each icon in small white text.
 - **Like**: Tap toggles. Heart animation. Unauthenticated → redirect to login.
-- **Comment**: Opens bottom sheet.
+- **Comment**: Opens right-side slide-in panel. Video pauses automatically.
 - **Rating**: Tap opens inline star picker. CONSUMER only. Shows average if not rated.
 
 #### Bottom-Left Info Overlay
@@ -159,12 +159,79 @@ Positioned on the right edge of the video, vertically centered.
 - Creator name tappable.
 - Genre tags tappable → `/discover` with genre filter.
 
-#### Comment Bottom Sheet
-- Slides up from bottom, covers ~60% of screen height.
-- Video info at top, scrollable comment list, input pinned at bottom.
-- Each comment: user avatar, display name, time ago, comment text.
-- User can edit/delete own comments (via ⋯ menu).
-- Drag down to dismiss.
+#### Comment Panel (Right-Side Slide-In, TikTok-Style)
+
+Slides in from the **right side** of the viewport, covering approximately **35-40% of viewport width**. The remaining left portion shows the video (dimmed/blurred, auto-paused).
+
+**Container:**
+- Rounded rectangle (border-radius ~16-20px) with dark background (`#121212` / `#1a1a1a`).
+- Slides in from right with fade (300ms ease-out). Swipe right on panel or tap X to dismiss.
+
+**Header Bar (fixed top):**
+- Left: Close/dismiss icon (X) in white/light gray.
+- Center: Title "Comments" in bold white, centered.
+- Dark background matching container body.
+
+**Comment List (scrollable middle):**
+- Each comment is a horizontal row:
+  - **Left**: Circular avatar (~36-40px), vertically centered.
+  - **Center-Right (content block, stacked vertically):**
+    1. **Header row**: Username (bold, white) + timestamp (gray, e.g., "11h", "2d").
+    2. **Body text**: Comment message (light gray/white, supports emoji inline, multi-line).
+    3. **Action row** (below body, ~4-6px margin): Like count (gray, e.g., "367 likes") + "Reply" text button (gray, right-aligned).
+  - **Far right**: Outline heart icon (gray when unliked, pink/red `#fe2c55` when liked). Tap toggles like with scale animation.
+- Tap username or avatar → navigates to profile.
+- Tap "Reply" → focuses input, prepends @username.
+- Tap heart → toggles like (CONSUMER only; hidden/disabled for CREATOR).
+
+**Reply Threads:**
+- "View all X replies" expandable link with thin separator line.
+- Replies render nested below parent (or flat with indent indicator).
+- Collapsible/expandable thread structure.
+
+**Input Field (pinned bottom, sticky):**
+- Capsule/pill shape (fully rounded, ~44-48px height).
+- Background: slightly lighter than panel (`#2c2c2c` / `#333`).
+- Layout (flex row): Small user avatar (~28-30px) left | Placeholder "Add a comment..." (gray) center | Emoji toggle icon right.
+- Always visible — no need to scroll to comment.
+
+**Interaction Behavior:**
+- Opening the comment panel **auto-pauses the video**.
+- Closing the panel resumes playback.
+- Comments sorted by relevance/popularity (not strict chronological).
+
+**Visual Layout Diagram:**
+
+```
+┌──────────────────────────────────────────────────────────────┐
+│                                    │ ┌────────────────────┐ │
+│                                    │ │ ✕   Comments       │ │
+│                                    │ ├────────────────────┤ │
+│                                    │ │                    │ │
+│   FULL-SCREEN VIDEO               │ │ [👤] @user1  11h   │ │
+│   (dimmed, paused)                │ │      Great video!  ♥│ │
+│                                    │ │      367 likes  Reply│ │
+│                                    │ │                    │ │
+│                                    │ │ ─── View 5 replies──│ │
+│                                    │ │                    │ │
+│                                    │ │ [👤] @user2  12h   │ │
+│                                    │ │      Amazing 😲  ♥ │ │
+│                                    │ │      89 likes   Reply│ │
+│                                    │ │                    │ │
+│                                    │ │      (scrollable)  │ │
+│                                    │ │                    │ │
+│                                    │ ├────────────────────┤ │
+│                                    │ │ [👤] Add a comment.. 😊│ │
+│                                    │ └────────────────────┘ │
+│  [♥]                              │                        │
+│  [💬]  ← tab bar below            │                        │
+│  [↗]                              │                        │
+├──────────────────────────────────────────────────────────────┤
+│  🏠    🔍    ➕    🔔    👤                                 │
+└──────────────────────────────────────────────────────────────┘
+
+  ~60% viewport (video)     ~40% viewport (comment panel)
+```
 
 #### Feed Navigation
 - **Scroll/swipe UP**: Next video.
@@ -204,6 +271,7 @@ Instagram Explore / TikTok search style.
 ### Consumer Profile (`/profile`)
 - User avatar, display name, email, join date.
 - Stats: comments made, ratings given.
+- List of user's comments with ability to edit/delete.
 - Edit profile button.
 - Dark theme.
 
@@ -369,8 +437,10 @@ The following remain completely unchanged — the UI paradigm correction does no
 
 Phase 0 v2 is complete with the TikTok/Reels UI correction applied.
 
-**Changed**: M, N, O, P (UI/UX design)
-**Unchanged**: A-L, Q-T (backend, data, security, architecture)
+**Changed**: M, N, O, P (UI/UX design) — comment section corrected from bottom-sheet to right-side TikTok panel
+**Unchanged**: A-L, Q-T (backend, data, security, architecture) except Comments API updated for reply threading
+
+**Note on Comments API**: The comment design now requires reply threading support. The existing `GET /api/videos/:id/comments` endpoint should return top-level comments with a `reply_count` field and an expandable replies structure. A new `GET /api/comments/:id/replies` endpoint returns nested replies. The Comments table in the database may need a `parent_comment_id` nullable foreign key for thread support (flat thread pattern).
 
 **Open questions remain** (D1, D6, D8, D9, D10 from v1).
 
