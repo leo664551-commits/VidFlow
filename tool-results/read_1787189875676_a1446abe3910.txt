@@ -1,0 +1,1382 @@
+     1→============================================================
+     2→MASTER IMPLEMENTATION PLAN
+     3→CLOUD-NATIVE VIDEO SHARING PLATFORM
+     4→============================================================
+     5→
+     6→You are implementing a production-quality, cloud-native web application
+     7→that acts as a video-sharing platform conceptually similar to TikTok.
+     8→
+     9→This is an academic/project implementation, but it must be designed using
+    10→real production-oriented architecture rather than a frontend-only mockup.
+    11→
+    12→The application must use Microsoft Azure as the primary cloud platform.
+    13→
+    14→============================================================
+    15→CRITICAL DEVELOPMENT RULES
+    16→============================================================
+    17→
+    18→1. DO NOT immediately start writing the UI.
+    19→
+    20→2. DO NOT create a mock frontend that pretends the backend exists.
+    21→
+    22→3. DO NOT store video files inside the relational database.
+    23→
+    24→4. DO NOT put Azure credentials, storage account keys, database passwords,
+    25→   client secrets, or other secrets inside frontend code.
+    26→
+    27→5. DO NOT allow consumers to upload videos.
+    28→
+    29→6. DO NOT rely only on frontend UI restrictions for authorization.
+    30→   All permissions must also be enforced server-side.
+    31→
+    32→7. DO NOT expose Azure Blob Storage credentials to the browser.
+    33→
+    34→8. Use secure, short-lived upload authorization for direct browser-to-Blob
+    35→   uploads.
+    36→
+    37→9. Use exact and consistent terminology throughout the entire application.
+    38→
+    39→10. Do not invent functionality that has not been requested.
+    40→
+    41→11. Do not replace the requested cloud architecture with local storage,
+    42→    mock APIs, JSON files, or in-memory data.
+    43→
+    44→12. Do not skip database design, API design, authentication,
+    45→    authorization, security, validation, error handling, testing,
+    46→    deployment, or documentation.
+    47→
+    48→13. Before implementing each phase, verify that the previous phase is
+    49→    complete and working.
+    50→
+    51→14. Never silently change the architecture.
+    52→
+    53→15. If a technical decision is necessary, choose the simplest production-
+    54→    appropriate solution that satisfies the requirements and document it.
+    55→
+    56→============================================================
+    57→PHASE 0 — REQUIREMENTS VALIDATION
+    58→============================================================
+    59→
+    60→Before writing application code:
+    61→
+    62→1. Read the complete requirements.
+    63→
+    64→2. Extract all functional requirements.
+    65→
+    66→3. Extract all non-functional requirements.
+    67→
+    68→4. Identify all actors:
+    69→
+    70→   - ADMIN
+    71→   - CREATOR
+    72→   - CONSUMER
+    73→
+    74→5. Identify what each role can and cannot do.
+    75→
+    76→6. Identify all entities.
+    77→
+    78→7. Identify all relationships.
+    79→
+    80→8. Identify all required pages.
+    81→
+    82→9. Identify all REST API resources.
+    83→
+    84→10. Identify all authentication requirements.
+    85→
+    86→11. Identify all authorization requirements.
+    87→
+    88→12. Identify all Azure services required.
+    89→
+    90→13. Identify all data that must be stored in PostgreSQL.
+    91→
+    92→14. Identify all media that must be stored in Azure Blob Storage.
+    93→
+    94→15. Identify scalability requirements.
+    95→
+    96→16. Identify caching requirements.
+    97→
+    98→17. Identify possible cost/free-tier limitations.
+    99→
+   100→18. Identify security risks.
+   101→
+   102→19. Identify testing requirements.
+   103→
+   104→20. Identify deployment requirements.
+   105→
+   106→Create a REQUIREMENTS TRACEABILITY MATRIX:
+   107→
+   108→Requirement
+   109→→ Feature
+   110→→ Page
+   111→→ API
+   112→→ Database entity
+   113→→ Azure service
+   114→→ Test case
+   115→
+   116→Do not proceed until the requirements are internally consistent.
+   117→
+   118→============================================================
+   119→PHASE 1 — FINAL ARCHITECTURE
+   120→============================================================
+   121→
+   122→Design the complete Azure architecture before implementation.
+   123→
+   124→The architecture should conceptually be:
+   125→
+   126→                    INTERNET
+   127→                       |
+   128→                       v
+   129→             STATIC WEB FRONTEND
+   130→              Azure Static Web Apps
+   131→                       |
+   132→                       | HTTPS / REST
+   133→                       v
+   134→                REST API BACKEND
+   135→                 Azure-hosted API
+   136→                       |
+   137→          +------------+-------------+
+   138→          |            |             |
+   139→          v            v             v
+   140→      PostgreSQL   Blob Storage   Authentication
+   141→      Database      Video files     / Identity
+   142→          |            |
+   143→          |            v
+   144→          |       Video/Thumbnail
+   145→          |
+   146→          +------ Metadata
+   147→
+   148→Optional infrastructure for scale:
+   149→
+   150→CDN / Front Door
+   151→Caching
+   152→DNS / Routing
+   153→Application Insights
+   154→Key Vault
+   155→Managed Identity
+   156→
+   157→Document:
+   158→
+   159→- Why each Azure service exists.
+   160→- What data belongs in each service.
+   161→- How requests flow through the system.
+   162→- How authentication works.
+   163→- How video uploads work.
+   164→- How videos are delivered.
+   165→- How the architecture can scale.
+   166→
+   167→============================================================
+   168→PHASE 2 — TECHNOLOGY DECISION
+   169→============================================================
+   170→
+   171→Use an architecture compatible with Microsoft Azure.
+   172→
+   173→Frontend:
+   174→
+   175→- Static web application.
+   176→- HTML/CSS/JavaScript or another framework that can produce a static build.
+   177→- Responsive design.
+   178→- Mobile-friendly consumer experience.
+   179→- Desktop/tablet-friendly admin and creator interfaces.
+   180→
+   181→Backend:
+   182→
+   183→- REST API.
+   184→- Azure-hosted.
+   185→- Stateless application architecture where practical.
+   186→- Clear separation between routes/controllers, business logic,
+   187→  data access, authentication, and storage services.
+   188→
+   189→Database:
+   190→
+   191→- Azure Database for PostgreSQL.
+   192→
+   193→Media:
+   194→
+   195→- Azure Blob Storage.
+   196→
+   197→Authentication:
+   198→
+   199→- Microsoft Entra-based authentication where appropriate.
+   200→
+   201→Secrets:
+   202→
+   203→- Azure Key Vault and/or secure environment configuration.
+   204→
+   205→Monitoring:
+   206→
+   207→- Azure Application Insights / Azure Monitor where available.
+   208→
+   209→IMPORTANT:
+   210→
+   211→Do not use Azure Media Services.
+   212→
+   213→For media processing, if required, use a currently supported Azure-compatible
+   214→approach such as application/container/serverless processing with FFmpeg
+   215→or another supported service.
+   216→
+   217→Do not implement deprecated Azure Media Services architecture.
+   218→
+   219→============================================================
+   220→PHASE 3 — DOMAIN MODEL
+   221→============================================================
+   222→
+   223→Define the domain entities before creating database tables.
+   224→
+   225→Required entities:
+   226→
+   227→1. User
+   228→2. Creator Profile
+   229→3. Video
+   230→4. Comment
+   231→5. Rating
+   232→
+   233→Recommended supporting entities:
+   234→
+   235→6. Video View
+   236→7. Video Category/Genre
+   237→8. Audit Log
+   238→9. Refresh/Session information if required by authentication architecture
+   239→
+   240→Every entity must have:
+   241→
+   242→- Primary key
+   243→- Appropriate foreign keys
+   244→- Created timestamp
+   245→- Updated timestamp where applicable
+   246→- Status fields where appropriate
+   247→- Appropriate indexes
+   248→
+   249→============================================================
+   250→PHASE 4 — DATABASE DESIGN
+   251→============================================================
+   252→
+   253→Create a normalized PostgreSQL schema.
+   254→
+   255→Minimum conceptual schema:
+   256→
+   257→USERS
+   258→
+   259→- id
+   260→- email
+   261→- display_name
+   262→- role
+   263→- status
+   264→- created_at
+   265→- updated_at
+   266→
+   267→CREATOR_PROFILES
+   268→
+   269→- id
+   270→- user_id
+   271→- creator_name
+   272→- description
+   273→- created_at
+   274→- updated_at
+   275→
+   276→VIDEOS
+   277→
+   278→- id
+   279→- creator_id
+   280→- title
+   281→- publisher
+   282→- producer
+   283→- genre
+   284→- age_rating
+   285→- description
+   286→- storage_blob_name
+   287→- thumbnail_blob_name
+   288→- duration
+   289→- status
+   290→- view_count
+   291→- created_at
+   292→- updated_at
+   293→
+   294→COMMENTS
+   295→
+   296→- id
+   297→- video_id
+   298→- user_id
+   299→- content
+   300→- status
+   301→- created_at
+   302→- updated_at
+   303→
+   304→RATINGS
+   305→
+   306→- id
+   307→- video_id
+   308→- user_id
+   309→- rating
+   310→- created_at
+   311→- updated_at
+   312→
+   313→VIDEO_VIEWS
+   314→
+   315→- id
+   316→- video_id
+   317→- user_id nullable
+   318→- viewed_at
+   319→
+   320→AUDIT_LOGS
+   321→
+   322→- id
+   323→- actor_user_id
+   324→- action
+   325→- entity_type
+   326→- entity_id
+   327→- metadata
+   328→- created_at
+   329→
+   330→Important database constraints:
+   331→
+   332→- A user must have exactly one primary role.
+   333→- A consumer cannot become a creator through the public UI.
+   334→- A video must belong to a creator.
+   335→- A comment must belong to a video and user.
+   336→- A user should have at most one rating per video.
+   337→- Rating must be within the allowed range.
+   338→- Required metadata must not be null.
+   339→- Foreign-key relationships must be enforced.
+   340→- Add indexes for frequently searched/filtering fields.
+   341→
+   342→============================================================
+   343→PHASE 5 — AUTHENTICATION
+   344→============================================================
+   345→
+   346→Implement secure authentication.
+   347→
+   348→Roles:
+   349→
+   350→ADMIN
+   351→CREATOR
+   352→CONSUMER
+   353→
+   354→Consumer:
+   355→
+   356→- Can register.
+   357→- Can authenticate.
+   358→- Can manage their own basic profile.
+   359→
+   360→Creator:
+   361→
+   362→- Does NOT have public self-enrollment.
+   363→- Account is created/managed by ADMIN.
+   364→- Can authenticate after being provisioned.
+   365→
+   366→Admin:
+   367→
+   368→- Administrative account.
+   369→- Can manage creator accounts.
+   370→- Can manage platform content.
+   371→
+   372→Authentication must use the selected Azure identity mechanism.
+   373→
+   374→Do not store plaintext passwords.
+   375→
+   376→Do not create a custom password system if Azure identity services
+   377→already provide the required authentication capability.
+   378→
+   379→============================================================
+   380→PHASE 6 — AUTHORIZATION
+   381→============================================================
+   382→
+   383→Authorization must be enforced on the backend.
+   384→
+   385→Permission matrix:
+   386→
+   387→                 ADMIN   CREATOR   CONSUMER
+   388→
+   389→View videos        YES      YES       YES
+   390→Search videos      YES      YES       YES
+   391→Play videos        YES      YES       YES
+   392→Comment            YES*     NO        YES
+   393→Rate               YES*     NO        YES
+   394→Upload video       YES*     YES       NO
+   395→Edit own video     YES      YES       NO
+   396→Delete own video   YES      YES       NO
+   397→Create creator     YES      NO        NO
+   398→Manage creators    YES      NO        NO
+   399→Manage users       YES      NO        NO
+   400→Moderate content   YES      NO        NO
+   401→
+   402→* If implemented as administrative/moderation capability.
+   403→
+   404→Every protected API endpoint must independently verify:
+   405→
+   406→1. Authentication
+   407→2. User identity
+   408→3. User role
+   409→4. Resource ownership where applicable
+   410→5. Permission
+   411→
+   412→Never trust role information supplied directly by the browser.
+   413→
+   414→============================================================
+   415→PHASE 7 — STORAGE ARCHITECTURE
+   416→============================================================
+   417→
+   418→Use Azure Blob Storage for video media.
+   419→
+   420→Do NOT store video binaries inside PostgreSQL.
+   421→
+   422→Suggested logical structure:
+   423→
+   424→videos/
+   425→    {video-id}/
+   426→        original/
+   427→        processed/
+   428→        thumbnails/
+   429→
+   430→The exact structure may differ if there is a better implementation.
+   431→
+   432→The database should store references/identifiers to the media.
+   433→
+   434→Do not expose storage account keys to the frontend.
+   435→
+   436→============================================================
+   437→PHASE 8 — SECURE VIDEO UPLOAD
+   438→============================================================
+   439→
+   440→Implement direct browser-to-Blob upload.
+   441→
+   442→The preferred flow is:
+   443→
+   444→Creator
+   445→   |
+   446→   | Select video
+   447→   v
+   448→Frontend
+   449→   |
+   450→   | Request upload authorization
+   451→   v
+   452→REST API
+   453→   |
+   454→   | Validate creator permission
+   455→   | Validate file metadata
+   456→   | Generate short-lived upload authorization
+   457→   v
+   458→Frontend
+   459→   |
+   460→   | Direct upload
+   461→   v
+   462→Azure Blob Storage
+   463→   |
+   464→   | Upload complete
+   465→   v
+   466→Frontend
+   467→   |
+   468→   | Notify API
+   469→   v
+   470→REST API
+   471→   |
+   472→   v
+   473→PostgreSQL metadata
+   474→
+   475→Use short-lived, narrowly scoped authorization for upload.
+   476→
+   477→Prefer Microsoft Entra-backed/user-delegation mechanisms where appropriate.
+   478→
+   479→The browser must never receive:
+   480→
+   481→- Storage account key
+   482→- Database credentials
+   483→- Application secrets
+   484→
+   485→Validate:
+   486→
+   487→- File type
+   488→- File size
+   489→- Filename
+   490→- Extension
+   491→- MIME type
+   492→- Creator authorization
+   493→
+   494→Do not blindly trust the file extension.
+   495→
+   496→============================================================
+   497→PHASE 9 — VIDEO PROCESSING
+   498→============================================================
+   499→
+   500→Media processing is optional unless required by the assignment.
+   501→
+   502→If implemented:
+   503→
+   504→Original video
+   505→      |
+   506→      v
+   507→Processing
+   508→      |
+   509→      +----> optimized video
+   510→      |
+   511→      +----> thumbnail
+   512→      |
+   513→      v
+   514→Azure Blob Storage
+   515→      |
+   516→      v
+   517→Database status update
+   518→
+   519→The system should track processing state:
+   520→
+   521→UPLOADING
+   522→PROCESSING
+   523→READY
+   524→FAILED
+   525→UNPUBLISHED
+   526→
+   527→Do not expose videos to consumers until their state is READY.
+   528→
+   529→Do not use deprecated Azure Media Services.
+   530→
+   531→If video processing is not implemented, clearly document that videos are
+   532→stored and served in the supported upload format.
+   533→
+   534→============================================================
+   535→PHASE 10 — REST API DESIGN
+   536→============================================================
+   537→
+   538→Create a documented REST API.
+   539→
+   540→AUTHENTICATION
+   541→
+   542→GET    /api/auth/me
+   543→POST   /api/auth/logout
+   544→
+   545→CONSUMER
+   546→
+   547→POST   /api/users/register
+   548→GET    /api/users/me
+   549→PATCH  /api/users/me
+   550→
+   551→VIDEOS
+   552→
+   553→GET    /api/videos
+   554→GET    /api/videos/:id
+   555→GET    /api/videos/latest
+   556→GET    /api/videos/search
+   557→POST   /api/videos/upload-session
+   558→POST   /api/videos/:id/upload-complete
+   559→PATCH  /api/videos/:id
+   560→DELETE /api/videos/:id
+   561→
+   562→COMMENTS
+   563→
+   564→GET    /api/videos/:id/comments
+   565→POST   /api/videos/:id/comments
+   566→PATCH  /api/comments/:id
+   567→DELETE /api/comments/:id
+   568→
+   569→RATINGS
+   570→
+   571→GET    /api/videos/:id/rating
+   572→POST   /api/videos/:id/rating
+   573→PATCH  /api/videos/:id/rating
+   574→DELETE /api/videos/:id/rating
+   575→
+   576→CREATOR
+   577→
+   578→GET    /api/creator/videos
+   579→GET    /api/creator/dashboard
+   580→
+   581→ADMIN
+   582→
+   583→GET    /api/admin/dashboard
+   584→
+   585→GET    /api/admin/creators
+   586→POST   /api/admin/creators
+   587→GET    /api/admin/creators/:id
+   588→PATCH  /api/admin/creators/:id
+   589→DELETE /api/admin/creators/:id
+   590→
+   591→GET    /api/admin/users
+   592→PATCH  /api/admin/users/:id/status
+   593→
+   594→GET    /api/admin/videos
+   595→PATCH  /api/admin/videos/:id/status
+   596→DELETE /api/admin/videos/:id
+   597→
+   598→GET    /api/admin/comments
+   599→PATCH  /api/admin/comments/:id/status
+   600→DELETE /api/admin/comments/:id
+   601→
+   602→These are conceptual endpoints.
+   603→
+   604→Adjust them if the final architecture requires a better REST design.
+   605→
+   606→Do not create unnecessary endpoints.
+   607→
+   608→Every endpoint must have:
+   609→
+   610→- Authentication requirements
+   611→- Authorization requirements
+   612→- Request validation
+   613→- Response schema
+   614→- Error responses
+   615→- Appropriate HTTP status codes
+   616→- Logging
+   617→- Security controls
+   618→
+   619→============================================================
+   620→PHASE 11 — FRONTEND PAGE ARCHITECTURE
+   621→============================================================
+   622→
+   623→PUBLIC PAGES
+   624→
+   625→1. Landing / Home
+   626→2. Latest Videos
+   627→3. Search
+   628→4. Video Details / Watch
+   629→5. Consumer Registration
+   630→6. Login
+   631→
+   632→CONSUMER PAGES
+   633→
+   634→1. Consumer Dashboard
+   635→2. Browse Videos
+   636→3. Search
+   637→4. Watch Video
+   638→5. Profile
+   639→
+   640→CREATOR PAGES
+   641→
+   642→1. Creator Dashboard
+   643→2. Upload Video
+   644→3. My Videos
+   645→4. Edit Video
+   646→5. Video Status
+   647→6. Profile
+   648→
+   649→ADMIN PAGES
+   650→
+   651→1. Admin Dashboard
+   652→2. Creator Management
+   653→3. Creator Details
+   654→4. Consumer/User Management
+   655→5. Video Management
+   656→6. Comment Moderation
+   657→7. Platform Statistics
+   658→
+   659→============================================================
+   660→PHASE 12 — CONSUMER EXPERIENCE
+   661→============================================================
+   662→
+   663→The consumer dashboard must provide:
+   664→
+   665→- Latest videos
+   666→- Video thumbnails
+   667→- Title
+   668→- Creator
+   669→- Genre
+   670→- Age rating
+   671→- Upload date
+   672→- View count where implemented
+   673→
+   674→Consumers must be able to:
+   675→
+   676→- Search
+   677→- Filter where implemented
+   678→- Open a video
+   679→- Play the video
+   680→- View metadata
+   681→- Comment
+   682→- Rate
+   683→- View comments
+   684→- View average rating
+   685→
+   686→Consumers must never see an upload capability.
+   687→
+   688→Do not rely only on hiding the upload button.
+   689→
+   690→The API must reject consumer upload requests.
+   691→
+   692→============================================================
+   693→PHASE 13 — CREATOR EXPERIENCE
+   694→============================================================
+   695→
+   696→Creator dashboard should show:
+   697→
+   698→- Total uploaded videos
+   699→- Published videos
+   700→- Processing videos
+   701→- Failed videos
+   702→- Recent uploads
+   703→
+   704→Upload page must include:
+   705→
+   706→Required:
+   707→
+   708→- Video file
+   709→- Title
+   710→- Publisher
+   711→- Producer
+   712→- Genre
+   713→- Age rating
+   714→
+   715→Optional:
+   716→
+   717→- Description
+   718→- Thumbnail if supported
+   719→
+   720→After upload:
+   721→
+   722→1. Show upload progress.
+   723→2. Show processing state if processing exists.
+   724→3. Confirm successful upload.
+   725→4. Display the video in My Videos.
+   726→5. Prevent publication if validation fails.
+   727→
+   728→Creator can only modify videos they own.
+   729→
+   730→============================================================
+   731→PHASE 14 — ADMIN EXPERIENCE
+   732→============================================================
+   733→
+   734→Admin dashboard should show useful platform information such as:
+   735→
+   736→- Total consumers
+   737→- Total creators
+   738→- Total videos
+   739→- Published videos
+   740→- Pending/processing videos
+   741→- Recent uploads
+   742→- Recent users
+   743→- Recent comments
+   744→
+   745→Creator management:
+   746→
+   747→- Create creator
+   748→- View creators
+   749→- Activate/deactivate creator
+   750→- View creator details
+   751→- Manage creator status
+   752→
+   753→User management:
+   754→
+   755→- View consumers
+   756→- View user status
+   757→- Disable/enable user where required
+   758→
+   759→Video management:
+   760→
+   761→- View videos
+   762→- Search videos
+   763→- Filter videos
+   764→- Publish/unpublish
+   765→- Remove inappropriate content
+   766→
+   767→Comment moderation:
+   768→
+   769→- View comments
+   770→- Hide/remove comments
+   771→- Review reported/problematic content if reporting is implemented
+   772→
+   773→============================================================
+   774→PHASE 15 — VIDEO SEARCH
+   775→============================================================
+   776→
+   777→Implement server-side search.
+   778→
+   779→Search should support the available metadata fields.
+   780→
+   781→At minimum:
+   782→
+   783→- Title
+   784→- Publisher
+   785→- Producer
+   786→- Genre
+   787→- Creator
+   788→
+   789→Support:
+   790→
+   791→- Search query
+   792→- Pagination
+   793→- Sorting
+   794→- Filtering where practical
+   795→
+   796→Do not load every video into the browser and perform the entire search
+   797→client-side.
+   798→
+   799→Use database indexes appropriately.
+   800→
+   801→============================================================
+   802→PHASE 16 — RATING SYSTEM
+   803→============================================================
+   804→
+   805→Consumers can rate videos.
+   806→
+   807→Use a defined scale, preferably:
+   808→
+   809→1 to 5
+   810→
+   811→Requirements:
+   812→
+   813→- User must be authenticated.
+   814→- Only eligible users can rate.
+   815→- One rating per consumer per video.
+   816→- User can update their rating.
+   817→- User can remove their rating if supported.
+   818→- Average rating must be calculated correctly.
+   819→
+   820→Prevent duplicate ratings at both:
+   821→
+   822→1. API/business-logic level
+   823→2. Database constraint level
+   824→
+   825→============================================================
+   826→PHASE 17 — COMMENT SYSTEM
+   827→============================================================
+   828→
+   829→Consumers can comment on videos.
+   830→
+   831→Requirements:
+   832→
+   833→- Authentication required.
+   834→- Validate comment length.
+   835→- Reject empty comments.
+   836→- Sanitize/escape output appropriately.
+   837→- Prevent unauthorized modification.
+   838→- Users can modify/delete only their own comments where supported.
+   839→- Admin can moderate comments.
+   840→
+   841→Protect against:
+   842→
+   843→- XSS
+   844→- SQL injection
+   845→- unauthorized deletion
+   846→- unauthorized editing
+   847→- spam where appropriate
+   848→
+   849→============================================================
+   850→PHASE 18 — VIDEO PLAYBACK
+   851→============================================================
+   852→
+   853→The consumer must be able to play uploaded videos.
+   854→
+   855→Video playback should use the appropriate secure media URL.
+   856→
+   857→Do not expose private storage credentials.
+   858→
+   859→If media URLs require authorization:
+   860→
+   861→- Generate appropriate short-lived access URLs.
+   862→- Do not permanently expose sensitive storage credentials.
+   863→
+   864→Track views only when the implementation has a clearly defined
+   865→view-counting rule.
+   866→
+   867→Do not inflate view counts from repeated page rendering.
+   868→
+   869→============================================================
+   870→PHASE 19 — SECURITY
+   871→============================================================
+   872→
+   873→Apply security throughout the system.
+   874→
+   875→Requirements:
+   876→
+   877→- HTTPS
+   878→- Secure authentication
+   879→- Role-based authorization
+   880→- Server-side validation
+   881→- Input sanitization
+   882→- SQL injection prevention
+   883→- XSS prevention
+   884→- CSRF protection where applicable
+   885→- Secure CORS configuration
+   886→- Rate limiting where appropriate
+   887→- Secure file validation
+   888→- Secure Blob access
+   889→- Short-lived upload authorization
+   890→- No secrets in frontend
+   891→- No secrets committed to Git
+   892→- Secure environment variables
+   893→- Least-privilege Azure RBAC
+   894→- Managed identity where appropriate
+   895→- Audit logging for administrative actions
+   896→
+   897→Never return sensitive internal errors to users.
+   898→
+   899→============================================================
+   900→PHASE 20 — SCALABILITY
+   901→============================================================
+   902→
+   903→The application must be designed so that frontend/API instances can scale
+   904→without relying on local server state.
+   905→
+   906→Do not depend on:
+   907→
+   908→- local filesystem
+   909→- in-memory sessions
+   910→- local video storage
+   911→- local JSON databases
+   912→
+   913→Use cloud-managed services.
+   914→
+   915→Discuss:
+   916→
+   917→- horizontal API scaling
+   918→- database indexing
+   919→- object storage scaling
+   920→- CDN/caching
+   921→- stateless API design
+   922→- pagination
+   923→- efficient video delivery
+   924→- connection management
+   925→- rate limiting
+   926→
+   927→If caching is implemented, clearly define:
+   928→
+   929→What is cached?
+   930→Where?
+   931→For how long?
+   932→How is invalidation handled?
+   933→
+   934→============================================================
+   935→PHASE 21 — DNS / ROUTING / DELIVERY
+   936→============================================================
+   937→
+   938→Document the role of:
+   939→
+   940→- Azure DNS
+   941→- Azure Front Door or appropriate routing/CDN service if used
+   942→
+   943→Do not add a service merely to satisfy a buzzword.
+   944→
+   945→If the selected Azure service is not necessary for the actual deployment,
+   946→document it as an optional scalability enhancement rather than pretending
+   947→it is being used.
+   948→
+   949→============================================================
+   950→PHASE 22 — OBSERVABILITY
+   951→============================================================
+   952→
+   953→Implement or prepare:
+   954→
+   955→- Application logs
+   956→- API error logs
+   957→- Authentication failure logs
+   958→- Upload failure logs
+   959→- Processing failure logs
+   960→- Administrative audit logs
+   961→
+   962→Where available, use Azure Application Insights / Azure Monitor.
+   963→
+   964→Do not log:
+   965→
+   966→- passwords
+   967→- tokens
+   968→- storage keys
+   969→- database credentials
+   970→- sensitive authentication information
+   971→
+   972→============================================================
+   973→PHASE 23 — ERROR HANDLING
+   974→============================================================
+   975→
+   976→Create consistent API errors.
+   977→
+   978→Example:
+   979→
+   980→{
+   981→  "error": {
+   982→    "code": "VIDEO_NOT_FOUND",
+   983→    "message": "The requested video could not be found."
+   984→  }
+   985→}
+   986→
+   987→Use correct HTTP status codes:
+   988→
+   989→400 Bad Request
+   990→401 Unauthorized
+   991→403 Forbidden
+   992→404 Not Found
+   993→409 Conflict
+   994→413 Payload Too Large
+   995→422 Validation Error where appropriate
+   996→429 Too Many Requests
+   997→500 Internal Server Error
+   998→
+   999→Do not expose stack traces to users.
+  1000→
+  1001→============================================================
+  1002→PHASE 24 — UI/UX REQUIREMENTS
+  1003→============================================================
+  1004→
+  1005→The UI must be:
+  1006→
+  1007→- Clean
+  1008→- Modern
+  1009→- Responsive
+  1010→- Accessible
+  1011→- Mobile-friendly
+  1012→- Consistent
+  1013→
+  1014→Consumer interface:
+  1015→
+  1016→- Video-focused
+  1017→- Easy navigation
+  1018→- Clear search
+  1019→- Simple playback
+  1020→- Clear metadata
+  1021→
+  1022→Creator interface:
+  1023→
+  1024→- Clear upload workflow
+  1025→- Upload progress
+  1026→- Validation messages
+  1027→- Video status
+  1028→
+  1029→Admin interface:
+  1030→
+  1031→- Data-oriented
+  1032→- Tables/cards
+  1033→- Search/filter
+  1034→- Clear management controls
+  1035→- Confirmation dialogs for destructive actions
+  1036→
+  1037→Do not copy TikTok's exact branding, assets, or proprietary design.
+  1038→
+  1039→Use the conceptual video-sharing interaction model only.
+  1040→
+  1041→============================================================
+  1042→PHASE 25 — ACCESSIBILITY
+  1043→============================================================
+  1044→
+  1045→Implement:
+  1046→
+  1047→- Keyboard navigation
+  1048→- Accessible labels
+  1049→- Proper form labels
+  1050→- Focus states
+  1051→- Sufficient contrast
+  1052→- Semantic HTML
+  1053→- Accessible video controls
+  1054→- Error messages associated with inputs
+  1055→
+  1056→============================================================
+  1057→PHASE 26 — TESTING
+  1058→============================================================
+  1059→
+  1060→Testing is mandatory.
+  1061→
+  1062→Unit tests:
+  1063→
+  1064→- Validation
+  1065→- Rating calculations
+  1066→- Authorization logic
+  1067→- Business logic
+  1068→- Search logic
+  1069→
+  1070→API tests:
+  1071→
+  1072→- Authentication
+  1073→- Authorization
+  1074→- Video endpoints
+  1075→- Comment endpoints
+  1076→- Rating endpoints
+  1077→- Admin endpoints
+  1078→
+  1079→Security tests:
+  1080→
+  1081→- Consumer attempting creator upload
+  1082→- Creator attempting admin endpoint
+  1083→- Creator modifying another creator's video
+  1084→- Consumer modifying another user's comment
+  1085→- Unauthorized API requests
+  1086→- Invalid upload
+  1087→- Oversized upload
+  1088→- Invalid MIME type
+  1089→
+  1090→Integration tests:
+  1091→
+  1092→- Database
+  1093→- Blob Storage
+  1094→- Authentication
+  1095→- Upload flow
+  1096→
+  1097→Frontend tests:
+  1098→
+  1099→- Login
+  1100→- Registration
+  1101→- Search
+  1102→- Video playback
+  1103→- Comment
+  1104→- Rating
+  1105→- Creator upload
+  1106→- Admin management
+  1107→
+  1108→============================================================
+  1109→PHASE 27 — DEPLOYMENT
+  1110→============================================================
+  1111→
+  1112→Prepare separate environments where practical:
+  1113→
+  1114→DEVELOPMENT
+  1115→STAGING
+  1116→PRODUCTION
+  1117→
+  1118→Do not commit secrets.
+  1119→
+  1120→Deployment must include:
+  1121→
+  1122→Frontend:
+  1123→Azure Static Web Apps
+  1124→
+  1125→Backend:
+  1126→Selected Azure-hosted REST API service
+  1127→
+  1128→Database:
+  1129→Azure Database for PostgreSQL
+  1130→
+  1131→Media:
+  1132→Azure Blob Storage
+  1133→
+  1134→Authentication:
+  1135→Microsoft Entra-based authentication
+  1136→
+  1137→Secrets:
+  1138→Azure Key Vault / secure environment configuration
+  1139→
+  1140→Monitoring:
+  1141→Azure Application Insights / Azure Monitor
+  1142→
+  1143→Document the exact deployment process.
+  1144→
+  1145→============================================================
+  1146→PHASE 28 — DATABASE MIGRATIONS
+  1147→============================================================
+  1148→
+  1149→Database schema must be reproducible.
+  1150→
+  1151→Do not manually create production tables without migration tracking.
+  1152→
+  1153→Use a proper migration system.
+  1154→
+  1155→Document:
+  1156→
+  1157→- Initial migration
+  1158→- Schema changes
+  1159→- Rollback strategy
+  1160→- Seed data if required
+  1161→
+  1162→Never use production data as test data.
+  1163→
+  1164→============================================================
+  1165→PHASE 29 — SAMPLE / DEMO DATA
+  1166→============================================================
+  1167→
+  1168→Create safe sample data for development/demo purposes.
+  1169→
+  1170→Include:
+  1171→
+  1172→- Admin account
+  1173→- Creator account
+  1174→- Consumer account
+  1175→- Several videos
+  1176→- Different genres
+  1177→- Different age ratings
+  1178→- Comments
+  1179→- Ratings
+  1180→
+  1181→Clearly label demo/sample accounts.
+  1182→
+  1183→Do not hardcode real credentials.
+  1184→
+  1185→============================================================
+  1186→PHASE 30 — COST AWARENESS
+  1187→============================================================
+  1188→
+  1189→Document Azure cost considerations.
+  1190→
+  1191→Especially consider:
+  1192→
+  1193→- Blob Storage capacity
+  1194→- Video bandwidth/egress
+  1195→- Database capacity
+  1196→- API compute
+  1197→- Authentication
+  1198→- CDN/routing
+  1199→- Logging
+  1200→- Media processing
+  1201→
+  1202→Do not assume the free tier is unlimited.
+  1203→
+  1204→Provide a section:
+  1205→
+  1206→"Free Tier and Cost Considerations"
+  1207→
+  1208→Explain what could become expensive as video usage grows.
+  1209→
+  1210→============================================================
+  1211→PHASE 31 — DOCUMENTATION
+  1212→============================================================
+  1213→
+  1214→Create documentation for:
+  1215→
+  1216→1. Product overview
+  1217→2. User roles
+  1218→3. Features
+  1219→4. User workflows
+  1220→5. Architecture
+  1221→6. Azure services
+  1222→7. Database schema
+  1223→8. REST API
+  1224→9. Authentication
+  1225→10. Authorization
+  1226→11. Storage architecture
+  1227→12. Video upload flow
+  1228→13. Security
+  1229→14. Scalability
+  1230→15. Testing
+  1231→16. Deployment
+  1232→17. Monitoring
+  1233→18. Cost considerations
+  1234→19. Known limitations
+  1235→20. Future improvements
+  1236→
+  1237→Documentation must distinguish:
+  1238→
+  1239→IMPLEMENTED
+  1240→OPTIONAL
+  1241→FUTURE
+  1242→
+  1243→Do not claim a feature is implemented if it is not.
+  1244→
+  1245→============================================================
+  1246→PHASE 32 — FINAL REQUIREMENTS AUDIT
+  1247→============================================================
+  1248→
+  1249→Before declaring the project complete, perform a complete audit.
+  1250→
+  1251→Check every original requirement:
+  1252→
+  1253→[ ] Creator accounts can be managed by Admin
+  1254→[ ] Creators can upload videos
+  1255→[ ] Creator metadata includes Title
+  1256→[ ] Creator metadata includes Publisher
+  1257→[ ] Creator metadata includes Producer
+  1258→[ ] Creator metadata includes Genre
+  1259→[ ] Creator metadata includes Age Rating
+  1260→[ ] Consumers can register
+  1261→[ ] Consumers can browse videos
+  1262→[ ] Consumers can search videos
+  1263→[ ] Consumers can play videos
+  1264→[ ] Consumers can comment
+  1265→[ ] Consumers can rate
+  1266→[ ] Latest video dashboard exists
+  1267→[ ] Static frontend exists
+  1268→[ ] REST backend exists
+  1269→[ ] Persistent database exists
+  1270→[ ] Object storage exists
+  1271→[ ] Authentication exists
+  1272→[ ] Authorization exists
+  1273→[ ] Consumer upload is blocked
+  1274→[ ] Creator-only upload is enforced server-side
+  1275→[ ] Admin-only management is enforced server-side
+  1276→[ ] Video files are not stored in PostgreSQL
+  1277→[ ] Azure Blob Storage is used for media
+  1278→[ ] Secrets are not exposed
+  1279→[ ] Scalability architecture is documented
+  1280→[ ] Caching strategy is documented
+  1281→[ ] DNS/routing strategy is documented
+  1282→[ ] Testing has been performed
+  1283→[ ] Deployment is documented
+  1284→[ ] Cost considerations are documented
+  1285→
+  1286→============================================================
+  1287→PHASE 33 — FINAL OUTPUT
+  1288→============================================================
+  1289→
+  1290→At the end, provide:
+  1291→
+  1292→1. Final architecture diagram
+  1293→2. Azure service list
+  1294→3. Final database schema
+  1295→4. API endpoint list
+  1296→5. Role/permission matrix
+  1297→6. Frontend page map
+  1298→7. Storage architecture
+  1299→8. Authentication flow
+  1300→9. Video upload flow
+  1301→10. Video playback flow
+  1302→11. Security checklist
+  1303→12. Testing checklist
+  1304→13. Deployment instructions
+  1305→14. Cost considerations
+  1306→15. Known limitations
+  1307→16. Future improvements
+  1308→
+  1309→Most importantly:
+  1310→
+  1311→DO NOT say the project is complete merely because the UI renders.
+  1312→
+  1313→The project is complete only when:
+  1314→
+  1315→- frontend works
+  1316→- backend works
+  1317→- database works
+  1318→- authentication works
+  1319→- authorization works
+  1320→- Blob Storage works
+  1321→- video upload works
+  1322→- video playback works
+  1323→- comments work
+  1324→- ratings work
+  1325→- search works
+  1326→- Admin works
+  1327→- Creator works
+  1328→- Consumer works
+  1329→- security controls work
+  1330→- deployment works
+  1331→- tests pass
+  1332→
+  1333→============================================================
+  1334→IMPLEMENTATION METHOD
+  1335→============================================================
+  1336→
+  1337→Implement the project phase-by-phase.
+  1338→
+  1339→After each phase:
+  1340→
+  1341→1. Explain what was implemented.
+  1342→2. List files changed.
+  1343→3. List database changes.
+  1344→4. List API changes.
+  1345→5. List Azure configuration changes.
+  1346→6. Run relevant tests.
+  1347→7. Report any errors.
+  1348→8. Fix errors before continuing.
+  1349→9. Confirm the phase is complete.
+  1350→
+  1351→Do not skip directly from architecture to a finished application.
+  1352→
+  1353→Do not rewrite working architecture without a documented reason.
+  1354→
+  1355→============================================================
+  1356→STARTING INSTRUCTION
+  1357→============================================================
+  1358→
+  1359→FIRST:
+  1360→
+  1361→Do NOT write application code.
+  1362→
+  1363→Start with PHASE 0.
+  1364→
+  1365→Return:
+  1366→
+  1367→1. Requirements interpretation
+  1368→2. Actors and permissions
+  1369→3. Entities
+  1370→4. Functional requirements
+  1371→5. Non-functional requirements
+  1372→6. Azure architecture proposal
+  1373→7. Database entity relationship proposal
+  1374→8. REST API resource proposal
+  1375→9. Frontend page proposal
+  1376→10. Security risks
+  1377→11. Scalability considerations
+  1378→12. Cost considerations
+  1379→13. Requirements traceability matrix
+  1380→14. Questions/ambiguities that must be resolved before implementation
+  1381→
+  1382→Then wait for approval before proceeding to implementation.
