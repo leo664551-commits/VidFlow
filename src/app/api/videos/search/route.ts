@@ -9,7 +9,7 @@ export async function GET(request: NextRequest) {
 
   const parsed = videoSearchSchema.safeParse(params);
   if (!parsed.success) {
-    return apiError('SEARCH_QUERY_REQUIRED', parsed.error.errors[0].message);
+    return apiError('SEARCH_QUERY_REQUIRED', parsed.error.issues[0].message);
   }
 
   const { q, title, publisher, producer, genre, creator, sort, order, page, limit } = parsed.data;
@@ -52,10 +52,6 @@ export async function GET(request: NextRequest) {
   // Build orderBy
   let orderBy: Record<string, string> = { createdAt: order };
   if (sort === 'viewCount') {
-    orderBy = { viewCount: order };
-  } else if (sort === 'averageRating') {
-    // For averageRating sort, we need a subquery approach
-    // SQLite doesn't support it directly, so we'll sort by viewCount as fallback
     orderBy = { viewCount: order };
   }
 

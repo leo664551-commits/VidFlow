@@ -17,6 +17,7 @@ interface AppState {
   toggleCommentPanel: () => void
   setCommentPanelOpen: (open: boolean) => void
   setSelectedCreatorId: (id: string | null) => void
+  setSelectedVideoId: (id: string | null) => void
 }
 
 export const useAppStore = create<AppState>((set) => ({
@@ -46,4 +47,5 @@ export const useAppStore = create<AppState>((set) => ({
     set((s) => ({ commentPanelOpen: !s.commentPanelOpen })),
   setCommentPanelOpen: (open) => set({ commentPanelOpen: open }),
   setSelectedCreatorId: (id) => set({ selectedCreatorId: id }),
+  setSelectedVideoId: (id) => set({ selectedVideoId: id }),
 }))

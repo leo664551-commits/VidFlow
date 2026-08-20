@@ -1,10 +1,12 @@
 'use client'
 
-import { useQuery } from '@tanstack/react-query'
+import { useState } from 'react'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { motion } from 'framer-motion'
 import { useAppStore } from '@/store/app-store'
-import { getCreatorProfile } from '@/lib/api'
-import { Loader2, ArrowLeft, Play, Eye } from 'lucide-react'
+import { getCreatorProfile, rateCreator, updateCreatorRating, deleteCreatorRating } from '@/lib/api'
+import { Loader2, ArrowLeft, Play, Eye, Star } from 'lucide-react'
+import { toast } from 'sonner'
 
 const GRADIENTS = [
   'bg-gradient-to-br from-rose-500 to-pink-600',
@@ -43,16 +45,77 @@ function formatViews(n: number) {
   return String(n)
 }
 
+function StarRating({
+  rating,
+  onRate,
+  interactive = false,
+  size = 'sm',
+}: {
+  rating: number | null
+  onRate?: (r: number) => void
+  interactive?: boolean
+  size?: 'sm' | 'md'
+}) {
+  const [hovered, setHovered] = useState(0)
+  const starSize = size === 'md' ? 'h-6 w-6' : 'h-4 w-4'
+  const displayRating = hovered || rating || 0
+
+  return (
+    <div className="flex items-center gap-0.5">
+      {[1, 2, 3, 4, 5].map((star) => (
+        <button
+          key={star}
+          onClick={() => interactive && onRate?.(star)}
+          onMouseEnter={() => interactive && setHovered(star)}
+          onMouseLeave={() => interactive && setHovered(0)}
+          disabled={!interactive}
+          className={`${interactive ? 'cursor-pointer hover:scale-110' : 'cursor-default'} transition-transform`}
+        >
+          <Star
+            className={`${starSize} transition-colors ${
+              star <= displayRating
+                ? 'fill-amber-400 text-amber-400'
+                : 'text-gray-600'
+            }`}
+          />
+        </button>
+      ))}
+    </div>
+  )
+}
+
 export function CreatorProfileView() {
   const selectedCreatorId = useAppStore((s) => s.selectedCreatorId)
   const navigate = useAppStore((s) => s.navigate)
-  const setSelectedVideoId = useAppStore((s) => s.setSelectedVideoId)
+  const user = useAppStore((s) => s.user)
+  const queryClient = useQueryClient()
 
   const { data, isLoading, isError } = useQuery({
     queryKey: ['creator-profile', selectedCreatorId],
     queryFn: () => getCreatorProfile(selectedCreatorId!),
     enabled: !!selectedCreatorId,
   })
+
+  const rateMutation = useMutation({
+    mutationFn: (rating: number) => {
+      if (data?.userRating) {
+        return updateCreatorRating(selectedCreatorId!, rating)
+      }
+      return rateCreator(selectedCreatorId!, rating)
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ['creator-profile', selectedCreatorId],
+      })
+      toast.success('Rating updated!')
+    },
+    onError: (err) => {
+      toast.error(err instanceof Error ? err.message : 'Failed to rate')
+    },
+  })
+
+  const canRate =
+    user?.role === 'CONSUMER' || user?.role === 'ADMIN'
 
   if (isLoading) {
     return (
@@ -86,8 +149,12 @@ export function CreatorProfileView() {
   const initial = data.displayName?.[0]?.toUpperCase() || 'C'
 
   const handleVideoClick = (videoId: string) => {
-    setSelectedVideoId(videoId)
     navigate('video-detail', videoId)
+  }
+
+  const handleRate = (rating: number) => {
+    if (!canRate || !selectedCreatorId) return
+    rateMutation.mutate(rating)
   }
 
   return (
@@ -137,6 +204,35 @@ export function CreatorProfileView() {
             </p>
             <p className="text-gray-500 text-xs">Views</p>
           </div>
+          <div className="w-px h-8 bg-white/10" />
+          <div className="text-center">
+            <p className="text-white text-lg font-bold">
+              {data.totalRatings > 0 ? data.averageRating.toFixed(1) : '--'}
+            </p>
+            <p className="text-gray-500 text-xs">Rating</p>
+          </div>
+        </div>
+
+        {/* Rating stars */}
+        <div className="mt-4 flex flex-col items-center gap-2">
+          <StarRating
+            rating={data.userRating}
+            onRate={handleRate}
+            interactive={canRate}
+            size="md"
+          />
+          {canRate && (
+            <p className="text-[11px] text-gray-500">
+              {data.userRating
+                ? 'Tap to update your rating'
+                : 'Tap to rate this creator'}
+            </p>
+          )}
+          {data.totalRatings > 0 && (
+            <p className="text-[11px] text-gray-600">
+              {data.totalRatings} {data.totalRatings === 1 ? 'rating' : 'ratings'}
+            </p>
+          )}
         </div>
       </motion.div>
 

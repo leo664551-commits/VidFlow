@@ -17,10 +17,10 @@ export const videoMetadataSchema = z.object({
   publisher: z.string().min(1, 'Publisher is required').max(255),
   producer: z.string().min(1, 'Producer is required').max(255),
   genre: z.enum(GENRES as unknown as [string, ...string[]], {
-    errorMap: () => ({ message: 'Invalid genre' }),
+    error: 'Invalid genre',
   }),
   ageRating: z.enum(AGE_RATINGS as unknown as [string, ...string[]], {
-    errorMap: () => ({ message: 'Invalid age rating' }),
+    error: 'Invalid age rating',
   }),
   description: z.string().max(2000).optional().nullable(),
 });
@@ -36,6 +36,14 @@ export const commentSchema = z.object({
 });
 
 export const ratingSchema = z.object({
+  rating: z.number().int().min(1, 'Rating must be at least 1').max(5, 'Rating must be at most 5'),
+});
+
+export const pinCommentSchema = z.object({
+  commentId: z.string().nullable().optional(),
+});
+
+export const creatorRatingSchema = z.object({
   rating: z.number().int().min(1, 'Rating must be at least 1').max(5, 'Rating must be at most 5'),
 });
 
@@ -65,7 +73,7 @@ export const videoSearchSchema = z.object({
   producer: z.string().optional(),
   genre: z.enum(GENRES as unknown as [string, ...string[]]).optional(),
   creator: z.string().optional(),
-  sort: z.enum(['createdAt', 'viewCount', 'averageRating']).default('createdAt'),
+  sort: z.enum(['createdAt', 'viewCount']).default('createdAt'),
   order: z.enum(['asc', 'desc']).default('desc'),
   page: z.coerce.number().int().min(1).default(1),
   limit: z.coerce.number().int().min(1).max(100).default(20),

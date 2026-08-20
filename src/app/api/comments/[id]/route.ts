@@ -23,7 +23,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     const body = await request.json();
     const parsed = commentSchema.safeParse(body);
     if (!parsed.success) {
-      return apiError('VALIDATION_ERROR', parsed.error.errors[0].message);
+      return apiError('VALIDATION_ERROR', parsed.error.issues[0].message);
     }
 
     const updated = await db.comment.update({

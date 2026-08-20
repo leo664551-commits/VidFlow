@@ -5,7 +5,8 @@ import { hash, compare } from 'bcryptjs';
 import { getServerSession } from 'next-auth';
 
 // NextAuth options are imported dynamically to avoid circular deps
-let authOptions: Record<string, unknown>;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let authOptions: any;
 
 async function getAuthOptions() {
   if (!authOptions) {
@@ -19,14 +20,15 @@ async function getAuthOptions() {
 export async function getSession(request: NextRequest): Promise<AuthUser | null> {
   try {
     const opts = await getAuthOptions();
-    const session = await getServerSession(opts as Parameters<typeof getServerSession>[0]);
+    const session = await getServerSession(opts);
+    const sessionUser = session as any;
 
-    if (!session?.user?.email) {
+    if (!sessionUser?.user?.email) {
       return null;
     }
 
     const user = await db.user.findUnique({
-      where: { email: session.user.email as string },
+      where: { email: sessionUser.user.email as string },
       include: {
         creatorProfile: {
           select: {

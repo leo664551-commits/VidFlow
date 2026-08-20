@@ -1,13 +1,14 @@
 import { NextRequest } from 'next/server';
 import { getSession } from '@/lib/auth';
 import { db } from '@/lib/db';
-import { apiPaginated, apiError } from '@/lib/api-response';
-import { paginationSchema } from '@/lib/validation';
+import { apiPaginated, apiCreated, apiError } from '@/lib/api-response';
+import { paginationSchema, commentSchema } from '@/lib/validation';
+import { logger } from '@/lib/logger';
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const user = await getSession(request);
   if (!user) return apiError('UNAUTHORIZED');
-  if (user.role !== 'CONSUMER' && user.role !== 'ADMIN') return apiError('FORBIDDEN');
+  if (user.role !== 'CONSUMER' && user.role !== 'CREATOR' && user.role !== 'ADMIN') return apiError('FORBIDDEN');
 
   const { id } = await params;
 
@@ -39,6 +40,11 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         where,
         include: {
           user: { select: { id: true, displayName: true } },
+          _count: {
+            select: {
+              likes: true,
+            },
+          },
         },
         orderBy: { createdAt: 'desc' },
         skip,
@@ -47,10 +53,21 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       db.comment.count({ where }),
     ]);
 
+    // Fetch authenticated user's comment likes for these replies
+    let userCommentLikes: Set<string> = new Set();
+    const replyIds = replies.map((r) => r.id);
+    const likes = await db.commentLike.findMany({
+      where: { commentId: { in: replyIds }, userId: user.id },
+      select: { commentId: true },
+    });
+    userCommentLikes = new Set(likes.map((l) => l.commentId));
+
     return apiPaginated(
       replies.map((r) => ({
         id: r.id,
         content: r.content,
+        likeCount: r._count.likes,
+        userLiked: userCommentLikes.has(r.id),
         createdAt: r.createdAt.toISOString(),
         updatedAt: r.updatedAt.toISOString(),
         user: r.user,
@@ -60,6 +77,57 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       total
     );
   } catch (error) {
+    return apiError('INTERNAL_SERVER_ERROR');
+  }
+}
+
+export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const user = await getSession(request);
+  if (!user) return apiError('UNAUTHORIZED');
+  if (user.role !== 'CONSUMER' && user.role !== 'CREATOR' && user.role !== 'ADMIN') return apiError('FORBIDDEN');
+
+  const { id } = await params;
+
+  // Check parent comment exists and is visible (unless admin)
+  const parentComment = await db.comment.findUnique({
+    where: { id },
+    select: { id: true, videoId: true, status: true },
+  });
+  if (!parentComment) return apiError('COMMENT_NOT_FOUND');
+  if (user.role !== 'ADMIN' && parentComment.status !== 'VISIBLE') {
+    return apiError('COMMENT_NOT_FOUND');
+  }
+
+  try {
+    const body = await request.json();
+    const parsed = commentSchema.safeParse(body);
+    if (!parsed.success) {
+      return apiError('VALIDATION_ERROR', parsed.error.issues[0].message);
+    }
+
+    const reply = await db.comment.create({
+      data: {
+        videoId: parentComment.videoId,
+        userId: user.id,
+        content: parsed.data.content,
+        parentCommentId: id,
+      },
+      include: {
+        user: { select: { id: true, displayName: true } },
+      },
+    });
+
+    return apiCreated({
+      id: reply.id,
+      content: reply.content,
+      status: reply.status,
+      parentCommentId: reply.parentCommentId,
+      createdAt: reply.createdAt.toISOString(),
+      updatedAt: reply.updatedAt.toISOString(),
+      user: reply.user,
+    });
+  } catch (error) {
+    logger.error('Create reply failed', { error: (error as Error).message, parentCommentId: id });
     return apiError('INTERNAL_SERVER_ERROR');
   }
 }

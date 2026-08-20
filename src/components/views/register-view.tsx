@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { useAppStore } from '@/store/app-store'
-import { register, getAuthUser } from '@/lib/api'
+import { register as apiRegister, getAuthUser } from '@/lib/api'
 import { Loader2, ArrowLeft } from 'lucide-react'
 import { toast } from 'sonner'
 
@@ -38,7 +38,7 @@ export function RegisterView() {
   const onSubmit = async (values: RegisterValues) => {
     setLoading(true)
     try {
-      await register({
+      await apiRegister({
         displayName: values.displayName,
         email: values.email,
         password: values.password,

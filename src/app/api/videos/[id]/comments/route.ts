@@ -1,7 +1,7 @@
-import { NextRequest } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth';
 import { db } from '@/lib/db';
-import { apiCreated, apiPaginated, apiError } from '@/lib/api-response';
+import { apiCreated, apiError } from '@/lib/api-response';
 import { commentSchema, paginationSchema } from '@/lib/validation';
 import { logger } from '@/lib/logger';
 import { z } from 'zod';
@@ -15,7 +15,10 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   const { id } = await params;
 
   // Check video exists
-  const video = await db.video.findUnique({ where: { id } });
+  const video = await db.video.findUnique({
+    where: { id },
+    select: { id: true, pinnedCommentId: true },
+  });
   if (!video) return apiError('VIDEO_NOT_FOUND');
 
   const { searchParams } = new URL(request.url);
@@ -41,6 +44,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
               replies: {
                 where: { status: 'VISIBLE' },
               },
+              likes: true,
             },
           },
         },
@@ -51,20 +55,37 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       db.comment.count({ where }),
     ]);
 
-    return apiPaginated(
-      comments.map((c) => ({
+    // For authenticated users, fetch their comment likes
+    let userCommentLikes: Set<string> = new Set();
+    if (user) {
+      const commentIds = comments.map((c) => c.id);
+      const likes = await db.commentLike.findMany({
+        where: { commentId: { in: commentIds }, userId: user.id },
+        select: { commentId: true },
+      });
+      userCommentLikes = new Set(likes.map((l) => l.commentId));
+    }
+
+    return NextResponse.json({
+      pinnedCommentId: video.pinnedCommentId,
+      data: comments.map((c) => ({
         id: c.id,
         content: c.content,
         status: c.status,
         replyCount: c._count.replies,
+        likeCount: c._count.likes,
+        ...(user ? { userLiked: userCommentLikes.has(c.id) } : {}),
         createdAt: c.createdAt.toISOString(),
         updatedAt: c.updatedAt.toISOString(),
         user: c.user,
       })),
-      page,
-      limit,
-      total
-    );
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+      },
+    });
   } catch (error) {
     logger.error('List comments failed', { error: (error as Error).message, videoId: id });
     return apiError('INTERNAL_SERVER_ERROR');
@@ -74,7 +95,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const user = await getSession(request);
   if (!user) return apiError('UNAUTHORIZED');
-  if (user.role !== 'CONSUMER' && user.role !== 'ADMIN') return apiError('FORBIDDEN');
+  if (user.role !== 'CONSUMER' && user.role !== 'CREATOR' && user.role !== 'ADMIN') return apiError('FORBIDDEN');
 
   const { id } = await params;
 
@@ -86,7 +107,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     const body = await request.json();
     const parsed = replyCommentSchema.safeParse(body);
     if (!parsed.success) {
-      return apiError('VALIDATION_ERROR', parsed.error.errors[0].message);
+      return apiError('VALIDATION_ERROR', parsed.error.issues[0].message);
     }
 
     // If parentCommentId is provided, validate it belongs to this video

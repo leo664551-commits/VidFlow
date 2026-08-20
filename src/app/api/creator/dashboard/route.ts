@@ -13,7 +13,7 @@ export async function GET(request: NextRequest) {
   try {
     const creatorId = user.id;
 
-    const [totalVideos, readyVideos, totalViews, totalComments, totalRatings, recentVideos] =
+    const [totalVideos, readyVideos, totalViews, totalComments, totalLikes, recentVideos] =
       await Promise.all([
         db.video.count({ where: { creatorId } }),
         db.video.count({ where: { creatorId, status: 'READY' } }),
@@ -24,7 +24,7 @@ export async function GET(request: NextRequest) {
         db.comment.count({
           where: { video: { creatorId } },
         }),
-        db.rating.count({
+        db.videoLike.count({
           where: { video: { creatorId } },
         }),
         db.video.findMany({
@@ -47,7 +47,7 @@ export async function GET(request: NextRequest) {
         readyVideos,
         totalViews: totalViews._sum.viewCount || 0,
         totalComments,
-        totalRatings,
+        totalLikes,
       },
       recentVideos: recentVideos.map((v) => ({
         ...v,

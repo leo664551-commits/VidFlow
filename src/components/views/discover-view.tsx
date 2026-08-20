@@ -88,10 +88,10 @@ function DiscoverCard({ video, onClick }: { video: FeedVideo; onClick: () => voi
 }
 
 export function DiscoverView() {
-  const { navigate, setSelectedVideoId, searchQuery, setSearchQuery } = useAppStore()
+  const { navigate, searchQuery, setSearchQuery } = useAppStore()
   const [activeGenre, setActiveGenre] = useState<string | null>(null)
   const [debouncedQuery, setDebouncedQuery] = useState('')
-  const debounceRef = useRef<ReturnType<typeof setTimeout>>()
+  const debounceRef = useRef<ReturnType<typeof setTimeout>>(undefined)
   const pillScrollRef = useRef<HTMLDivElement>(null)
 
   // Debounce search input
@@ -123,9 +123,9 @@ export function DiscoverView() {
   })
 
   // Determine which data to show
-  const videos: FeedVideo[] = useMemo(() => {
+  const videos = useMemo(() => {
     if (isSearching) {
-      return searchResult.data?.data ?? []
+      return (searchResult.data?.data ?? []) as unknown as FeedVideo[]
     }
     return genreResult.data?.data ?? []
   }, [isSearching, searchResult.data, genreResult.data])
@@ -133,8 +133,7 @@ export function DiscoverView() {
   const isLoading = isSearching ? searchResult.isLoading : genreResult.isLoading
 
   const handleCardClick = (video: FeedVideo) => {
-    setSelectedVideoId(video.id)
-    navigate('video-detail')
+    navigate('video-detail', video.id)
   }
 
   const handleGenreClick = (genre: string) => {

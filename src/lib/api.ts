@@ -7,6 +7,8 @@ import type {
   FeedVideo,
   CommentWithUser,
   CreatorPublicProfile,
+  CreatorRating,
+  PinCommentResponse,
   Genre,
   AgeRating,
   VideoStatus,
@@ -77,7 +79,7 @@ export interface GetVideosParams {
   page?: number
   limit?: number
   genre?: Genre
-  sort?: 'latest' | 'mostViewed' | 'highestRated'
+  sort?: 'latest' | 'mostViewed'
 }
 
 export async function getVideos(
@@ -208,26 +210,42 @@ export interface Comment {
   }
 }
 
+// Extended comment with engagement data (returned by GET /api/videos/[id]/comments)
+export interface CommentWithEngagement extends CommentWithUser {
+  status: CommentStatus
+}
+
+interface CommentsApiResponse {
+ data: CommentWithUser[]
+ pinnedCommentId: string | null
+  pagination: {
+    page: number
+    limit: number
+    total: number
+    totalPages: number
+  }
+}
+
 export async function getVideoComments(
   videoId: string,
   params?: { page?: number; limit?: number }
-): Promise<PaginatedResponse<Comment>> {
+): Promise<{ data: CommentWithUser[]; pinnedCommentId: string | null; pagination: { page: number; limit: number; total: number; totalPages: number } }> {
   const searchParams = new URLSearchParams()
   if (params?.page) searchParams.set('page', String(params.page))
   if (params?.limit) searchParams.set('limit', String(params.limit))
   const qs = searchParams.toString()
-  return request<PaginatedResponse<Comment>>(
+  return request<CommentsApiResponse>(
     `/api/videos/${videoId}/comments${qs ? `?${qs}` : ''}`
   )
 }
 
 export async function createComment(
   videoId: string,
-  content: string
+  data: { content: string; parentCommentId?: string }
 ): Promise<Comment> {
   return request<Comment>(`/api/videos/${videoId}/comments`, {
     method: 'POST',
-    body: JSON.stringify({ content }),
+    body: JSON.stringify(data),
   })
 }
 
@@ -245,41 +263,56 @@ export async function deleteComment(commentId: string): Promise<void> {
   await request<void>(`/api/comments/${commentId}`, { method: 'DELETE' })
 }
 
-// Ratings
-export interface VideoRating {
-  averageRating: number
-  totalRatings: number
-  userRating: number | null
+// Comment Like
+export async function toggleCommentLike(
+  commentId: string
+): Promise<{ liked: boolean; likeCount: number }> {
+  return request<{ liked: boolean; likeCount: number }>(
+    `/api/comments/${commentId}/like`,
+    { method: 'POST' }
+  )
 }
 
-export async function getVideoRating(videoId: string): Promise<VideoRating> {
-  return request<VideoRating>(`/api/videos/${videoId}/rating`)
-}
-
-export async function createRating(
+// Pin Comment
+export async function pinComment(
   videoId: string,
+  commentId: string | null
+): Promise<PinCommentResponse> {
+  return request<PinCommentResponse>(`/api/videos/${videoId}/pin-comment`, {
+    method: 'POST',
+    body: JSON.stringify({ commentId }),
+  })
+}
+
+// Creator Rating
+export async function getCreatorRating(
+  creatorId: string
+): Promise<CreatorRating> {
+  return request<CreatorRating>(`/api/creators/${creatorId}/rate`)
+}
+
+export async function rateCreator(
+  creatorId: string,
   rating: number
-): Promise<VideoRating> {
-  return request<VideoRating>(`/api/videos/${videoId}/rating`, {
+): Promise<CreatorRating> {
+  return request<CreatorRating>(`/api/creators/${creatorId}/rate`, {
     method: 'POST',
     body: JSON.stringify({ rating }),
   })
 }
 
-export async function updateRating(
-  videoId: string,
+export async function updateCreatorRating(
+  creatorId: string,
   rating: number
-): Promise<VideoRating> {
-  return request<VideoRating>(`/api/videos/${videoId}/rating`, {
+): Promise<CreatorRating> {
+  return request<CreatorRating>(`/api/creators/${creatorId}/rate`, {
     method: 'PATCH',
     body: JSON.stringify({ rating }),
   })
 }
 
-export async function deleteRating(videoId: string): Promise<VideoRating> {
-  return request<VideoRating>(`/api/videos/${videoId}/rating`, {
-    method: 'DELETE',
-  })
+export async function deleteCreatorRating(creatorId: string): Promise<void> {
+  await request<void>(`/api/creators/${creatorId}/rate`, { method: 'DELETE' })
 }
 
 // Creator
@@ -534,8 +567,39 @@ export async function getCommentReplies(
 }
 
 // Public Creator
+interface CreatorProfileApiResponse {
+  creator: {
+    id: string
+    creatorName: string
+    displayName: string
+    description: string | null
+  }
+  stats: {
+    videoCount: number
+    totalViews: number
+    averageRating: number
+    totalRatings: number
+  }
+  videos: PaginatedResponse<FeedVideo>
+  userRating?: number | null
+}
+
 export async function getCreatorProfile(
   creatorId: string
 ): Promise<CreatorPublicProfile> {
-  return request<CreatorPublicProfile>(`/api/creators/${creatorId}`)
+  const res = await request<CreatorProfileApiResponse>(
+    `/api/creators/${creatorId}`
+  )
+  return {
+    id: res.creator.id,
+    creatorName: res.creator.creatorName,
+    displayName: res.creator.displayName,
+    description: res.creator.description,
+    videoCount: res.stats.videoCount,
+    totalViews: res.stats.totalViews,
+    averageRating: res.stats.averageRating,
+    totalRatings: res.stats.totalRatings,
+    userRating: res.userRating ?? null,
+    videos: res.videos.data,
+  }
 }

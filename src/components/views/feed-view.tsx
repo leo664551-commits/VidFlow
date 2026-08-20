@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useQuery, useMutation, useQueryClient, useInfiniteQuery } from '@tanstack/react-query'
-import { Heart, MessageCircle, Share2, Star, Music } from 'lucide-react'
+import { Heart, MessageCircle, Share2, Music } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { getFeedVideos, toggleLike } from '@/lib/api'
 import { useAppStore } from '@/store/app-store'
@@ -57,7 +57,7 @@ function ActionBar({ video }: { video: FeedVideo }) {
     },
   })
 
-  const canInteract = user?.role === 'CONSUMER' || user?.role === 'ADMIN'
+  const canInteract = user?.role === 'CONSUMER' || user?.role === 'CREATOR' || user?.role === 'ADMIN'
 
   const handleComment = () => {
     setSelectedVideoId(video.id)
@@ -104,12 +104,7 @@ function ActionBar({ video }: { video: FeedVideo }) {
         <Share2 className="h-7 w-7 text-white drop-shadow-lg" />
       </button>
 
-      {video.avgRating > 0 && (
-        <div className="flex flex-col items-center gap-1">
-          <Star className="h-7 w-7 fill-yellow-400 text-yellow-400 drop-shadow-lg" />
-          <span className="text-xs font-medium text-white drop-shadow">{video.avgRating.toFixed(1)}</span>
-        </div>
-      )}
+
     </div>
   )
 }

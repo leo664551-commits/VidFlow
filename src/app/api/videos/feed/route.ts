@@ -17,7 +17,7 @@ export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const parsed = feedPaginationSchema.safeParse(Object.fromEntries(searchParams));
   if (!parsed.success) {
-    return apiError('VALIDATION_ERROR', parsed.error.errors[0].message);
+    return apiError('VALIDATION_ERROR', parsed.error.issues[0].message);
   }
 
   const { page, limit, genre } = parsed.data;
@@ -32,7 +32,20 @@ export async function GET(request: NextRequest) {
     const [videos, total] = await Promise.all([
       db.video.findMany({
         where,
-        include: {
+        select: {
+          id: true,
+          title: true,
+          description: true,
+          publisher: true,
+          producer: true,
+          genre: true,
+          ageRating: true,
+          thumbnailBlobName: true,
+          storageBlobName: true,
+          duration: true,
+          viewCount: true,
+          pinnedCommentId: true,
+          createdAt: true,
           creator: {
             select: {
               id: true,
@@ -48,9 +61,6 @@ export async function GET(request: NextRequest) {
               },
             },
           },
-          ratings: {
-            select: { rating: true },
-          },
         },
         orderBy: { createdAt: 'desc' },
         skip,
@@ -59,34 +69,21 @@ export async function GET(request: NextRequest) {
       db.video.count({ where }),
     ]);
 
-    // If user is authenticated consumer/admin, fetch their likes and ratings for these videos
+    // If user is authenticated, fetch their likes for these videos
     let userLikes: Set<string> = new Set();
-    let userRatings: Map<string, number> = new Map();
 
-    if (user && (user.role === 'CONSUMER' || user.role === 'ADMIN')) {
+    if (user) {
       const videoIds = videos.map((v) => v.id);
 
-      const [likes, ratings] = await Promise.all([
-        db.videoLike.findMany({
-          where: { videoId: { in: videoIds }, userId: user.id },
-          select: { videoId: true },
-        }),
-        db.rating.findMany({
-          where: { videoId: { in: videoIds }, userId: user.id },
-          select: { videoId: true, rating: true },
-        }),
-      ]);
+      const likes = await db.videoLike.findMany({
+        where: { videoId: { in: videoIds }, userId: user.id },
+        select: { videoId: true },
+      });
 
       userLikes = new Set(likes.map((l) => l.videoId));
-      userRatings = new Map(ratings.map((r) => [r.videoId, r.rating]));
     }
 
     const data = videos.map((v) => {
-      const totalRatings = v.ratings.length;
-      const avgRating = totalRatings > 0
-        ? v.ratings.reduce((sum, r) => sum + r.rating, 0) / totalRatings
-        : 0;
-
       const result: Record<string, unknown> = {
         id: v.id,
         title: v.title,
@@ -106,14 +103,13 @@ export async function GET(request: NextRequest) {
         viewCount: v.viewCount,
         likeCount: v._count.likes,
         commentCount: v._count.comments,
-        avgRating: Math.round(avgRating * 100) / 100,
+        pinnedCommentId: v.pinnedCommentId,
         createdAt: v.createdAt.toISOString(),
       };
 
       // Include user-specific data only if authenticated
-      if (user && (user.role === 'CONSUMER' || user.role === 'ADMIN')) {
+      if (user) {
         result.userLiked = userLikes.has(v.id);
-        result.userRating = userRatings.get(v.id) ?? null;
       }
 
       return result;

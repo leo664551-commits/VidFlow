@@ -6,7 +6,7 @@ import { apiSuccess, apiError } from '@/lib/api-response';
 export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const user = await getSession(request);
   if (!user) return apiError('UNAUTHORIZED');
-  if (user.role !== 'CONSUMER' && user.role !== 'ADMIN') return apiError('FORBIDDEN');
+  if (user.role !== 'CONSUMER' && user.role !== 'CREATOR' && user.role !== 'ADMIN') return apiError('FORBIDDEN');
 
   const { id } = await params;
 
@@ -43,7 +43,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const user = await getSession(request);
   if (!user) return apiError('UNAUTHORIZED');
-  if (user.role !== 'CONSUMER' && user.role !== 'ADMIN') return apiError('FORBIDDEN');
+  if (user.role !== 'CONSUMER' && user.role !== 'CREATOR' && user.role !== 'ADMIN') return apiError('FORBIDDEN');
 
   const { id } = await params;
 

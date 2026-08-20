@@ -15,7 +15,8 @@ export async function GET(request: NextRequest) {
       totalVideos,
       readyVideos,
       totalComments,
-      totalRatings,
+      totalVideoLikes,
+      totalCreatorRatings,
       totalViews,
       recentUsers,
       recentVideos,
@@ -25,7 +26,8 @@ export async function GET(request: NextRequest) {
       db.video.count(),
       db.video.count({ where: { status: 'READY' } }),
       db.comment.count(),
-      db.rating.count(),
+      db.videoLike.count(),
+      db.creatorRating.count(),
       db.video.aggregate({ _sum: { viewCount: true } }),
       db.user.findMany({
         orderBy: { createdAt: 'desc' },
@@ -36,7 +38,6 @@ export async function GET(request: NextRequest) {
         orderBy: { createdAt: 'desc' },
         take: 5,
         include: { creator: { select: { creatorName: true } } },
-        select: { id: true, title: true, status: true, viewCount: true, createdAt: true, creator: true },
       }),
     ]);
 
@@ -47,7 +48,8 @@ export async function GET(request: NextRequest) {
         totalVideos,
         readyVideos,
         totalComments,
-        totalRatings,
+        totalVideoLikes,
+        totalCreatorRatings,
         totalViews: totalViews._sum.viewCount || 0,
       },
       recentUsers: recentUsers.map((u) => ({

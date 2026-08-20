@@ -36,7 +36,7 @@ export async function GET(request: NextRequest) {
         where,
         include: {
           creator: { select: { id: true, creatorName: true } },
-          _count: { select: { comments: true, ratings: true } },
+          _count: { select: { comments: true, likes: true } },
         },
         orderBy: { createdAt: 'desc' },
         skip,
@@ -56,7 +56,7 @@ export async function GET(request: NextRequest) {
         status: v.status,
         viewCount: v.viewCount,
         commentCount: v._count.comments,
-        ratingCount: v._count.ratings,
+        likeCount: v._count.likes,
         creator: v.creator,
         createdAt: v.createdAt.toISOString(),
         updatedAt: v.updatedAt.toISOString(),

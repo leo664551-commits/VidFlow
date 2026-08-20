@@ -18,13 +18,13 @@ export async function POST(request: NextRequest) {
     // Validate file info
     const fileInfo = uploadSessionSchema.safeParse(body);
     if (!fileInfo.success) {
-      return apiError('VALIDATION_ERROR', fileInfo.error.errors[0].message);
+      return apiError('VALIDATION_ERROR', fileInfo.error.issues[0].message);
     }
 
     // Validate metadata
     const metadata = videoMetadataSchema.safeParse(body);
     if (!metadata.success) {
-      return apiError('VALIDATION_ERROR', metadata.error.errors[0].message);
+      return apiError('VALIDATION_ERROR', metadata.error.issues[0].message);
     }
 
     // Validate file

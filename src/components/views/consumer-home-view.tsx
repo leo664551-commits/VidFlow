@@ -2,9 +2,10 @@
 
 import { useState, useRef, useCallback, useEffect } from 'react'
 import { useMutation, useQueryClient, useInfiniteQuery } from '@tanstack/react-query'
-import { Heart, MessageCircle, Share2, Star, Loader2, Music } from 'lucide-react'
+import { Heart, MessageCircle, Share2, Loader2, Music } from 'lucide-react'
 import { useAppStore } from '@/store/app-store'
 import { getFeedVideos, toggleLike } from '@/lib/api'
+import type { FeedVideo } from '@/types'
 import { GENRES } from '@/config'
 
 const AVATAR_COLORS = [
@@ -248,17 +249,7 @@ function FeedVideoItem({
           </button>
         </div>
 
-        {/* Rating */}
-        {video.avgRating > 0 && (
-          <div className="flex flex-col items-center gap-1">
-            <div className="flex items-center justify-center w-10 h-10">
-              <Star className="h-5 w-5 text-amber-400 fill-amber-400" />
-            </div>
-            <span className="text-white text-xs font-medium">
-              {video.avgRating.toFixed(1)}
-            </span>
-          </div>
-        )}
+
       </div>
 
       {/* Bottom-left info overlay */}

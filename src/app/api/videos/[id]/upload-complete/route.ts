@@ -30,7 +30,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     const body = await request.json();
     const metadata = videoMetadataSchema.safeParse(body);
     if (!metadata.success) {
-      return apiError('VALIDATION_ERROR', metadata.error.errors[0].message);
+      return apiError('VALIDATION_ERROR', metadata.error.issues[0].message);
     }
 
     // Verify file exists (for local dev, skip strict check)

@@ -76,9 +76,7 @@ export interface VideoWithCreator {
 }
 
 export interface VideoDetail extends VideoWithCreator {
-  averageRating: number;
-  totalRatings: number;
-  userRating: number | null;
+  pinnedCommentId: string | null;
   likeCount?: number;
   commentCount?: number;
   userLiked?: boolean;
@@ -99,9 +97,8 @@ export interface FeedVideo {
   updatedAt: string;
   likeCount: number;
   commentCount: number;
-  avgRating: number;
+  pinnedCommentId: string | null;
   userLiked: boolean;
-  userRating: number | null;
   creator: {
     id: string;
     creatorName: string;
@@ -120,6 +117,9 @@ export interface CommentWithUser {
     displayName: string;
   };
   replyCount: number;
+  likeCount: number;
+  userLiked: boolean;
+  isPinned?: boolean;
   videoId: string;
   parentCommentId: string | null;
 }
@@ -143,7 +143,20 @@ export interface CreatorPublicProfile {
   description: string | null;
   videoCount: number;
   totalViews: number;
+  averageRating: number;
+  totalRatings: number;
+  userRating: number | null;
   videos: FeedVideo[];
+}
+
+export interface CreatorRating {
+  averageRating: number;
+  totalRatings: number;
+  userRating: number | null;
+}
+
+export interface PinCommentResponse {
+  pinnedCommentId: string | null;
 }
 
 export type AppView =

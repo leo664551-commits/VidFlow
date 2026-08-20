@@ -69,7 +69,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const parsed = createCreatorSchema.safeParse(body);
     if (!parsed.success) {
-      return apiError('VALIDATION_ERROR', parsed.error.errors[0].message);
+      return apiError('VALIDATION_ERROR', parsed.error.issues[0].message);
     }
 
     const { email, displayName, creatorName, password, description } = parsed.data;

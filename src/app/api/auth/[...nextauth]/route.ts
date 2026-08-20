@@ -62,7 +62,6 @@ export const authOptions: NextAuthOptions = {
     strategy: 'jwt',
   },
   secret: process.env.NEXTAUTH_SECRET,
-  callbacksUrl: 'http://localhost:3000',
 };
 
 const handler = NextAuth(authOptions);

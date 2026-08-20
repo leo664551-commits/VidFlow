@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { ArrowLeft, Heart, MessageCircle, Share2, Star, Eye, Music, Loader2 } from 'lucide-react'
+import { ArrowLeft, Heart, MessageCircle, Share2, Eye, Music, Loader2 } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { getVideoDetail, toggleLike } from '@/lib/api'
 import { useAppStore } from '@/store/app-store'
@@ -76,7 +76,6 @@ export function VideoDetailView() {
 
   const isLiked = localLiked ?? video.userLiked ?? false
   const likeCount = localLikeCount ?? video.likeCount ?? 0
-  const avgRating = video.averageRating ?? 0
   const commentCount = video.commentCount ?? 0
   const viewCount = video.viewCount ?? 0
   const bg = GENRE_COLORS[video.genre] || GENRE_COLORS.OTHER
@@ -85,7 +84,7 @@ export function VideoDetailView() {
     ? video.genre.replace('_', ' ')
     : video.genre
 
-  const canInteract = user?.role === 'CONSUMER' || user?.role === 'ADMIN'
+  const canInteract = user?.role === 'CONSUMER' || user?.role === 'CREATOR' || user?.role === 'ADMIN'
 
   const handleBack = () => {
     navigate('feed')
@@ -187,15 +186,7 @@ export function VideoDetailView() {
           <Share2 className="h-7 w-7 text-white drop-shadow-lg" />
         </button>
 
-        {/* Rating */}
-        {avgRating > 0 && (
-          <div className="flex flex-col items-center gap-1">
-            <Star className="h-7 w-7 fill-yellow-400 text-yellow-400 drop-shadow-lg" />
-            <span className="text-xs text-white font-medium drop-shadow">
-              {avgRating.toFixed(1)}
-            </span>
-          </div>
-        )}
+
       </motion.div>
 
       {/* Bottom-left info overlay (same as feed) */}

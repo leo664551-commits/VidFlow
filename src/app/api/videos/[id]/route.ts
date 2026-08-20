@@ -19,11 +19,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         _count: {
           select: {
             likes: true,
-            ratings: true,
           },
-        },
-        ratings: {
-          select: { rating: true },
         },
       },
     });
@@ -68,30 +64,17 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       }
     }
 
-    // Calculate rating stats
-    const totalRatings = video.ratings.length;
-    const averageRating = totalRatings > 0
-      ? video.ratings.reduce((sum, r) => sum + r.rating, 0) / totalRatings
-      : 0;
-
     // Count visible top-level comments
     const commentCount = await db.comment.count({
       where: { videoId: id, status: 'VISIBLE', parentCommentId: null },
     });
 
-    // Get user's rating and like status
-    let userRating: number | null = null;
+    // Get user's like status
     let userLiked = false;
     if (user) {
-      const [userRatingRecord, userLikeRecord] = await Promise.all([
-        db.rating.findUnique({
-          where: { videoId_userId: { videoId: id, userId: user.id } },
-        }),
-        db.videoLike.findUnique({
-          where: { videoId_userId: { videoId: id, userId: user.id } },
-        }),
-      ]);
-      if (userRatingRecord) userRating = userRatingRecord.rating;
+      const userLikeRecord = await db.videoLike.findUnique({
+        where: { videoId_userId: { videoId: id, userId: user.id } },
+      });
       if (userLikeRecord) userLiked = true;
     }
 
@@ -108,15 +91,13 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       duration: video.duration,
       status: video.status,
       viewCount: video.viewCount,
+      pinnedCommentId: video.pinnedCommentId,
       createdAt: video.createdAt.toISOString(),
       updatedAt: video.updatedAt.toISOString(),
       creator: video.creator,
-      averageRating: Math.round(averageRating * 100) / 100,
-      totalRatings,
-      userRating,
       likeCount: video._count.likes,
       commentCount,
-      ...(user && (user.role === 'CONSUMER' || user.role === 'ADMIN') ? { userLiked } : {}),
+      ...(user ? { userLiked } : {}),
     });
   } catch (error) {
     logger.error('Get video failed', { error: (error as Error).message, videoId: id });
@@ -142,7 +123,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     const body = await request.json();
     const metadata = videoMetadataSchema.safeParse(body);
     if (!metadata.success) {
-      return apiError('VALIDATION_ERROR', metadata.error.errors[0].message);
+      return apiError('VALIDATION_ERROR', metadata.error.issues[0].message);
     }
 
     const updated = await db.video.update({
@@ -202,7 +183,7 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
       await deleteBlob(video.thumbnailBlobName);
     }
 
-    // Delete video (cascade will handle comments, ratings, views)
+    // Delete video (cascade will handle comments, views, likes)
     await db.video.delete({ where: { id } });
 
     await createAuditLog(user.id, 'VIDEO_DELETED', 'Video', id, { title: video.title });
