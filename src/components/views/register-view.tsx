@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { useAppStore } from '@/store/app-store'
-import { register as apiRegister, getAuthUser } from '@/lib/api'
+import { register as apiRegister, login, getAuthUser } from '@/lib/api'
 import { Loader2, ArrowLeft } from 'lucide-react'
 import { toast } from 'sonner'
 
@@ -44,6 +44,7 @@ export function RegisterView() {
         password: values.password,
         role: 'CONSUMER',
       })
+      await login(values.email, values.password)
       const user = await getAuthUser()
       setUser(user)
       toast.success('Account created!')
@@ -56,7 +57,7 @@ export function RegisterView() {
   }
 
   return (
-    <div className="min-h-screen bg-black flex flex-col">
+    <div className="h-full w-full overflow-y-auto bg-black flex flex-col scrollbar-thin scrollbar-thumb-zinc-800">
       {/* Back arrow */}
       <div className="px-4 pt-4">
         <button

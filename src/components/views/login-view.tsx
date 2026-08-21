@@ -49,7 +49,7 @@ export function LoginView() {
   }
 
   return (
-    <div className="min-h-screen bg-black flex flex-col">
+    <div className="h-full w-full overflow-y-auto bg-black flex flex-col scrollbar-thin scrollbar-thumb-zinc-800">
       {/* Back arrow */}
       <div className="px-4 pt-4">
         <button

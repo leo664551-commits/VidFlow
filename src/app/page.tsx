@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { AnimatePresence, motion } from 'framer-motion'
 import { Toaster } from '@/components/ui/sonner'
 import { BottomTabBar } from '@/components/layout/bottom-tab-bar'
+import { DesktopSidebar } from '@/components/layout/desktop-sidebar'
 import { useAppStore } from '@/store/app-store'
 import { getAuthUser } from '@/lib/api'
 import { LandingView } from '@/components/views/landing-view'
@@ -74,7 +75,7 @@ function ViewRouter() {
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
         transition={{ duration: 0.15 }}
-        className={DASHBOARD_VIEWS.has(currentView) ? 'h-full' : ''}
+        className="h-full w-full overflow-hidden bg-black"
       >
         {views[currentView] ?? <LandingView />}
       </motion.div>
@@ -96,21 +97,41 @@ export default function Home() {
       })
       .catch(() => {
         setUser(null)
-        navigate('landing')
+        navigate('feed')
       })
+
+    const handlePopState = () => {
+      useAppStore.getState().goBack()
+    }
+    window.addEventListener('popstate', handlePopState)
+    return () => window.removeEventListener('popstate', handlePopState)
   }, [])
 
+  const showSidebar = !AUTH_VIEWS.has(currentView) && !DASHBOARD_VIEWS.has(currentView)
   const showTabBar = user && !AUTH_VIEWS.has(currentView) && !DASHBOARD_VIEWS.has(currentView)
   const showCommentPanel = !DASHBOARD_VIEWS.has(currentView) && !AUTH_VIEWS.has(currentView)
 
   return (
     <QueryClientProvider client={queryClient}>
-      <div className="h-dvh w-screen overflow-hidden bg-black text-white">
-        <main className={DASHBOARD_VIEWS.has(currentView) ? 'h-full overflow-y-auto' : 'h-full'}>
+      <div className="h-dvh w-screen overflow-hidden bg-black text-white flex">
+        {/* Desktop Left Sidebar (TikTok Web style) */}
+        {showSidebar && <DesktopSidebar />}
+
+        {/* Main Content Area */}
+        <main
+          className={`h-full flex-1 overflow-hidden bg-black ${
+            showSidebar ? 'md:pl-60 lg:pl-64' : ''
+          }`}
+        >
           <ViewRouter />
         </main>
+
+        {/* Mobile Bottom Tab Bar */}
         {showTabBar && <BottomTabBar />}
+
+        {/* Slide-in Comment Drawer */}
         {showCommentPanel && <CommentPanel />}
+
         <Toaster richColors theme="dark" />
       </div>
     </QueryClientProvider>

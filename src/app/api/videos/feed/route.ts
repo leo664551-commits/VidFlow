@@ -7,7 +7,7 @@ import { GENRES } from '@/config';
 
 const feedPaginationSchema = z.object({
   page: z.coerce.number().int().min(1).default(1),
-  limit: z.coerce.number().int().min(1).max(20).default(10),
+  limit: z.coerce.number().int().min(1).max(100).default(10),
   genre: z.enum(GENRES as unknown as [string, ...string[]]).optional(),
 });
 
@@ -50,7 +50,7 @@ export async function GET(request: NextRequest) {
             select: {
               id: true,
               creatorName: true,
-              user: { select: { displayName: true } },
+              user: { select: { id: true, displayName: true, username: true, avatarUrl: true } },
             },
           },
           _count: {
@@ -92,6 +92,8 @@ export async function GET(request: NextRequest) {
           id: v.creator.id,
           creatorName: v.creator.creatorName,
           displayName: v.creator.user.displayName,
+          username: v.creator.user.username || null,
+          avatarUrl: v.creator.user.avatarUrl || null,
         },
         publisher: v.publisher,
         producer: v.producer,

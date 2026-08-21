@@ -8,33 +8,62 @@ datasource db {
 }
 
 model User {
-  id          String   @id @default(cuid())
-  email       String   @unique
-  displayName String   @default("")
-  password    String   @default("")
-  role        String   @default("CONSUMER")
-  status      String   @default("ACTIVE")
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id           String   @id @default(cuid())
+  email        String   @unique
+  username     String?  @unique
+  displayName  String   @default("")
+  password     String   @default("")
+  role         String   @default("CONSUMER")
+  status       String   @default("ACTIVE")
+  bio          String?  @default("")
+  avatarUrl    String?
+  gender              String?  @default("PREFER_NOT_TO_SAY")
+  website             String?
+  instagram           String?
+  youtube             String?
+  twitter             String?
+  contactEmail        String?
+  category            String?  @default("Comedy")
+  categoryChangeCount Int      @default(0)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
 
   creatorProfile CreatorProfile?
-  comments      Comment[]
-  videoViews    VideoView[]
-  videoLikes    VideoLike[]
-  commentLikes  CommentLike[]
-  creatorRatings CreatorRating[]
-  auditLogs     AuditLog[]
+  comments            Comment[]
+  videoViews          VideoView[]
+  videoWatches        VideoWatch[]
+  videoLikes          VideoLike[]
+  commentLikes        CommentLike[]
+  creatorRatings      CreatorRating[]
+  creatorApplications CreatorApplication[]
+  auditLogs           AuditLog[]
+  following           Follow[]             @relation("UserFollowing")
+  followers           Follow[]             @relation("UserFollowers")
+}
+
+model Follow {
+  id          String   @id @default(cuid())
+  followerId  String
+  followingId String
+  createdAt   DateTime @default(now())
+
+  follower  User @relation("UserFollowing", fields: [followerId], references: [id], onDelete: Cascade)
+  following User @relation("UserFollowers", fields: [followingId], references: [id], onDelete: Cascade)
+
+  @@unique([followerId, followingId])
 }
 
 model CreatorProfile {
-  id          String   @id @default(cuid())
-  userId      String   @unique
-  creatorName String
-  description String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id                  String   @id @default(cuid())
+  userId              String   @unique
+  creatorName         String
+  description         String?
+  category            String?  @default("Comedy")
+  categoryChangeCount Int      @default(0)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
 
-  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user    User            @relation(fields: [userId], references: [id], onDelete: Cascade)
   videos  Video[]
   ratings CreatorRating[]
 }
@@ -60,6 +89,7 @@ model Video {
   creator  CreatorProfile @relation(fields: [creatorId], references: [userId], onDelete: Cascade)
   comments Comment[]
   views    VideoView[]
+  watches  VideoWatch[]
   likes    VideoLike[]
 }
 
@@ -75,7 +105,7 @@ model Comment {
 
   video         Video         @relation(fields: [videoId], references: [id], onDelete: Cascade)
   user          User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  parentComment Comment?       @relation("CommentReplies", fields: [parentCommentId], references: [id], onDelete: Cascade)
+  parentComment Comment?      @relation("CommentReplies", fields: [parentCommentId], references: [id], onDelete: Cascade)
   replies       Comment[]     @relation("CommentReplies")
   likes         CommentLike[]
 }
@@ -105,17 +135,48 @@ model VideoLike {
 }
 
 model CreatorRating {
-  id          String   @id @default(cuid())
-  creatorId   String
-  userId      String
-  rating      Int
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id                  String   @id @default(cuid())
+  creatorId           String
+  userId              String
+  rating              Int      @default(5)
+  overallRating       Float    @default(5.0)
+  contentQuality      Int?     @default(5)
+  valueRating         Int?     @default(5)
+  creativityRating    Int?     @default(5)
+  entertainmentRating Int?     @default(5)
+  consistencyRating   Int?     @default(5)
+  review              String?
+  tags                String?
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
 
   creator CreatorProfile @relation(fields: [creatorId], references: [id], onDelete: Cascade)
   user    User           @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([creatorId, userId])
+  @@index([creatorId])
+  @@index([userId])
+}
+
+model VideoWatch {
+  id                   String   @id @default(cuid())
+  userId               String
+  videoId              String
+  creatorId            String
+  watchDuration        Float    @default(0)
+  videoDuration        Float    @default(0)
+  completionPercentage Float    @default(0)
+  lastWatchedAt        DateTime @default(now())
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  video Video @relation(fields: [videoId], references: [id], onDelete: Cascade)
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, videoId])
+  @@index([userId, creatorId])
+  @@index([creatorId])
+  @@index([videoId])
 }
 
 model VideoView {
@@ -125,17 +186,35 @@ model VideoView {
   viewedAt DateTime @default(now())
 
   video Video @relation(fields: [videoId], references: [id], onDelete: Cascade)
-  user  User?  @relation(fields: [userId], references: [id], onDelete: SetNull)
+  user  User? @relation(fields: [userId], references: [id], onDelete: SetNull)
 }
 
 model AuditLog {
-  id            String   @id @default(cuid())
-  actorUserId   String
-  action        String
-  entityType    String
-  entityId      String
-  metadata      String?
-  createdAt     DateTime @default(now())
+  id          String   @id @default(cuid())
+  actorUserId String
+  action      String
+  entityType  String
+  entityId    String
+  metadata    String?
+  createdAt   DateTime @default(now())
 
   actor User @relation(fields: [actorUserId], references: [id], onDelete: Cascade)
+}
+
+model CreatorApplication {
+  id          String    @id @default(cuid())
+  userId      String
+  category    String    @default("Comedy")
+  description String?
+  socialLink  String?
+  status      String    @default("APPROVED")
+  reviewedAt  DateTime?
+  reviewedBy  String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([status])
 }

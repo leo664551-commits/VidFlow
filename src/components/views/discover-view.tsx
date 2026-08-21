@@ -2,9 +2,9 @@
 
 import { useState, useRef, useEffect, useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { Search, Eye, Clock, Play } from 'lucide-react'
+import { Search, Eye, Clock, Play, AtSign, Sparkles, User, ArrowRight } from 'lucide-react'
 import { motion } from 'framer-motion'
-import { searchVideos, getFeedVideos } from '@/lib/api'
+import { searchVideos, getFeedVideos, searchCreators, type CreatorSearchResult } from '@/lib/api'
 import { useAppStore } from '@/store/app-store'
 import { GENRES } from '@/config'
 import type { Genre, FeedVideo } from '@/types'
@@ -38,22 +38,19 @@ function formatViews(count: number): string {
 
 function DiscoverCard({ video, onClick }: { video: FeedVideo; onClick: () => void }) {
   const gradient = GENRE_GRADIENTS[video.genre] || GENRE_GRADIENTS.OTHER
-  // Vary card height for masonry effect based on video id
-  const heights = ['h-48', 'h-56', 'h-64', 'h-52', 'h-60']
-  const heightIdx = video.id.split('').reduce((a, c) => a + c.charCodeAt(0), 0) % heights.length
 
   return (
     <motion.button
       onClick={onClick}
       whileTap={{ scale: 0.97 }}
-      className="mb-3 w-full break-inside-avoid overflow-hidden rounded-xl relative group"
+      className="w-full aspect-[9/16] overflow-hidden rounded-2xl relative group bg-zinc-900 border border-white/10 shadow-md hover:shadow-2xl hover:border-white/30 transition-all duration-300 flex flex-col justify-end text-left"
     >
       {/* Gradient background */}
-      <div className={`${heights[heightIdx]} w-full bg-gradient-to-br ${gradient} relative`}>
+      <div className={`absolute inset-0 bg-gradient-to-b ${gradient} group-hover:scale-105 transition-transform duration-500`}>
         {/* Play icon overlay */}
-        <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-          <div className="h-14 w-14 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center">
-            <Play className="h-7 w-7 text-white fill-white" />
+        <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+          <div className="h-12 w-12 rounded-full bg-black/60 backdrop-blur-md flex items-center justify-center shadow-xl border border-white/20">
+            <Play className="h-6 w-6 text-white fill-white ml-0.5" />
           </div>
         </div>
 
@@ -88,7 +85,7 @@ function DiscoverCard({ video, onClick }: { video: FeedVideo; onClick: () => voi
 }
 
 export function DiscoverView() {
-  const { navigate, searchQuery, setSearchQuery } = useAppStore()
+  const { navigate, setSelectedCreatorId, searchQuery, setSearchQuery } = useAppStore()
   const [activeGenre, setActiveGenre] = useState<string | null>(null)
   const [debouncedQuery, setDebouncedQuery] = useState('')
   const debounceRef = useRef<ReturnType<typeof setTimeout>>(undefined)
@@ -108,10 +105,17 @@ export function DiscoverView() {
   // When user types in search, clear genre filter
   const isSearching = debouncedQuery.trim().length > 0
 
-  // Search query
+  // Search videos query
   const searchResult = useQuery({
     queryKey: ['discover-search', debouncedQuery],
     queryFn: () => searchVideos({ query: debouncedQuery, limit: 40 }),
+    enabled: isSearching,
+  })
+
+  // Search creators query (matching username or name)
+  const creatorsResult = useQuery({
+    queryKey: ['discover-creators', debouncedQuery],
+    queryFn: () => searchCreators(debouncedQuery),
     enabled: isSearching,
   })
 
@@ -130,10 +134,18 @@ export function DiscoverView() {
     return genreResult.data?.data ?? []
   }, [isSearching, searchResult.data, genreResult.data])
 
-  const isLoading = isSearching ? searchResult.isLoading : genreResult.isLoading
+  const creators = creatorsResult.data ?? []
+  const isLoading = isSearching
+    ? searchResult.isLoading && creatorsResult.isLoading
+    : genreResult.isLoading
 
   const handleCardClick = (video: FeedVideo) => {
     navigate('video-detail', video.id)
+  }
+
+  const handleCreatorClick = (creatorId: string) => {
+    setSelectedCreatorId(creatorId)
+    navigate('creator-profile')
   }
 
   const handleGenreClick = (genre: string) => {
@@ -147,7 +159,7 @@ export function DiscoverView() {
   }
 
   return (
-    <div className="min-h-screen bg-black pb-20">
+    <div className="h-full w-full overflow-y-auto bg-black text-white pb-32 select-none scrollbar-thin scrollbar-thumb-zinc-800 scroll-smooth">
       {/* Search bar */}
       <div className="sticky top-0 z-20 bg-black/95 backdrop-blur-md px-4 pt-3 pb-2">
         <div className="relative">
@@ -159,7 +171,7 @@ export function DiscoverView() {
               setSearchQuery(e.target.value)
               if (e.target.value) setActiveGenre(null)
             }}
-            placeholder="Search videos, creators..."
+            placeholder="Search by @username, creator, or videos..."
             className="w-full rounded-full bg-white/10 py-2.5 pl-10 pr-4 text-sm text-white placeholder-gray-500 outline-none ring-1 ring-white/10 focus:ring-white/30 transition-all"
           />
         </div>
@@ -190,37 +202,113 @@ export function DiscoverView() {
       </div>
 
       {/* Content area */}
-      <div className="px-2 pt-2">
-        {isLoading ? (
-          <div className="flex h-64 items-center justify-center">
-            <div className="h-10 w-10 animate-spin rounded-full border-2 border-white/20 border-t-white" />
-          </div>
-        ) : videos.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-24 text-center">
-            <Search className="mb-3 h-12 w-12 text-white/20" />
-            <p className="text-base font-medium text-white/60">
-              {isSearching ? 'No results found' : 'No videos in this genre'}
-            </p>
-            <p className="mt-1 text-sm text-white/30">
-              {isSearching
-                ? 'Try a different search term'
-                : 'Check back later for new content'}
-            </p>
-          </div>
-        ) : (
-          <div className="columns-2 gap-3">
-            {videos.map((video, idx) => (
-              <motion.div
-                key={video.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: Math.min(idx * 0.04, 0.4), duration: 0.3 }}
-              >
-                <DiscoverCard video={video} onClick={() => handleCardClick(video)} />
-              </motion.div>
-            ))}
+      <div className="px-3 pt-2 space-y-6">
+        {/* If searching and matching creators exist, show Creators Section */}
+        {isSearching && creators.length > 0 && (
+          <div className="space-y-3">
+            <div className="flex items-center justify-between px-1">
+              <h2 className="text-sm font-bold text-white flex items-center gap-1.5">
+                <Sparkles className="w-4 h-4 text-[#25F4EE]" />
+                Matching Creators ({creators.length})
+              </h2>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
+              {creators.map((c) => {
+                const initial = c.displayName?.[0]?.toUpperCase() || c.creatorName?.[0]?.toUpperCase() || 'C'
+                return (
+                  <motion.div
+                    key={c.id}
+                    onClick={() => handleCreatorClick(c.id)}
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    className="p-3.5 rounded-2xl bg-zinc-950 border border-white/10 hover:border-white/20 flex items-center justify-between gap-3 cursor-pointer transition-all shadow-md group"
+                  >
+                    <div className="flex items-center gap-3 min-w-0">
+                      {/* Avatar */}
+                      <div className="w-12 h-12 rounded-full p-[2px] bg-gradient-to-tr from-amber-400 via-[#FE2C55] to-purple-600 shrink-0">
+                        {c.avatarUrl ? (
+                          <img
+                            src={c.avatarUrl}
+                            alt={c.displayName}
+                            className="w-full h-full rounded-full object-cover"
+                          />
+                        ) : (
+                          <div className="w-full h-full rounded-full bg-zinc-900 flex items-center justify-center font-bold text-white text-sm">
+                            {initial}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Info */}
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-1.5">
+                          <p className="text-sm font-bold text-white truncate group-hover:text-[#FE2C55] transition-colors">
+                            {c.displayName || c.creatorName}
+                          </p>
+                          <span className="text-[10px] px-1.5 py-0.2 rounded bg-white/15 text-white/80 font-medium">
+                            Creator
+                          </span>
+                        </div>
+                        <p className="text-xs text-gray-400 font-mono truncate flex items-center gap-0.5">
+                          <AtSign className="w-3 h-3 text-[#FE2C55]" />
+                          {c.username || c.creatorName}
+                        </p>
+                        <p className="text-[11px] text-gray-500 mt-0.5">
+                          {c.followerCount} followers • {c.videoCount} videos
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="w-8 h-8 rounded-full bg-white/5 group-hover:bg-[#FE2C55] flex items-center justify-center text-gray-400 group-hover:text-white transition-all shrink-0">
+                      <ArrowRight className="w-4 h-4" />
+                    </div>
+                  </motion.div>
+                )
+              })}
+            </div>
           </div>
         )}
+
+        {/* Videos Area */}
+        <div>
+          {isSearching && videos.length > 0 && (
+            <h2 className="text-sm font-bold text-white mb-3 px-1">
+              Videos ({videos.length})
+            </h2>
+          )}
+
+          {isLoading ? (
+            <div className="flex h-64 items-center justify-center">
+              <div className="h-10 w-10 animate-spin rounded-full border-2 border-white/20 border-t-white" />
+            </div>
+          ) : videos.length === 0 && creators.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-24 text-center">
+              <Search className="mb-3 h-12 w-12 text-white/20" />
+              <p className="text-base font-medium text-white/60">
+                {isSearching ? 'No results found' : 'No videos in this genre'}
+              </p>
+              <p className="mt-1 text-sm text-white/30">
+                {isSearching
+                  ? 'Try searching by a different @username, title, or genre'
+                  : 'Check back later for new content'}
+              </p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3.5 pb-8">
+              {videos.map((video, idx) => (
+                <motion.div
+                  key={video.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: Math.min(idx * 0.04, 0.4), duration: 0.3 }}
+                >
+                  <DiscoverCard video={video} onClick={() => handleCardClick(video)} />
+                </motion.div>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   )

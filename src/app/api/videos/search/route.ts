@@ -12,19 +12,25 @@ export async function GET(request: NextRequest) {
     return apiError('SEARCH_QUERY_REQUIRED', parsed.error.issues[0].message);
   }
 
-  const { q, title, publisher, producer, genre, creator, sort, order, page, limit } = parsed.data;
+  const { q, query, title, publisher, producer, genre, creator, sort, order, page, limit } = parsed.data;
+  const searchTerm = q || query;
 
   const skip = (page - 1) * limit;
 
   // Build where clause
   const conditions: Record<string, unknown>[] = [{ status: 'READY' }];
 
-  if (q) {
+  if (searchTerm) {
+    const cleanSearch = searchTerm.trim().replace(/^@/, '');
     conditions.push({
       OR: [
-        { title: { contains: q } },
-        { publisher: { contains: q } },
-        { producer: { contains: q } },
+        { title: { contains: searchTerm } },
+        { publisher: { contains: searchTerm } },
+        { producer: { contains: searchTerm } },
+        { description: { contains: searchTerm } },
+        { creator: { creatorName: { contains: searchTerm } } },
+        { creator: { user: { username: { contains: cleanSearch } } } },
+        { creator: { user: { displayName: { contains: searchTerm } } } },
       ],
     });
   }
@@ -42,8 +48,13 @@ export async function GET(request: NextRequest) {
     conditions.push({ genre });
   }
   if (creator) {
+    const cleanCreator = creator.trim().replace(/^@/, '');
     conditions.push({
-      creator: { creatorName: { contains: creator } },
+      OR: [
+        { creator: { creatorName: { contains: creator } } },
+        { creator: { user: { username: { contains: cleanCreator } } } },
+        { creator: { user: { displayName: { contains: creator } } } },
+      ],
     });
   }
 
@@ -61,7 +72,18 @@ export async function GET(request: NextRequest) {
         where,
         include: {
           creator: {
-            select: { id: true, creatorName: true },
+            select: {
+              id: true,
+              creatorName: true,
+              user: {
+                select: {
+                  id: true,
+                  username: true,
+                  displayName: true,
+                  avatarUrl: true,
+                },
+              },
+            },
           },
         },
         orderBy,

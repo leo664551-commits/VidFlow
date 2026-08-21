@@ -1,6 +1,4 @@
-# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
-
-# dependencies
+# Dependencies
 node_modules
 /.pnp
 .pnp.*
@@ -10,45 +8,56 @@ node_modules
 !.yarn/releases
 !.yarn/versions
 
-# testing
+# Testing & Coverage
 /coverage
 
-# next.js
+# Next.js Build Output
 /.next/
 /out/
-
-# production
 /build
+/dist
 
-# misc
+# Environment Variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+!.env.example
+
+# Local SQLite Database Files
+db/*.db
+db/*.db-journal
+prisma/*.db
+prisma/*.db-journal
+*.sqlite
+*.db
+
+# Uploaded User Content (Media/Avatars)
+public/uploads/videos/*
+public/uploads/avatars/*
+!public/uploads/.gitkeep
+
+# System and IDE Files
 .DS_Store
 *.pem
+Thumbs.db
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
 
-# debug
+# Logs and Diagnostics
+*.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
-
-# env files (can opt-in for committing if needed)
-.env*
-
-# vercel
-.vercel
-
-
-# typescript
-*.tsbuildinfo
-next-env.d.ts
-local-*
-.claude
-.z-ai-config
-*.log
 dev.log
-dev.out.log
-test
-prompt
-
 server.log
-# Skills directory
-/skills/
+
+# TypeScript
+*.tsbuildinfo

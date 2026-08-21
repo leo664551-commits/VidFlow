@@ -32,7 +32,7 @@ export async function GET(request: NextRequest) {
       db.creatorProfile.findMany({
         where,
         include: {
-          user: { select: { id: true, email: true, displayName: true, status: true } },
+          user: { select: { id: true, email: true, username: true, displayName: true, avatarUrl: true, status: true } },
         },
         orderBy: { createdAt: 'desc' },
         skip,

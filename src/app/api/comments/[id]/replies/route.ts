@@ -39,7 +39,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       db.comment.findMany({
         where,
         include: {
-          user: { select: { id: true, displayName: true } },
+          user: { select: { id: true, displayName: true, username: true, avatarUrl: true } },
           _count: {
             select: {
               likes: true,
@@ -70,7 +70,12 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         userLiked: userCommentLikes.has(r.id),
         createdAt: r.createdAt.toISOString(),
         updatedAt: r.updatedAt.toISOString(),
-        user: r.user,
+        user: {
+          id: r.user.id,
+          displayName: r.user.displayName,
+          username: (r.user as any).username || null,
+          avatarUrl: (r.user as any).avatarUrl || null,
+        },
       })),
       page,
       limit,
@@ -113,7 +118,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
         parentCommentId: id,
       },
       include: {
-        user: { select: { id: true, displayName: true } },
+        user: { select: { id: true, displayName: true, username: true, avatarUrl: true } },
       },
     });
 
@@ -124,7 +129,12 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       parentCommentId: reply.parentCommentId,
       createdAt: reply.createdAt.toISOString(),
       updatedAt: reply.updatedAt.toISOString(),
-      user: reply.user,
+      user: {
+        id: reply.user.id,
+        displayName: reply.user.displayName,
+        username: (reply.user as any).username || null,
+        avatarUrl: (reply.user as any).avatarUrl || null,
+      },
     });
   } catch (error) {
     logger.error('Create reply failed', { error: (error as Error).message, parentCommentId: id });

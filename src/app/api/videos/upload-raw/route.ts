@@ -7,6 +7,9 @@ import { logger } from '@/lib/logger';
 export async function POST(request: NextRequest) {
   const user = await getSession(request);
   if (!user) return apiError('UNAUTHORIZED');
+  if (user.role !== 'CREATOR' && user.role !== 'ADMIN') {
+    return apiError('FORBIDDEN', 'Only approved creators can upload videos');
+  }
 
   const blobName = new URL(request.url).searchParams.get('blobName');
   if (!blobName) {

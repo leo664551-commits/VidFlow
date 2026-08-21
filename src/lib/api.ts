@@ -1,3 +1,4 @@
+import { signIn, signOut } from 'next-auth/react'
 import type {
   AuthUser,
   PaginatedResponse,
@@ -8,6 +9,7 @@ import type {
   CommentWithUser,
   CreatorPublicProfile,
   CreatorRating,
+  CreatorReviewItem,
   PinCommentResponse,
   Genre,
   AgeRating,
@@ -36,6 +38,10 @@ export async function getAuthUser(): Promise<AuthUser> {
   return request<AuthUser>('/api/auth/me')
 }
 
+export async function getMyProfile(): Promise<AuthUser> {
+  return request<AuthUser>('/api/users/me')
+}
+
 export async function register(data: {
   email: string
   displayName: string
@@ -49,29 +55,136 @@ export async function register(data: {
 }
 
 export async function login(email: string, password: string) {
-  const res = await fetch('/api/auth/callback/credentials', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email, password }),
+  const res = await signIn('credentials', {
+    email,
+    password,
+    redirect: false,
   })
-  if (!res.ok) {
-    const body = await res.json().catch(() => ({}))
-    throw new Error(body?.error || 'Login failed')
+  if (!res) {
+    throw new Error('Login failed. Please check your network and credentials.')
   }
-  return res.json()
+  if (res.error) {
+    if (res.error === 'CredentialsSignin') {
+      throw new Error('Invalid email or password.')
+    }
+    throw new Error(res.error)
+  }
+  return res
 }
 
 export async function logout(): Promise<void> {
-  await request<void>('/api/auth/logout', { method: 'POST' })
+  await signOut({ redirect: false })
+  await request<void>('/api/auth/logout', { method: 'POST' }).catch(() => {})
 }
 
 export async function updateProfile(data: {
-  displayName: string
+  displayName?: string
+  username?: string
+  bio?: string | null
+  avatarUrl?: string | null
+  gender?: string | null
+  website?: string | null
+  instagram?: string | null
+  youtube?: string | null
+  twitter?: string | null
+  contactEmail?: string | null
+  category?: string | null
 }): Promise<AuthUser> {
   return request<AuthUser>('/api/users/me', {
     method: 'PATCH',
     body: JSON.stringify(data),
   })
+}
+
+export async function uploadAvatar(file: File): Promise<{ avatarUrl: string; message: string }> {
+  const formData = new FormData()
+  formData.append('file', file)
+  return request<{ avatarUrl: string; message: string }>('/api/users/me/avatar', {
+    method: 'POST',
+    body: formData,
+  })
+}
+
+export async function deleteAvatar(): Promise<{ avatarUrl: null; message: string }> {
+  return request<{ avatarUrl: null; message: string }>('/api/users/me/avatar', {
+    method: 'DELETE',
+  })
+}
+
+export async function getMyLikedVideos(): Promise<{ data: FeedVideo[]; total: number }> {
+  return request<{ data: FeedVideo[]; total: number }>('/api/users/me/liked-videos')
+}
+
+export async function getMyRatings(): Promise<{ data: import('@/types').ConsumerRatingItem[]; total: number }> {
+  return request<{ data: import('@/types').ConsumerRatingItem[]; total: number }>('/api/users/me/ratings')
+}
+
+export async function applyToBeCreator(data: {
+  category: string
+  description?: string
+  socialLink?: string
+}): Promise<{ success: boolean; message: string; status: string; applicationId?: string }> {
+  return request<{ success: boolean; message: string; status: string; applicationId?: string }>(
+    '/api/creator/apply',
+    {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }
+  )
+}
+
+export async function getCreatorApplicationStatus(): Promise<{
+  hasApplication: boolean
+  application: {
+    id: string
+    category: string
+    description: string | null
+    socialLink: string | null
+    status: 'PENDING' | 'APPROVED' | 'REJECTED'
+    createdAt: string
+    reviewedAt: string | null
+  } | null
+}> {
+  return request<{
+    hasApplication: boolean
+    application: {
+      id: string
+      category: string
+      description: string | null
+      socialLink: string | null
+      status: 'PENDING' | 'APPROVED' | 'REJECTED'
+      createdAt: string
+      reviewedAt: string | null
+    } | null
+  }>('/api/creator/application-status')
+}
+
+export async function getAdminCreatorApplications(params?: {
+  page?: number
+  limit?: number
+  status?: string
+}): Promise<PaginatedResponse<import('@/types').CreatorApplicationItem>> {
+  const searchParams = new URLSearchParams()
+  if (params?.page) searchParams.set('page', String(params.page))
+  if (params?.limit) searchParams.set('limit', String(params.limit))
+  if (params?.status) searchParams.set('status', params.status)
+  const qs = searchParams.toString()
+  return request<PaginatedResponse<import('@/types').CreatorApplicationItem>>(
+    `/api/admin/creator-applications${qs ? `?${qs}` : ''}`
+  )
+}
+
+export async function reviewCreatorApplication(
+  id: string,
+  status: 'APPROVED' | 'REJECTED'
+): Promise<{ success: boolean; message: string; status: string; applicationId: string }> {
+  return request<{ success: boolean; message: string; status: string; applicationId: string }>(
+    `/api/admin/creator-applications/${id}/status`,
+    {
+      method: 'PATCH',
+      body: JSON.stringify({ status }),
+    }
+  )
 }
 
 // Videos
@@ -216,8 +329,9 @@ export interface CommentWithEngagement extends CommentWithUser {
 }
 
 interface CommentsApiResponse {
- data: CommentWithUser[]
- pinnedCommentId: string | null
+  creatorId?: string | null
+  data: CommentWithUser[]
+  pinnedCommentId: string | null
   pagination: {
     page: number
     limit: number
@@ -229,7 +343,7 @@ interface CommentsApiResponse {
 export async function getVideoComments(
   videoId: string,
   params?: { page?: number; limit?: number }
-): Promise<{ data: CommentWithUser[]; pinnedCommentId: string | null; pagination: { page: number; limit: number; total: number; totalPages: number } }> {
+): Promise<{ creatorId?: string | null; data: CommentWithUser[]; pinnedCommentId: string | null; pagination: { page: number; limit: number; total: number; totalPages: number } }> {
   const searchParams = new URLSearchParams()
   if (params?.page) searchParams.set('page', String(params.page))
   if (params?.limit) searchParams.set('limit', String(params.limit))
@@ -284,6 +398,16 @@ export async function pinComment(
   })
 }
 
+// Follow Creator
+export async function toggleFollowCreator(
+  creatorOrUserId: string
+): Promise<{ isFollowing: boolean; followerCount: number; followingCount: number }> {
+  return request<{ isFollowing: boolean; followerCount: number; followingCount: number }>(
+    `/api/creators/${creatorOrUserId}/follow`,
+    { method: 'POST' }
+  )
+}
+
 // Creator Rating
 export async function getCreatorRating(
   creatorId: string
@@ -293,21 +417,53 @@ export async function getCreatorRating(
 
 export async function rateCreator(
   creatorId: string,
-  rating: number
-): Promise<CreatorRating> {
-  return request<CreatorRating>(`/api/creators/${creatorId}/rate`, {
+  ratingOrData:
+    | number
+    | {
+        overallRating?: number
+        rating?: number
+        contentQuality?: number
+        valueRating?: number
+        creativityRating?: number
+        entertainmentRating?: number
+        consistencyRating?: number
+        review?: string
+        tags?: string[]
+      }
+): Promise<CreatorReviewItem> {
+  const body =
+    typeof ratingOrData === 'number'
+      ? { rating: ratingOrData }
+      : ratingOrData
+  return request<CreatorReviewItem>(`/api/creators/${creatorId}/rate`, {
     method: 'POST',
-    body: JSON.stringify({ rating }),
+    body: JSON.stringify(body),
   })
 }
 
 export async function updateCreatorRating(
   creatorId: string,
-  rating: number
-): Promise<CreatorRating> {
-  return request<CreatorRating>(`/api/creators/${creatorId}/rate`, {
+  ratingOrData:
+    | number
+    | {
+        overallRating?: number
+        rating?: number
+        contentQuality?: number
+        valueRating?: number
+        creativityRating?: number
+        entertainmentRating?: number
+        consistencyRating?: number
+        review?: string
+        tags?: string[]
+      }
+): Promise<CreatorReviewItem> {
+  const body =
+    typeof ratingOrData === 'number'
+      ? { rating: ratingOrData }
+      : ratingOrData
+  return request<CreatorReviewItem>(`/api/creators/${creatorId}/rate`, {
     method: 'PATCH',
-    body: JSON.stringify({ rating }),
+    body: JSON.stringify(body),
   })
 }
 
@@ -315,14 +471,66 @@ export async function deleteCreatorRating(creatorId: string): Promise<void> {
   await request<void>(`/api/creators/${creatorId}/rate`, { method: 'DELETE' })
 }
 
-// Creator
+export interface CreatorDashboardComment {
+  id: string
+  content: string
+  createdAt: string
+  user: {
+    id: string
+    displayName: string
+  }
+  video: {
+    id: string
+    title: string
+    genre: string
+  }
+}
+
+export interface CreatorDashboardReview {
+  id: string
+  overallRating?: number
+  rating: number
+  review: string | null
+  tags: string[]
+  createdAt: string
+  user: {
+    id: string
+    displayName: string
+    username?: string | null
+    avatarUrl?: string | null
+  }
+}
+
+export interface CreatorDashboardRatings {
+  totalRatings: number
+  averageRating: number
+  ratingBreakdown: { 5: number; 4: number; 3: number; 2: number; 1: number }
+  reviews: CreatorDashboardReview[]
+}
+
 export interface CreatorDashboard {
   totalVideos: number
   publishedVideos: number
   processingVideos: number
   failedVideos: number
   totalViews: number
-  recentVideos: VideoWithCreator[]
+  totalLikes?: number
+  totalComments?: number
+  followerCount?: number
+  followingCount?: number
+  profileViews?: number
+  uniqueViewers?: number
+  sharesCount?: number
+  creatorProfile?: {
+    id: string
+    creatorName: string
+    displayName?: string
+    description: string | null
+    bio?: string | null
+  }
+  recentVideos: (VideoWithCreator & { likeCount?: number; commentCount?: number })[]
+  recentComments?: CreatorDashboardComment[]
+  ratings?: CreatorDashboardRatings
 }
 
 export async function getCreatorDashboard(): Promise<CreatorDashboard> {
@@ -340,6 +548,31 @@ export async function getCreatorVideos(
   return request<PaginatedResponse<VideoWithCreator>>(
     `/api/creator/videos${qs ? `?${qs}` : ''}`
   )
+}
+
+export interface CreatorSearchResult {
+  id: string
+  userId: string
+  creatorName: string
+  username: string
+  displayName: string
+  bio: string
+  avatarUrl: string | null
+  gender: string
+  website: string | null
+  instagram: string | null
+  youtube: string | null
+  twitter: string | null
+  contactEmail: string | null
+  videoCount: number
+  followerCount: number
+}
+
+export async function searchCreators(query?: string): Promise<CreatorSearchResult[]> {
+  const searchParams = new URLSearchParams()
+  if (query) searchParams.set('q', query)
+  const qs = searchParams.toString()
+  return request<CreatorSearchResult[]>(`/api/creators${qs ? `?${qs}` : ''}`)
 }
 
 // Admin
@@ -369,7 +602,9 @@ export interface AdminCreator {
   user: {
     id: string
     email: string
+    username?: string | null
     displayName: string
+    avatarUrl?: string | null
     status: UserStatus
   }
 }
@@ -570,18 +805,48 @@ export async function getCommentReplies(
 interface CreatorProfileApiResponse {
   creator: {
     id: string
+    userId: string
     creatorName: string
+    username?: string | null
     displayName: string
     description: string | null
+    bio: string | null
+    category?: string | null
+    categoryChangeCount?: number
+    avatarUrl?: string | null
+    gender?: string | null
+    website?: string | null
+    instagram?: string | null
+    youtube?: string | null
+    twitter?: string | null
+    contactEmail?: string | null
   }
   stats: {
+    postCount: number
     videoCount: number
+    followerCount: number
+    followingCount: number
+    isFollowing: boolean
     totalViews: number
     averageRating: number
     totalRatings: number
+    bayesianScore?: number
+    confidenceLevel?: 'LIMITED_DATA' | 'MODERATE' | 'ESTABLISHED'
+    isLimitedData?: boolean
+    dimensionAverages?: {
+      contentQuality: number
+      valueRating: number
+      creativityRating: number
+      entertainmentRating: number
+      consistencyRating: number
+    }
+    userRating: number | null
+    userReview?: string | null
+    ratingBreakdown: { 5: number; 4: number; 3: number; 2: number; 1: number }
   }
+  ratingEligibility?: import('@/types').RatingEligibility
+  reviews: CreatorReviewItem[]
   videos: PaginatedResponse<FeedVideo>
-  userRating?: number | null
 }
 
 export async function getCreatorProfile(
@@ -592,14 +857,68 @@ export async function getCreatorProfile(
   )
   return {
     id: res.creator.id,
+    userId: res.creator.userId,
     creatorName: res.creator.creatorName,
+    username: res.creator.username || res.creator.creatorName,
     displayName: res.creator.displayName,
     description: res.creator.description,
-    videoCount: res.stats.videoCount,
-    totalViews: res.stats.totalViews,
-    averageRating: res.stats.averageRating,
-    totalRatings: res.stats.totalRatings,
-    userRating: res.userRating ?? null,
-    videos: res.videos.data,
+    bio: res.creator.bio || res.creator.description || '',
+    category: res.creator.category || 'Comedy',
+    categoryChangeCount: res.creator.categoryChangeCount || 0,
+    avatarUrl: res.creator.avatarUrl || null,
+    gender: res.creator.gender || 'PREFER_NOT_TO_SAY',
+    website: res.creator.website || null,
+    instagram: res.creator.instagram || null,
+    youtube: res.creator.youtube || null,
+    twitter: res.creator.twitter || null,
+    contactEmail: res.creator.contactEmail || null,
+    postCount: res.stats.postCount ?? res.stats.videoCount ?? 0,
+    videoCount: res.stats.videoCount ?? 0,
+    followerCount: res.stats.followerCount ?? 0,
+    followingCount: res.stats.followingCount ?? 0,
+    isFollowing: res.stats.isFollowing ?? false,
+    totalViews: res.stats.totalViews ?? 0,
+    averageRating: res.stats.averageRating ?? 0,
+    totalRatings: res.stats.totalRatings ?? 0,
+    bayesianScore: res.stats.bayesianScore,
+    confidenceLevel: res.stats.confidenceLevel,
+    isLimitedData: res.stats.isLimitedData,
+    dimensionAverages: res.stats.dimensionAverages,
+    userRating: res.stats.userRating ?? null,
+    userReview: res.stats.userReview ?? null,
+    ratingBreakdown: res.stats.ratingBreakdown ?? { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 },
+    ratingEligibility: res.ratingEligibility,
+    reviews: res.reviews ?? [],
+    videos: res.videos.data ?? [],
   }
+}
+
+export async function getCreatorFollowers(
+  creatorOrUserId: string
+): Promise<{ total: number; data: import('@/types').FollowUserItem[] }> {
+  return request<{ total: number; data: import('@/types').FollowUserItem[] }>(
+    `/api/creators/${creatorOrUserId}/followers`
+  )
+}
+
+export async function getCreatorFollowing(
+  creatorOrUserId: string
+): Promise<{ total: number; data: import('@/types').FollowUserItem[] }> {
+  return request<{ total: number; data: import('@/types').FollowUserItem[] }>(
+    `/api/creators/${creatorOrUserId}/following`
+  )
+}
+
+// Watch Tracking
+export async function recordVideoWatch(
+  videoId: string,
+  data: { watchDuration: number; videoDuration?: number }
+): Promise<{ videoId: string; watchDuration: number; completionPercentage: number; qualifying: boolean }> {
+  return request<{ videoId: string; watchDuration: number; completionPercentage: number; qualifying: boolean }>(
+    `/api/videos/${videoId}/watch`,
+    {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }
+  ).catch(() => ({ videoId, watchDuration: 0, completionPercentage: 0, qualifying: false }))
 }

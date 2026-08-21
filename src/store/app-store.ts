@@ -3,14 +3,22 @@
 import { create } from 'zustand'
 import type { AppView, AuthUser } from '@/types'
 
+export interface HistoryEntry {
+  view: AppView
+  videoId?: string | null
+  creatorId?: string | null
+}
+
 interface AppState {
   currentView: AppView
+  history: HistoryEntry[]
   user: AuthUser | null
   selectedVideoId: string | null
   searchQuery: string
   commentPanelOpen: boolean
   selectedCreatorId: string | null
   navigate: (view: AppView, videoId?: string) => void
+  goBack: (fallbackView?: AppView) => void
   setUser: (user: AuthUser | null) => void
   clearUser: () => void
   setSearchQuery: (q: string) => void
@@ -20,23 +28,60 @@ interface AppState {
   setSelectedVideoId: (id: string | null) => void
 }
 
-export const useAppStore = create<AppState>((set) => ({
+export const useAppStore = create<AppState>((set, get) => ({
   currentView: 'landing',
+  history: [],
   user: null,
   selectedVideoId: null,
   searchQuery: '',
   commentPanelOpen: false,
   selectedCreatorId: null,
   navigate: (view, videoId) =>
-    set({
-      currentView: view,
-      selectedVideoId: videoId ?? null,
-      commentPanelOpen: false,
+    set((state) => {
+      // Don't add duplicate if clicking same view without video change
+      if (state.currentView === view && state.selectedVideoId === (videoId ?? null)) {
+        return state
+      }
+
+      const prevEntry: HistoryEntry = {
+        view: state.currentView,
+        videoId: state.selectedVideoId,
+        creatorId: state.selectedCreatorId,
+      }
+
+      return {
+        currentView: view,
+        history: [...state.history, prevEntry].slice(-30),
+        selectedVideoId: videoId ?? null,
+        commentPanelOpen: false,
+      }
+    }),
+  goBack: (fallbackView = 'feed') =>
+    set((state) => {
+      if (state.history.length === 0) {
+        return {
+          currentView: fallbackView,
+          selectedVideoId: null,
+          commentPanelOpen: false,
+        }
+      }
+
+      const newHistory = [...state.history]
+      const previous = newHistory.pop()!
+
+      return {
+        currentView: previous.view,
+        history: newHistory,
+        selectedVideoId: previous.videoId ?? null,
+        selectedCreatorId: previous.creatorId ?? state.selectedCreatorId,
+        commentPanelOpen: false,
+      }
     }),
   setUser: (user) => set({ user }),
   clearUser: () =>
     set({
       user: null,
+      history: [],
       currentView: 'landing',
       selectedVideoId: null,
       commentPanelOpen: false,

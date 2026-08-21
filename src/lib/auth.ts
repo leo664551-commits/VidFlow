@@ -44,12 +44,34 @@ export async function getSession(request: NextRequest): Promise<AuthUser | null>
       return null;
     }
 
+    const username = user.username || user.displayName.toLowerCase().replace(/[^a-z0-9_]/g, '') || user.email.split('@')[0];
+
+    const [followerCount, followingCount, postCount] = await Promise.all([
+      db.follow.count({ where: { followingId: user.id } }),
+      db.follow.count({ where: { followerId: user.id } }),
+      db.video.count({ where: { creatorId: user.id } }),
+    ]);
+
     return {
       id: user.id,
       email: user.email,
+      username,
       displayName: user.displayName,
       role: user.role as AuthUser['role'],
       status: user.status as AuthUser['status'],
+      bio: user.bio || user.creatorProfile?.description || '',
+      avatarUrl: user.avatarUrl || null,
+      gender: user.gender || 'PREFER_NOT_TO_SAY',
+      website: user.website || null,
+      instagram: user.instagram || null,
+      youtube: user.youtube || null,
+      twitter: user.twitter || null,
+      contactEmail: user.contactEmail || null,
+      category: user.category || 'Comedy',
+      categoryChangeCount: user.categoryChangeCount || 0,
+      followerCount,
+      followingCount,
+      postCount,
       creatorProfile: user.creatorProfile
         ? {
             id: user.creatorProfile.id,

@@ -68,6 +68,7 @@ export const paginationSchema = z.object({
 
 export const videoSearchSchema = z.object({
   q: z.string().optional(),
+  query: z.string().optional(),
   title: z.string().optional(),
   publisher: z.string().optional(),
   producer: z.string().optional(),
@@ -78,7 +79,7 @@ export const videoSearchSchema = z.object({
   page: z.coerce.number().int().min(1).default(1),
   limit: z.coerce.number().int().min(1).max(100).default(20),
 }).refine(
-  (data) => data.q || data.title || data.publisher || data.producer || data.genre || data.creator,
+  (data) => data.q || data.query || data.title || data.publisher || data.producer || data.genre || data.creator,
   { message: 'At least one search parameter is required' }
 );
 

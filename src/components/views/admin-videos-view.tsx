@@ -41,7 +41,7 @@ import { Video, Trash2, Eye, EyeOff, ArrowLeft } from 'lucide-react'
 import type { VideoStatus, Genre } from '@/types'
 
 export function AdminVideosView() {
-  const navigate = useAppStore((s) => s.navigate)
+  const { navigate, goBack } = useAppStore()
   const { toast } = useToast()
   const queryClient = useQueryClient()
   const [page, setPage] = useState(1)
@@ -73,11 +73,11 @@ export function AdminVideosView() {
   })
 
   return (
-    <div className="min-h-screen bg-gray-950 pb-20">
+    <div className="h-full w-full overflow-y-auto bg-gray-950 pb-32 select-none scrollbar-thin scrollbar-thumb-zinc-800 scroll-smooth">
       {/* Header */}
       <header className="sticky top-0 z-10 bg-gray-950/80 backdrop-blur-md border-b border-gray-800">
         <div className="flex items-center justify-center h-14 px-4 relative">
-          <Button variant="ghost" size="icon" className="absolute left-2 sm:left-4 text-gray-400 hover:text-white hover:bg-gray-800" onClick={() => navigate('feed')} aria-label="Back to feed">
+          <Button variant="ghost" size="icon" className="absolute left-2 sm:left-4 text-gray-400 hover:text-white hover:bg-gray-800" onClick={() => goBack('admin-dashboard')} aria-label="Back">
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <h1 className="text-lg font-bold text-white">Videos</h1>
@@ -123,7 +123,7 @@ export function AdminVideosView() {
                       <TableCell className="text-sm text-gray-400">{v.creator.creatorName}</TableCell>
                       <TableCell><Badge variant="outline" className="border-gray-700 text-gray-400 text-xs">{v.genre.replace('_', ' ')}</Badge></TableCell>
                       <TableCell><StatusBadge status={v.status} /></TableCell>
-                      <TableCell className="text-right text-gray-300">{v.viewCount.toLocaleString()}</TableCell>
+                      <TableCell className="text-right text-gray-300">{(v.viewCount ?? 0).toLocaleString()}</TableCell>
                       <TableCell className="text-right">
                         <div className="flex items-center justify-end gap-1">
                           {v.status === 'READY' ? (

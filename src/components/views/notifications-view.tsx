@@ -25,7 +25,7 @@ export function NotificationsView() {
   }
 
   return (
-    <div className="min-h-screen bg-black pb-20">
+    <div className="h-full w-full overflow-y-auto bg-black text-white pb-32 select-none scrollbar-thin scrollbar-thumb-zinc-800 scroll-smooth">
       {/* Header */}
       <div className="sticky top-0 z-30 bg-black/90 backdrop-blur-sm px-4 py-4">
         <h1 className="text-white text-lg font-bold">Inbox</h1>

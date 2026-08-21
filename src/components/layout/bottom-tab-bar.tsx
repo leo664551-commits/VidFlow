@@ -3,6 +3,7 @@
 import { Home, Search, PlusCircle, Bell, User, Shield } from 'lucide-react'
 import { useAppStore } from '@/store/app-store'
 import type { AppView } from '@/types'
+import { UserAvatar } from '@/components/common/user-avatar'
 
 interface TabItem {
   icon: React.ReactNode
@@ -23,7 +24,19 @@ export function BottomTabBar() {
       ? [{ icon: <PlusCircle className="h-7 w-7" />, label: '', view: 'creator-upload' as AppView, roles: ['CREATOR'] }]
       : []),
     { icon: <Bell className="h-6 w-6" />, label: 'Inbox', view: 'notifications' },
-    { icon: <User className="h-6 w-6" />, label: 'Profile', view: 'profile' },
+    {
+      icon: user?.avatarUrl ? (
+        <UserAvatar
+          src={user.avatarUrl}
+          name={user.displayName || user.email}
+          size="xs"
+        />
+      ) : (
+        <User className="h-6 w-6" />
+      ),
+      label: 'Profile',
+      view: 'profile',
+    },
   ]
 
   const isActive = (view: AppView) => {
@@ -35,7 +48,7 @@ export function BottomTabBar() {
   }
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-40 flex items-center justify-around border-t border-white/10 bg-black/95 backdrop-blur-md pb-[env(safe-area-inset-bottom)]">
+    <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 flex items-center justify-around border-t border-white/10 bg-black/95 backdrop-blur-md pb-[env(safe-area-inset-bottom)]">
       {tabs.map((tab) => {
         const active = isActive(tab.view)
         return (

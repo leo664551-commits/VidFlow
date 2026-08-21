@@ -15,7 +15,13 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     const video = await db.video.findUnique({
       where: { id },
       include: {
-        creator: { select: { id: true, creatorName: true } },
+        creator: {
+          select: {
+            id: true,
+            creatorName: true,
+            user: { select: { id: true, displayName: true, username: true, avatarUrl: true } },
+          },
+        },
         _count: {
           select: {
             likes: true,
@@ -94,7 +100,13 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       pinnedCommentId: video.pinnedCommentId,
       createdAt: video.createdAt.toISOString(),
       updatedAt: video.updatedAt.toISOString(),
-      creator: video.creator,
+      creator: {
+        id: video.creator.id,
+        creatorName: video.creator.creatorName,
+        displayName: video.creator.user.displayName,
+        username: video.creator.user.username || null,
+        avatarUrl: video.creator.user.avatarUrl || null,
+      },
       likeCount: video._count.likes,
       commentCount,
       ...(user ? { userLiked } : {}),

@@ -2,49 +2,35 @@
 
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table'
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog'
-import { PaginationControls } from '@/components/common/pagination-controls'
-import { TableSkeleton } from '@/components/common/loading-skeleton'
-import { EmptyState } from '@/components/common/empty-state'
+  ArrowLeft,
+  Upload,
+  Home,
+  Film,
+  MessageSquare,
+  BarChart3,
+  HelpCircle,
+  Play,
+  Trash2,
+  Eye,
+  ChevronDown,
+  Globe,
+  Search,
+} from 'lucide-react'
 import { getCreatorVideos, deleteVideo } from '@/lib/api'
 import { useAppStore } from '@/store/app-store'
-import { useToast } from '@/hooks/use-toast'
+import { TableSkeleton } from '@/components/common/loading-skeleton'
+import { PaginationControls } from '@/components/common/pagination-controls'
+import { toast } from 'sonner'
 import { format } from 'date-fns'
-import { Video, Pencil, Trash2, Upload, ArrowLeft } from 'lucide-react'
 import type { VideoStatus } from '@/types'
 
 export function CreatorVideosView() {
-  const navigate = useAppStore((s) => s.navigate)
-  const { toast } = useToast()
+  const { navigate, goBack } = useAppStore()
   const queryClient = useQueryClient()
   const [page, setPage] = useState(1)
   const [status, setStatus] = useState<VideoStatus | 'ALL'>('ALL')
+  const [searchFilter, setSearchFilter] = useState('')
   const [deleteId, setDeleteId] = useState<string | null>(null)
 
   const { data, isLoading } = useQuery({
@@ -62,206 +48,311 @@ export function CreatorVideosView() {
     onSuccess: () => {
       setDeleteId(null)
       queryClient.invalidateQueries({ queryKey: ['creator-videos'] })
-      toast({ title: 'Video deleted' })
+      queryClient.invalidateQueries({ queryKey: ['creator-dashboard'] })
+      toast.success('Video deleted successfully')
     },
     onError: (err) => {
-      toast({
-        title: 'Delete failed',
-        description: err instanceof Error ? err.message : 'Error',
-        variant: 'destructive',
-      })
+      toast.error(err instanceof Error ? err.message : 'Delete failed')
     },
   })
 
+  const videos = data?.data ?? []
+  const filteredVideos = searchFilter.trim()
+    ? videos.filter((v) => v.title.toLowerCase().includes(searchFilter.toLowerCase()))
+    : videos
+
   return (
-    <div className="min-h-screen bg-gray-950 pb-20">
-      {/* Header */}
-      <header className="sticky top-0 z-10 bg-gray-950/80 backdrop-blur-sm border-b border-white/5">
-        <div className="flex items-center px-4 h-12">
-          <Button
-            variant="ghost"
-            size="icon"
-            className="text-gray-300 hover:text-white hover:bg-white/10 -ml-2"
-            onClick={() => navigate('feed')}
-            aria-label="Back to feed"
+    <div className="h-full w-full overflow-y-auto bg-black text-white pb-32 select-none scrollbar-thin scrollbar-thumb-zinc-800 scroll-smooth">
+      {/* Top Header Bar */}
+      <header className="sticky top-0 z-30 bg-black/90 backdrop-blur-md border-b border-white/10 px-4 sm:px-8 py-3.5 flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => goBack('creator-dashboard')}
+            className="p-2 -ml-2 rounded-xl text-gray-400 hover:text-white hover:bg-white/5 transition-colors"
+            aria-label="Back to dashboard"
           >
             <ArrowLeft className="h-5 w-5" />
-          </Button>
-          <h1 className="flex-1 text-center text-lg font-semibold text-white -ml-12">
-            My Videos
-          </h1>
-          <Button
-            onClick={() => navigate('creator-upload')}
-            size="sm"
-            className="bg-white text-gray-950 hover:bg-gray-200 font-medium h-8"
-          >
-            <Upload className="h-3.5 w-3.5 mr-1" />
-            Upload
-          </Button>
+          </button>
+          <div className="flex items-center gap-2">
+            <span className="text-lg font-black tracking-tight text-white flex items-center gap-1">
+              Vid<span className="text-[#FE2C55]">Flow</span>
+            </span>
+            <span className="text-base font-bold text-gray-300">Creator Center</span>
+            <span className="px-2 py-0.5 rounded-md bg-[#FE2C55]/20 text-[#FE2C55] text-[10px] font-black uppercase tracking-wider border border-[#FE2C55]/30">
+              Beta
+            </span>
+          </div>
         </div>
+
+        <button
+          onClick={() => navigate('creator-upload')}
+          className="hidden sm:flex items-center gap-2 px-5 py-2 rounded-xl bg-[#FE2C55] hover:bg-[#FE2C55]/90 text-white font-bold text-sm shadow-lg shadow-[#FE2C55]/20 transition-all hover:scale-[1.02]"
+        >
+          <Upload className="w-4 h-4" />
+          Upload
+        </button>
       </header>
 
-      <div className="px-4 pt-4">
-        {/* Status Filter */}
-        <div className="mb-4">
-          <Select
-            value={status}
-            onValueChange={(v) => {
-              setStatus(v as VideoStatus | 'ALL')
-              setPage(1)
-            }}
-          >
-            <SelectTrigger className="w-full sm:w-48 bg-gray-900 border-white/10 text-white h-9">
-              <SelectValue placeholder="Filter by status" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="ALL">All Statuses</SelectItem>
-              <SelectItem value="READY">Ready</SelectItem>
-              <SelectItem value="PROCESSING">Processing</SelectItem>
-              <SelectItem value="UPLOADING">Uploading</SelectItem>
-              <SelectItem value="FAILED">Failed</SelectItem>
-              <SelectItem value="UNPUBLISHED">Unpublished</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
+      {/* Main Container with Sidebar + Content */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          {/* Left Navigation Sidebar */}
+          <div className="lg:col-span-3 space-y-4">
+            <button
+              onClick={() => navigate('creator-upload')}
+              className="w-full py-3.5 rounded-2xl bg-[#FE2C55] hover:bg-[#FE2C55]/90 text-white font-bold text-base shadow-xl shadow-[#FE2C55]/25 flex items-center justify-center gap-2 transition-all hover:scale-[1.01]"
+            >
+              <Upload className="w-5 h-5" />
+              Upload
+            </button>
 
-        {isLoading && <TableSkeleton rows={5} cols={5} />}
+            <div className="rounded-3xl bg-zinc-950 border border-white/10 p-3 space-y-1">
+              <button
+                onClick={() => navigate('creator-dashboard')}
+                className="w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm text-gray-400 hover:text-white hover:bg-white/5 transition-all"
+              >
+                <Home className="w-5 h-5" />
+                <span>Home</span>
+              </button>
 
-        {!isLoading && data && data.data.length > 0 && (
-          <>
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow className="border-white/10 hover:bg-transparent">
-                    <TableHead className="text-gray-400 text-xs uppercase tracking-wider">
-                      Title
-                    </TableHead>
-                    <TableHead className="text-gray-400 text-xs uppercase tracking-wider">
-                      Status
-                    </TableHead>
-                    <TableHead className="text-gray-400 text-xs uppercase tracking-wider text-right">
-                      Views
-                    </TableHead>
-                    <TableHead className="text-gray-400 text-xs uppercase tracking-wider text-right">
-                      Date
-                    </TableHead>
-                    <TableHead className="text-gray-400 text-xs uppercase tracking-wider text-right">
-                      Actions
-                    </TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {data.data.map((v) => (
-                    <TableRow
-                      key={v.id}
-                      className="border-white/5 hover:bg-white/5"
-                    >
-                      <TableCell className="font-medium text-white max-w-[200px] truncate">
-                        {v.title}
-                      </TableCell>
-                      <TableCell>
-                        <StatusBadge status={v.status} />
-                      </TableCell>
-                      <TableCell className="text-right text-gray-300">
-                        {v.viewCount.toLocaleString()}
-                      </TableCell>
-                      <TableCell className="text-right text-sm text-gray-500">
-                        {format(new Date(v.createdAt), 'MMM d, yyyy')}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex items-center justify-end gap-1">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="text-gray-400 hover:text-white hover:bg-white/10 h-8 w-8"
-                            onClick={() => navigate('creator-edit-video', v.id)}
-                          >
-                            <Pencil className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="text-gray-400 hover:text-red-400 hover:bg-red-500/10 h-8 w-8"
-                            onClick={() => setDeleteId(v.id)}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+              <button
+                className="w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm bg-white/10 text-[#FE2C55]"
+              >
+                <Film className="w-5 h-5" />
+                <span>Posts</span>
+              </button>
+
+              <button
+                onClick={() => navigate('creator-dashboard')}
+                className="w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm text-gray-400 hover:text-white hover:bg-white/5 transition-all"
+              >
+                <MessageSquare className="w-5 h-5" />
+                <span>Comments</span>
+              </button>
+
+              <div className="pt-2">
+                <div className="px-4 py-2 flex items-center justify-between text-xs font-bold text-gray-400">
+                  <span className="flex items-center gap-2">
+                    <BarChart3 className="w-4 h-4" />
+                    Analytics
+                  </span>
+                  <ChevronDown className="w-3.5 h-3.5" />
+                </div>
+                <div className="pl-7 pr-2 space-y-1 pt-1">
+                  <button onClick={() => navigate('creator-dashboard')} className="w-full text-left py-1.5 px-3 rounded-lg text-xs font-semibold text-gray-400 hover:text-white transition-colors">
+                    Key metrics
+                  </button>
+                  <button className="w-full text-left py-1.5 px-3 rounded-lg text-xs font-semibold text-[#FE2C55] bg-white/5">
+                    Content
+                  </button>
+                  <button onClick={() => navigate('profile')} className="w-full text-left py-1.5 px-3 rounded-lg text-xs font-semibold text-gray-400 hover:text-white transition-colors">
+                    Followers
+                  </button>
+                </div>
+              </div>
             </div>
-            <PaginationControls
-              page={data.pagination.page}
-              totalPages={data.pagination.totalPages}
-              onPageChange={setPage}
-            />
-          </>
-        )}
+          </div>
 
-        {!isLoading && data && data.data.length === 0 && (
-          <EmptyState
-            icon={Video}
-            title="No videos found"
-            description="Upload your first video to get started."
-          />
-        )}
+          {/* Right Main Table Content: Manage your posts */}
+          <div className="lg:col-span-9 space-y-6">
+            <div className="rounded-3xl bg-zinc-950 border border-white/10 p-6 sm:p-8 space-y-6 shadow-xl">
+              {/* Header */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div>
+                  <h1 className="text-2xl font-black text-white">Manage your posts</h1>
+                  <p className="text-xs text-gray-400 mt-1">View, manage, and analyze your published video content</p>
+                </div>
+
+                {/* Search in Posts */}
+                <div className="relative w-full sm:w-64">
+                  <input
+                    type="text"
+                    value={searchFilter}
+                    onChange={(e) => setSearchFilter(e.target.value)}
+                    placeholder="Search posts..."
+                    className="w-full h-10 pl-9 pr-3 rounded-xl bg-zinc-900 border border-white/15 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-[#FE2C55]"
+                  />
+                  <Search className="w-4 h-4 text-gray-500 absolute left-3 top-3" />
+                </div>
+              </div>
+
+              {/* Posts Table List */}
+              {isLoading ? (
+                <TableSkeleton />
+              ) : filteredVideos.length === 0 ? (
+                <div className="py-16 text-center space-y-3">
+                  <Film className="w-12 h-12 text-zinc-600 mx-auto" />
+                  <h3 className="text-base font-bold text-white">No posts found</h3>
+                  <p className="text-xs text-gray-400">You haven&apos;t uploaded any videos matching this filter yet.</p>
+                  <button
+                    onClick={() => navigate('creator-upload')}
+                    className="mt-2 px-6 py-2.5 rounded-xl bg-[#FE2C55] hover:bg-[#FE2C55]/90 text-white font-bold text-xs"
+                  >
+                    Upload your first video
+                  </button>
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left border-collapse">
+                    <thead>
+                      <tr className="border-b border-white/10 text-[11px] font-bold text-gray-400 uppercase tracking-wider">
+                        <th className="pb-3 pr-4">Posts</th>
+                        <th className="pb-3 px-4 text-center">Actions</th>
+                        <th className="pb-3 px-4">Status</th>
+                        <th className="pb-3 pl-4">Privacy</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-white/5">
+                      {filteredVideos.map((video) => (
+                        <tr key={video.id} className="hover:bg-white/[0.02] transition-colors group">
+                          {/* Posts Column: Thumbnail + Title + Engagement */}
+                          <td className="py-4 pr-4">
+                            <div className="flex items-start gap-3.5 max-w-md">
+                              {/* 9:16 Thumbnail */}
+                              <div
+                                onClick={() => navigate('video-detail', video.id)}
+                                className="relative w-16 aspect-[9/14] rounded-xl bg-zinc-800 border border-white/10 overflow-hidden shrink-0 cursor-pointer shadow-md"
+                              >
+                                <div className="w-full h-full bg-gradient-to-b from-purple-900 via-rose-900 to-black flex items-center justify-center group-hover:scale-105 transition-transform">
+                                  <Play className="w-5 h-5 text-white fill-white opacity-80" />
+                                </div>
+                                {video.duration && (
+                                  <span className="absolute bottom-1 right-1 px-1 rounded bg-black/80 text-[8px] font-bold text-white">
+                                    00:{String(video.duration).padStart(2, '0')}
+                                  </span>
+                                )}
+                              </div>
+
+                              {/* Title + Hashtags + Engagement Metrics Row */}
+                              <div className="flex-1 min-w-0">
+                                <h4
+                                  onClick={() => navigate('video-detail', video.id)}
+                                  className="text-sm font-bold text-white group-hover:text-[#25F4EE] transition-colors cursor-pointer line-clamp-2 leading-snug"
+                                >
+                                  {video.title}
+                                </h4>
+                                <p className="text-[11px] text-gray-400 mt-0.5 truncate">
+                                  #{video.genre.toLowerCase()} #viral #trending
+                                </p>
+
+                                {/* Engagement Counts */}
+                                <div className="flex items-center gap-3.5 mt-2 text-[11px] text-gray-400 font-medium">
+                                  <span className="flex items-center gap-1 text-gray-300">
+                                    ▶ {(video.viewCount ?? 0).toLocaleString()}
+                                  </span>
+                                  <span className="flex items-center gap-1">
+                                    ❤️ {Math.floor((video.viewCount ?? 0) * 0.12)}
+                                  </span>
+                                  <span className="flex items-center gap-1">
+                                    💬 {Math.floor((video.viewCount ?? 0) * 0.04)}
+                                  </span>
+                                  <span className="flex items-center gap-1">
+                                    ↗ 0
+                                  </span>
+                                  <span className="flex items-center gap-1">
+                                    🔖 1
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+                          </td>
+
+                          {/* Actions Column: Edit, Comments, Delete */}
+                          <td className="py-4 px-4 text-center">
+                            <div className="flex items-center justify-center gap-2">
+                              <button
+                                onClick={() => navigate('video-detail', video.id)}
+                                className="p-2 rounded-xl text-gray-400 hover:text-white hover:bg-white/10 transition-colors"
+                                title="View Video Details"
+                              >
+                                <Eye className="w-4 h-4" />
+                              </button>
+                              <button
+                                onClick={() => {
+                                  useAppStore.getState().setSelectedVideoId(video.id)
+                                  useAppStore.getState().setCommentPanelOpen(true)
+                                }}
+                                className="p-2 rounded-xl text-gray-400 hover:text-white hover:bg-white/10 transition-colors"
+                                title="Open Comments"
+                              >
+                                <MessageSquare className="w-4 h-4" />
+                              </button>
+                              <button
+                                onClick={() => setDeleteId(video.id)}
+                                className="p-2 rounded-xl text-gray-400 hover:text-red-400 hover:bg-red-500/10 transition-colors"
+                                title="Delete Video"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </div>
+                          </td>
+
+                          {/* Status Column */}
+                          <td className="py-4 px-4 whitespace-nowrap">
+                            <div className="space-y-1">
+                              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/15 text-emerald-400 border border-emerald-500/20">
+                                Posted
+                              </span>
+                              <p className="text-[11px] text-gray-400">
+                                {format(new Date(video.createdAt), 'MMM d, yyyy h:mm a')}
+                              </p>
+                            </div>
+                          </td>
+
+                          {/* Privacy Column */}
+                          <td className="py-4 pl-4 whitespace-nowrap">
+                            <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-zinc-900 border border-white/10 text-xs font-semibold text-gray-300">
+                              <Globe className="w-3.5 h-3.5 text-gray-400" />
+                              <span>Everyone</span>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+
+              {/* Pagination */}
+              {data?.pagination && data.pagination.totalPages > 1 && (
+                <div className="pt-4 border-t border-white/10">
+                  <PaginationControls
+                    page={page}
+                    totalPages={data.pagination.totalPages}
+                    onPageChange={setPage}
+                  />
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
       </div>
 
-      {/* Delete Confirmation Dialog */}
-      <AlertDialog
-        open={!!deleteId}
-        onOpenChange={(open) => !open && setDeleteId(null)}
-      >
-        <AlertDialogContent className="bg-gray-900 border-white/10">
-          <AlertDialogHeader>
-            <AlertDialogTitle className="text-white">
-              Delete Video
-            </AlertDialogTitle>
-            <AlertDialogDescription className="text-gray-400">
-              Are you sure you want to delete this video? This action cannot be
-              undone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel className="text-gray-400 border-white/10 hover:bg-white/5 hover:text-gray-200">
-              Cancel
-            </AlertDialogCancel>
-            <AlertDialogAction
-              onClick={() => deleteId && deleteMutation.mutate(deleteId)}
-              className="bg-red-600 text-white hover:bg-red-700"
-            >
-              Delete
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      {/* Delete Confirmation Modal */}
+      {deleteId && (
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="max-w-sm w-full rounded-3xl bg-zinc-900 border border-white/15 p-6 space-y-4 shadow-2xl">
+            <h3 className="text-lg font-bold text-white">Delete Video</h3>
+            <p className="text-xs text-gray-400">
+              Are you sure you want to delete this video? This action is permanent and cannot be undone.
+            </p>
+            <div className="flex gap-3 pt-2">
+              <button
+                onClick={() => setDeleteId(null)}
+                className="flex-1 py-2.5 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-xs font-bold text-white transition-all"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => deleteMutation.mutate(deleteId)}
+                className="flex-1 py-2.5 rounded-xl bg-red-600 hover:bg-red-500 text-xs font-bold text-white transition-all shadow-lg shadow-red-600/30"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
-  )
-}
-
-function StatusBadge({ status }: { status: string }) {
-  const className =
-    status === 'READY'
-      ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/20 hover:bg-emerald-500/25'
-      : status === 'FAILED'
-        ? 'bg-red-500/15 text-red-400 border-red-500/20 hover:bg-red-500/25'
-        : status === 'PROCESSING'
-          ? 'bg-amber-500/15 text-amber-400 border-amber-500/20 hover:bg-amber-500/25'
-          : 'bg-white/10 text-gray-400 border-white/5 hover:bg-white/15'
-
-  const variant =
-    status === 'READY'
-      ? 'default'
-      : status === 'FAILED'
-        ? 'destructive'
-        : 'secondary'
-
-  return (
-    <Badge variant={variant} className={`text-xs font-medium ${className}`}>
-      {status}
-    </Badge>
   )
 }

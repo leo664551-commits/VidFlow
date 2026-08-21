@@ -14,24 +14,23 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Z.ai Code Scaffold - AI-Powered Development",
-  description: "Modern Next.js scaffold optimized for AI-powered development with Z.ai. Built with TypeScript, Tailwind CSS, and shadcn/ui.",
-  keywords: ["Z.ai", "Next.js", "TypeScript", "Tailwind CSS", "shadcn/ui", "AI development", "React"],
-  authors: [{ name: "Z.ai Team" }],
+  title: "VidFlow - TikTok-Style Short Video Platform",
+  description: "VidFlow is a modern, cloud-native short video sharing web platform. Watch, like, comment, and share trending videos.",
+  keywords: ["VidFlow", "Short Videos", "TikTok", "Reels", "Entertainment", "Video Sharing"],
+  authors: [{ name: "VidFlow Team" }],
   icons: {
-    icon: "https://z-cdn.chatglm.cn/z-ai/static/logo.svg",
+    icon: "/logo.svg",
   },
   openGraph: {
-    title: "Z.ai Code Scaffold",
-    description: "AI-powered development with modern React stack",
-    url: "https://chat.z.ai",
-    siteName: "Z.ai",
+    title: "VidFlow - Short Video Platform",
+    description: "Discover trending short videos and follow your favorite creators on VidFlow.",
+    siteName: "VidFlow",
     type: "website",
   },
   twitter: {
     card: "summary_large_image",
-    title: "Z.ai Code Scaffold",
-    description: "AI-powered development with modern React stack",
+    title: "VidFlow - Short Video Platform",
+    description: "Discover trending short videos and follow your favorite creators on VidFlow.",
   },
 };
 
@@ -41,9 +40,9 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en" className="dark bg-black" suppressHydrationWarning>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-background text-foreground`}
+        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-black text-white dark`}
       >
         {children}
         <Toaster />

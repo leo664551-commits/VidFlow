@@ -19,9 +19,23 @@ export type Genre =
 export interface AuthUser {
   id: string;
   email: string;
+  username?: string | null;
   displayName: string;
   role: UserRole;
   status: UserStatus;
+  bio?: string | null;
+  avatarUrl?: string | null;
+  gender?: string | null;
+  website?: string | null;
+  instagram?: string | null;
+  youtube?: string | null;
+  twitter?: string | null;
+  contactEmail?: string | null;
+  category?: string | null;
+  categoryChangeCount?: number;
+  followerCount?: number;
+  followingCount?: number;
+  postCount?: number;
   creatorProfile?: {
     id: string;
     creatorName: string;
@@ -103,7 +117,23 @@ export interface FeedVideo {
     id: string;
     creatorName: string;
     displayName: string;
+    username?: string | null;
+    avatarUrl?: string | null;
   };
+}
+
+export interface FollowUserItem {
+  id: string;
+  displayName: string;
+  username: string | null;
+  avatarUrl: string | null;
+  role: string;
+  bio: string | null;
+  creatorProfileId?: string | null;
+  creatorName?: string | null;
+  isFollowing: boolean;
+  isSelf: boolean;
+  followedAt?: string;
 }
 
 export interface CommentWithUser {
@@ -115,6 +145,8 @@ export interface CommentWithUser {
   user: {
     id: string;
     displayName: string;
+    username?: string | null;
+    avatarUrl?: string | null;
   };
   replyCount: number;
   likeCount: number;
@@ -136,23 +168,166 @@ export interface FeedComment {
   likeCount?: number;
 }
 
+export interface RatingBreakdown {
+  5: number;
+  4: number;
+  3: number;
+  2: number;
+  1: number;
+}
+
+export interface RatingEligibility {
+  eligible: boolean;
+  canRate: boolean;
+  isSelf: boolean;
+  status: 'NOT_LOGGED_IN' | 'SELF' | 'NOT_ELIGIBLE' | 'ALMOST_ELIGIBLE' | 'ELIGIBLE' | 'ALREADY_RATED';
+  qualifyingVideos: number;
+  requiredVideos: number;
+  averageCompletion: number;
+  totalCreatorVideos: number;
+  reason: string;
+  userRating?: {
+    id: string;
+    overallRating: number;
+    rating: number;
+    contentQuality: number | null;
+    valueRating: number | null;
+    creativityRating: number | null;
+    entertainmentRating: number | null;
+    consistencyRating: number | null;
+    review: string | null;
+    tags: string[];
+    createdAt: string;
+    updatedAt: string;
+  } | null;
+}
+
+export interface CreatorReviewItem {
+  id: string;
+  overallRating: number;
+  rating: number;
+  contentQuality?: number | null;
+  valueRating?: number | null;
+  creativityRating?: number | null;
+  entertainmentRating?: number | null;
+  consistencyRating?: number | null;
+  review: string | null;
+  tags: string[] | null;
+  createdAt: string;
+  user: {
+    id: string;
+    displayName: string;
+    username?: string | null;
+    avatarUrl?: string | null;
+  };
+}
+
+export interface ConsumerRatingItem {
+  id: string;
+  creatorId: string;
+  overallRating: number;
+  rating: number;
+  contentQuality: number;
+  valueRating: number;
+  creativityRating: number;
+  entertainmentRating: number;
+  consistencyRating: number;
+  review: string | null;
+  tags: string[];
+  createdAt: string;
+  updatedAt: string;
+  creator: {
+    id: string;
+    userId: string;
+    creatorName: string;
+    displayName: string;
+    username: string;
+    avatarUrl: string | null;
+  };
+}
+
+export interface CreatorApplicationItem {
+  id: string;
+  userId: string;
+  category: string;
+  description: string | null;
+  socialLink: string | null;
+  status: 'PENDING' | 'APPROVED' | 'REJECTED';
+  reviewedAt: string | null;
+  reviewedBy: string | null;
+  createdAt: string;
+  user: {
+    id: string;
+    email: string;
+    username?: string | null;
+    displayName: string;
+    avatarUrl: string | null;
+    status: UserStatus;
+    createdAt: string;
+  };
+}
+
 export interface CreatorPublicProfile {
   id: string;
+  userId: string;
   creatorName: string;
+  username?: string | null;
   displayName: string;
   description: string | null;
+  bio: string | null;
+  category?: string | null;
+  categoryChangeCount?: number;
+  avatarUrl?: string | null;
+  gender?: string | null;
+  website?: string | null;
+  instagram?: string | null;
+  youtube?: string | null;
+  twitter?: string | null;
+  contactEmail?: string | null;
+  postCount: number;
   videoCount: number;
+  followerCount: number;
+  followingCount: number;
+  isFollowing: boolean;
   totalViews: number;
   averageRating: number;
   totalRatings: number;
+  bayesianScore?: number;
+  confidenceLevel?: 'LIMITED_DATA' | 'MODERATE' | 'ESTABLISHED';
+  isLimitedData?: boolean;
+  dimensionAverages?: {
+    contentQuality: number;
+    valueRating: number;
+    creativityRating: number;
+    entertainmentRating: number;
+    consistencyRating: number;
+  };
   userRating: number | null;
+  userReview?: string | null;
+  ratingBreakdown: RatingBreakdown;
+  ratingEligibility?: RatingEligibility;
+  reviews: CreatorReviewItem[];
   videos: FeedVideo[];
 }
 
 export interface CreatorRating {
   averageRating: number;
   totalRatings: number;
+  bayesianScore?: number;
+  confidenceLevel?: 'LIMITED_DATA' | 'MODERATE' | 'ESTABLISHED';
+  isLimitedData?: boolean;
+  dimensionAverages?: {
+    contentQuality: number;
+    valueRating: number;
+    creativityRating: number;
+    entertainmentRating: number;
+    consistencyRating: number;
+  };
   userRating: number | null;
+  userReview?: string | null;
+  ratingBreakdown?: RatingBreakdown;
+  reviews?: CreatorReviewItem[];
+  eligibility?: RatingEligibility;
 }
 
 export interface PinCommentResponse {

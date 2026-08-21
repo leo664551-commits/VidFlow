@@ -33,7 +33,7 @@ interface FormData {
 
 export function CreatorEditVideoView() {
   const selectedVideoId = useAppStore((s) => s.selectedVideoId)
-  const navigate = useAppStore((s) => s.navigate)
+  const { navigate, goBack } = useAppStore()
   const { toast } = useToast()
   const queryClient = useQueryClient()
 
@@ -103,7 +103,7 @@ export function CreatorEditVideoView() {
   if (!video) return null
 
   return (
-    <div className="min-h-screen bg-gray-950 pb-20">
+    <div className="h-full w-full overflow-y-auto bg-gray-950 pb-32 select-none scrollbar-thin scrollbar-thumb-zinc-800 scroll-smooth">
       {/* Header */}
       <header className="sticky top-0 z-10 bg-gray-950/80 backdrop-blur-sm border-b border-white/5">
         <div className="flex items-center px-4 h-12">
@@ -111,8 +111,8 @@ export function CreatorEditVideoView() {
             variant="ghost"
             size="icon"
             className="text-gray-300 hover:text-white hover:bg-white/10 -ml-2"
-            onClick={() => navigate('feed')}
-            aria-label="Back to feed"
+            onClick={() => goBack('creator-videos')}
+            aria-label="Back"
           >
             <ArrowLeft className="h-5 w-5" />
           </Button>

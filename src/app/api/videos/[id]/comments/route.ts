@@ -17,7 +17,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   // Check video exists
   const video = await db.video.findUnique({
     where: { id },
-    select: { id: true, pinnedCommentId: true },
+    select: { id: true, creatorId: true, pinnedCommentId: true },
   });
   if (!video) return apiError('VIDEO_NOT_FOUND');
 
@@ -38,7 +38,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       db.comment.findMany({
         where,
         include: {
-          user: { select: { id: true, displayName: true } },
+          user: { select: { id: true, displayName: true, username: true, avatarUrl: true } },
           _count: {
             select: {
               replies: {
@@ -66,9 +66,37 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       userCommentLikes = new Set(likes.map((l) => l.commentId));
     }
 
+    // If a pinned comment exists, ensure it is placed at the very top of the list
+    let sortedComments = [...comments];
+    if (video.pinnedCommentId) {
+      const pinnedIdx = sortedComments.findIndex((c) => c.id === video.pinnedCommentId);
+      if (pinnedIdx > 0) {
+        const [pinnedItem] = sortedComments.splice(pinnedIdx, 1);
+        sortedComments.unshift(pinnedItem);
+      } else if (pinnedIdx === -1 && page === 1) {
+        // If pinned comment is not in the first page batch, fetch it and place at top
+        const pinnedComment = await db.comment.findUnique({
+          where: { id: video.pinnedCommentId },
+          include: {
+            user: { select: { id: true, displayName: true, username: true, avatarUrl: true } },
+            _count: {
+              select: {
+                replies: { where: { status: 'VISIBLE' } },
+                likes: true,
+              },
+            },
+          },
+        });
+        if (pinnedComment && (user?.role === 'ADMIN' || pinnedComment.status === 'VISIBLE')) {
+          sortedComments.unshift(pinnedComment);
+        }
+      }
+    }
+
     return NextResponse.json({
+      creatorId: video.creatorId,
       pinnedCommentId: video.pinnedCommentId,
-      data: comments.map((c) => ({
+      data: sortedComments.map((c) => ({
         id: c.id,
         content: c.content,
         status: c.status,
@@ -77,7 +105,12 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         ...(user ? { userLiked: userCommentLikes.has(c.id) } : {}),
         createdAt: c.createdAt.toISOString(),
         updatedAt: c.updatedAt.toISOString(),
-        user: c.user,
+        user: {
+          id: c.user.id,
+          displayName: c.user.displayName,
+          username: c.user.username || null,
+          avatarUrl: c.user.avatarUrl || null,
+        },
       })),
       pagination: {
         page,
@@ -129,7 +162,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
         parentCommentId: parsed.data.parentCommentId ?? null,
       },
       include: {
-        user: { select: { id: true, displayName: true } },
+        user: { select: { id: true, displayName: true, username: true, avatarUrl: true } },
       },
     });
 
@@ -140,7 +173,12 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       parentCommentId: comment.parentCommentId,
       createdAt: comment.createdAt.toISOString(),
       updatedAt: comment.updatedAt.toISOString(),
-      user: comment.user,
+      user: {
+        id: comment.user.id,
+        displayName: comment.user.displayName,
+        username: comment.user.username || null,
+        avatarUrl: comment.user.avatarUrl || null,
+      },
     });
   } catch (error) {
     logger.error('Create comment failed', { error: (error as Error).message, videoId: id });

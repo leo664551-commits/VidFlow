@@ -12,7 +12,7 @@ import { Users, Video, Eye, Clock, AlertCircle, CheckCircle2, UserPlus, MessageS
 import { useAppStore } from '@/store/app-store'
 
 export function AdminDashboardView() {
-  const navigate = useAppStore((s) => s.navigate)
+  const { navigate, goBack } = useAppStore()
 
   const { data, isLoading } = useQuery({
     queryKey: ['admin-dashboard'],
@@ -39,11 +39,11 @@ export function AdminDashboardView() {
   ]
 
   return (
-    <div className="min-h-screen bg-gray-950 pb-20">
+    <div className="h-full w-full overflow-y-auto bg-gray-950 pb-32 select-none scrollbar-thin scrollbar-thumb-zinc-800 scroll-smooth">
       {/* Header */}
       <header className="sticky top-0 z-10 bg-gray-950/80 backdrop-blur-md border-b border-gray-800">
         <div className="flex items-center justify-center h-14 px-4 relative">
-          <Button variant="ghost" size="icon" className="absolute left-2 sm:left-4 text-gray-400 hover:text-white hover:bg-gray-800" onClick={() => navigate('feed')} aria-label="Back to feed">
+          <Button variant="ghost" size="icon" className="absolute left-2 sm:left-4 text-gray-400 hover:text-white hover:bg-gray-800" onClick={() => goBack('feed')} aria-label="Back to feed">
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <h1 className="text-lg font-bold text-white">Admin Dashboard</h1>

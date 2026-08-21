@@ -8,7 +8,7 @@ export function LandingView() {
   const navigate = useAppStore((s) => s.navigate)
 
   return (
-    <div className="min-h-screen bg-black flex flex-col items-center justify-center px-8 relative overflow-hidden">
+    <div className="h-full w-full bg-black flex flex-col items-center justify-center px-8 relative overflow-hidden">
       {/* Subtle radial glow */}
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(255,255,255,0.03)_0%,transparent_70%)]" />
 
