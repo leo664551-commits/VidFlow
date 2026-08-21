@@ -178,13 +178,14 @@ export async function getAdminCreatorApplications(params?: {
 
 export async function reviewCreatorApplication(
   id: string,
-  status: 'APPROVED' | 'REJECTED'
+  status: 'APPROVED' | 'REJECTED',
+  reason?: string
 ): Promise<{ success: boolean; message: string; status: string; applicationId: string }> {
   return request<{ success: boolean; message: string; status: string; applicationId: string }>(
     `/api/admin/creator-applications/${id}/status`,
     {
       method: 'PATCH',
-      body: JSON.stringify({ status }),
+      body: JSON.stringify({ status, reason }),
     }
   )
 }
@@ -579,16 +580,35 @@ export async function searchCreators(query?: string): Promise<CreatorSearchResul
 
 // Admin
 export interface AdminDashboard {
-  totalConsumers: number
-  totalCreators: number
-  totalVideos: number
-  publishedVideos: number
-  processingVideos: number
-  failedVideos: number
-  recentUploads: VideoWithCreator[]
-  recentUsers: AuthUser[]
-  recentComments: Comment[]
-  mostViewedVideos: VideoWithCreator[]
+  stats: {
+    totalUsers: number
+    totalCreators: number
+    totalVideos: number
+    readyVideos: number
+    totalComments: number
+    totalVideoLikes: number
+    totalCreatorRatings: number
+    totalViews: number
+  }
+  recentUsers: Array<{
+    id: string
+    email: string
+    displayName: string
+    role: string
+    status: string
+    createdAt: string
+  }>
+  recentVideos: Array<{
+    id: string
+    title: string
+    status: VideoStatus
+    createdAt: string
+    creator: { creatorName: string }
+  }>
+  // Backwards-compatible aliases for any consumer views
+  totalConsumers?: number
+  totalCreators?: number
+  totalVideos?: number
 }
 
 export async function getAdminDashboard(): Promise<AdminDashboard> {
@@ -753,6 +773,25 @@ export async function updateCommentStatus(
 
 export async function adminDeleteComment(id: string): Promise<void> {
   await request<void>(`/api/admin/comments/${id}`, { method: 'DELETE' })
+}
+
+export async function getAdminAuditLogs(params?: {
+  page?: number
+  limit?: number
+  action?: string
+  entityType?: string
+  search?: string
+}): Promise<PaginatedResponse<import('@/types').AdminAuditLogItem>> {
+  const searchParams = new URLSearchParams()
+  if (params?.page) searchParams.set('page', String(params.page))
+  if (params?.limit) searchParams.set('limit', String(params.limit))
+  if (params?.action) searchParams.set('action', params.action)
+  if (params?.entityType) searchParams.set('entityType', params.entityType)
+  if (params?.search) searchParams.set('search', params.search)
+  const qs = searchParams.toString()
+  return request<PaginatedResponse<import('@/types').AdminAuditLogItem>>(
+    `/api/admin/audit-logs${qs ? `?${qs}` : ''}`
+  )
 }
 
 // Feed

@@ -23,6 +23,9 @@ export function BottomTabBar() {
     ...(role === 'CREATOR'
       ? [{ icon: <PlusCircle className="h-7 w-7" />, label: '', view: 'creator-upload' as AppView, roles: ['CREATOR'] }]
       : []),
+    ...(role === 'ADMIN'
+      ? [{ icon: <Shield className="h-6 w-6 text-cyan-400" />, label: 'Admin', view: 'admin-dashboard' as AppView, roles: ['ADMIN'] }]
+      : []),
     { icon: <Bell className="h-6 w-6" />, label: 'Notifications', view: 'notifications' },
     {
       icon: user?.avatarUrl ? (
@@ -44,6 +47,7 @@ export function BottomTabBar() {
     if (view === 'discover' && currentView === 'discover') return true
     if (view === 'notifications' && currentView === 'notifications') return true
     if (view === 'profile' && currentView === 'profile') return true
+    if (view === 'admin-dashboard' && currentView.startsWith('admin-')) return true
     return false
   }
 

@@ -16,7 +16,7 @@ export async function PATCH(
 
   try {
     const body = await request.json();
-    const { status } = body;
+    const { status, reason } = body;
 
     if (status !== 'APPROVED' && status !== 'REJECTED') {
       return apiError('VALIDATION_ERROR', 'Status must be APPROVED or REJECTED');
@@ -77,7 +77,7 @@ export async function PATCH(
       status === 'APPROVED' ? 'CREATOR_APPLICATION_APPROVED' : 'CREATOR_APPLICATION_REJECTED',
       'CreatorApplication',
       id,
-      { applicantUserId: application.userId, status }
+      { applicantUserId: application.userId, status, reason: reason || undefined }
     );
 
     return apiSuccess({

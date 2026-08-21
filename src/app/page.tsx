@@ -23,11 +23,16 @@ import { CreatorVideosView } from '@/components/views/creator-videos-view'
 import { CreatorUploadView } from '@/components/views/creator-upload-view'
 import { CreatorEditVideoView } from '@/components/views/creator-edit-video-view'
 import { AdminDashboardView } from '@/components/views/admin-dashboard-view'
+import { AdminApplicationsView } from '@/components/views/admin-applications-view'
 import { AdminCreatorsView } from '@/components/views/admin-creators-view'
 import { AdminCreatorNewView } from '@/components/views/admin-creator-new-view'
 import { AdminUsersView } from '@/components/views/admin-users-view'
 import { AdminVideosView } from '@/components/views/admin-videos-view'
 import { AdminCommentsView } from '@/components/views/admin-comments-view'
+import { AdminModerationView } from '@/components/views/admin-moderation-view'
+import { AdminAuditLogsView } from '@/components/views/admin-audit-logs-view'
+import { AdminAnalyticsView } from '@/components/views/admin-analytics-view'
+import { AdminSystemView } from '@/components/views/admin-system-view'
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -38,8 +43,9 @@ const queryClient = new QueryClient({
 const AUTH_VIEWS = new Set(['landing', 'login', 'register'])
 const DASHBOARD_VIEWS = new Set([
   'creator-dashboard', 'creator-videos', 'creator-upload', 'creator-edit-video',
-  'admin-dashboard', 'admin-creators', 'admin-creator-new',
-  'admin-users', 'admin-videos', 'admin-comments',
+  'admin-dashboard', 'admin-applications', 'admin-creators', 'admin-creator-new',
+  'admin-users', 'admin-videos', 'admin-comments', 'admin-moderation',
+  'admin-audit-logs', 'admin-analytics', 'admin-system',
 ])
 
 function ViewRouter() {
@@ -60,11 +66,16 @@ function ViewRouter() {
     'creator-upload': <CreatorUploadView />,
     'creator-edit-video': <CreatorEditVideoView />,
     'admin-dashboard': <AdminDashboardView />,
+    'admin-applications': <AdminApplicationsView />,
     'admin-creators': <AdminCreatorsView />,
     'admin-creator-new': <AdminCreatorNewView />,
     'admin-users': <AdminUsersView />,
     'admin-videos': <AdminVideosView />,
     'admin-comments': <AdminCommentsView />,
+    'admin-moderation': <AdminModerationView />,
+    'admin-audit-logs': <AdminAuditLogsView />,
+    'admin-analytics': <AdminAnalyticsView />,
+    'admin-system': <AdminSystemView />,
   }
 
   return (
@@ -93,7 +104,11 @@ export default function Home() {
     getAuthUser()
       .then((u) => {
         setUser(u)
-        navigate('feed')
+        if (u.role === 'ADMIN') {
+          navigate('admin-dashboard')
+        } else {
+          navigate('feed')
+        }
       })
       .catch(() => {
         setUser(null)
@@ -107,14 +122,22 @@ export default function Home() {
     return () => window.removeEventListener('popstate', handlePopState)
   }, [])
 
-  const showSidebar = !AUTH_VIEWS.has(currentView) && !DASHBOARD_VIEWS.has(currentView)
-  const showTabBar = user && !AUTH_VIEWS.has(currentView) && !DASHBOARD_VIEWS.has(currentView)
-  const showCommentPanel = !DASHBOARD_VIEWS.has(currentView) && !AUTH_VIEWS.has(currentView)
+  // Strict Admin Isolation: Admins only access the Admin Control Center
+  useEffect(() => {
+    if (user?.role === 'ADMIN' && !currentView.startsWith('admin-') && !AUTH_VIEWS.has(currentView)) {
+      navigate('admin-dashboard')
+    }
+  }, [user, currentView, navigate])
+
+  const isAdmin = user?.role === 'ADMIN'
+  const showSidebar = !isAdmin && !AUTH_VIEWS.has(currentView) && !DASHBOARD_VIEWS.has(currentView)
+  const showTabBar = !isAdmin && user && !AUTH_VIEWS.has(currentView) && !DASHBOARD_VIEWS.has(currentView)
+  const showCommentPanel = !isAdmin && !DASHBOARD_VIEWS.has(currentView) && !AUTH_VIEWS.has(currentView)
 
   return (
     <QueryClientProvider client={queryClient}>
       <div className="h-dvh w-screen overflow-hidden bg-black text-white flex">
-        {/* Desktop Left Sidebar (TikTok Web style) */}
+        {/* Desktop Left Sidebar (Consumer/Creator only) */}
         {showSidebar && <DesktopSidebar />}
 
         {/* Main Content Area */}
@@ -126,7 +149,7 @@ export default function Home() {
           <ViewRouter />
         </main>
 
-        {/* Mobile Bottom Tab Bar */}
+        {/* Mobile Bottom Tab Bar (Consumer/Creator only) */}
         {showTabBar && <BottomTabBar />}
 
         {/* Slide-in Comment Drawer */}

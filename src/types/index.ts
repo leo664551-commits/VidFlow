@@ -36,11 +36,31 @@ export interface AuthUser {
   followerCount?: number;
   followingCount?: number;
   postCount?: number;
+  createdAt?: string;
   creatorProfile?: {
     id: string;
     creatorName: string;
     description: string | null;
   } | null;
+}
+
+export interface Comment {
+  id: string;
+  videoId: string;
+  userId: string;
+  content: string;
+  status: CommentStatus;
+  createdAt: string;
+  parentCommentId?: string | null;
+  user?: {
+    id: string;
+    displayName: string;
+    avatarUrl?: string | null;
+  };
+  video?: {
+    id: string;
+    title: string;
+  };
 }
 
 export interface PaginatedResponse<T> {
@@ -388,8 +408,43 @@ export type AppView =
   | 'creator-upload'
   | 'creator-edit-video'
   | 'admin-dashboard'
+  | 'admin-applications'
   | 'admin-creators'
   | 'admin-creator-new'
   | 'admin-users'
   | 'admin-videos'
-  | 'admin-comments';
+  | 'admin-comments'
+  | 'admin-moderation'
+  | 'admin-audit-logs'
+  | 'admin-analytics'
+  | 'admin-system';
+
+export interface AdminAuditLogItem {
+  id: string;
+  actorUserId: string;
+  action: string;
+  entityType: string;
+  entityId: string;
+  metadata: string | null;
+  createdAt: string;
+  actor: {
+    id: string;
+    email: string;
+    displayName: string;
+    role: string;
+    avatarUrl?: string | null;
+  };
+}
+
+export interface AdminReportItem {
+  id: string;
+  type: 'VIDEO' | 'USER' | 'COMMENT';
+  targetId: string;
+  targetTitle?: string;
+  targetAuthor?: string;
+  reporterName: string;
+  reason: string;
+  priority: 'HIGH' | 'NORMAL' | 'LOW';
+  status: 'OPEN' | 'IN_REVIEW' | 'RESOLVED' | 'DISMISSED';
+  createdAt: string;
+}

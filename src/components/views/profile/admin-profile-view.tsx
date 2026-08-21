@@ -469,100 +469,99 @@ export function AdminProfileView() {
 
         {/* Tab Content */}
         <div className="p-4">
-          {/* TAB 1: PENDING CREATOR APPLICATIONS */}
+          {/* TAB 1: ADMINISTRATIVE HUBS & OPERATIONS */}
           {activeTab === 'applications' && (
-            appsLoading ? (
-              <div className="py-20 flex justify-center">
-                <Loader2 className="w-8 h-8 animate-spin text-[#FE2C55]" />
-              </div>
-            ) : applicationsList.length > 0 ? (
-              <div className="space-y-3">
-                {applicationsList.map((app: CreatorApplicationItem) => (
-                  <div
-                    key={app.id}
-                    className="p-4 rounded-2xl bg-zinc-900 border border-white/10 space-y-3 shadow-md"
-                  >
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="flex items-center gap-3">
-                        <UserAvatar
-                          src={app.user.avatarUrl}
-                          name={app.user.displayName}
-                          size="md"
-                          bordered
-                        />
-                        <div>
-                          <h4 className="text-sm font-bold text-white">
-                            {app.user.displayName}
-                          </h4>
-                          <p className="text-xs text-gray-400 font-mono">
-                            @{app.user.username || app.user.email}
-                          </p>
-                        </div>
-                      </div>
-
-                      <span className="px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30 text-xs font-bold uppercase">
-                        {app.category}
-                      </span>
+            <div className="space-y-3">
+              <div className="p-4 rounded-2xl bg-gradient-to-r from-cyan-950/60 to-zinc-900 border border-cyan-500/30 space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2.5">
+                    <div className="p-2 rounded-xl bg-cyan-500/20 text-cyan-400">
+                      <Shield className="w-5 h-5" />
                     </div>
-
-                    {app.description && (
-                      <p className="text-xs text-gray-300 bg-white/5 p-2.5 rounded-xl border border-white/5">
-                        <span className="font-semibold text-gray-400 block mb-1">Content Plan:</span>
-                        {app.description}
-                      </p>
-                    )}
-
-                    {app.socialLink && (
-                      <p className="text-xs text-[#25F4EE] truncate">
-                        🔗 Portfolio/Channel:{' '}
-                        <a
-                          href={app.socialLink}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="hover:underline"
-                        >
-                          {app.socialLink}
-                        </a>
-                      </p>
-                    )}
-
-                    {/* Review Actions */}
-                    <div className="flex items-center gap-2 pt-2 border-t border-white/10">
-                      <button
-                        onClick={() => handleReviewApplication(app.id, 'APPROVED')}
-                        disabled={reviewingId === app.id}
-                        className="flex-1 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-lg transition-all flex items-center justify-center gap-1.5 disabled:opacity-50"
-                      >
-                        {reviewingId === app.id ? (
-                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                        ) : (
-                          <CheckCircle className="w-3.5 h-3.5" />
-                        )}
-                        Approve Creator
-                      </button>
-                      <button
-                        onClick={() => handleReviewApplication(app.id, 'REJECTED')}
-                        disabled={reviewingId === app.id}
-                        className="px-4 py-2 rounded-xl bg-red-950/50 hover:bg-red-900/50 border border-red-500/30 text-red-300 font-bold text-xs transition-all flex items-center justify-center gap-1.5 disabled:opacity-50"
-                      >
-                        <XCircle className="w-3.5 h-3.5" />
-                        Reject
-                      </button>
+                    <div>
+                      <h3 className="text-sm font-bold text-white">VidFlow Executive Control Center</h3>
+                      <p className="text-xs text-zinc-400">Platform moderation, creator approvals, and audit records</p>
                     </div>
                   </div>
-                ))}
-              </div>
-            ) : (
-              <div className="py-16 text-center text-gray-500 space-y-3">
-                <div className="w-14 h-14 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center mx-auto">
-                  <CheckCircle className="w-7 h-7" />
                 </div>
-                <h3 className="text-base font-bold text-white">No pending applications</h3>
-                <p className="text-xs text-gray-400 max-w-xs mx-auto">
-                  All creator applications have been reviewed.
-                </p>
+
+                <button
+                  onClick={() => navigate('admin-dashboard')}
+                  className="w-full py-2.5 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-black font-bold text-xs flex items-center justify-center gap-2 shadow-lg transition-all"
+                >
+                  <span>Launch Full Control Center</span>
+                  <ChevronRight className="w-4 h-4" />
+                </button>
               </div>
-            )
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                <button
+                  onClick={() => navigate('admin-applications')}
+                  className="p-3.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-amber-500/30 text-left transition-all group flex items-center justify-between"
+                >
+                  <div className="flex items-center gap-3">
+                    <UserCheck className="w-4 h-4 text-amber-400" />
+                    <div>
+                      <p className="text-xs font-bold text-white group-hover:text-amber-400 transition-colors">
+                        Creator Applications
+                      </p>
+                      <p className="text-[10px] text-zinc-400">
+                        {applicationsList.length} pending review
+                      </p>
+                    </div>
+                  </div>
+                  <ChevronRight className="w-4 h-4 text-zinc-500 group-hover:text-white transition-colors" />
+                </button>
+
+                <button
+                  onClick={() => navigate('admin-users')}
+                  className="p-3.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-left transition-all group flex items-center justify-between"
+                >
+                  <div className="flex items-center gap-3">
+                    <Users className="w-4 h-4 text-cyan-400" />
+                    <div>
+                      <p className="text-xs font-bold text-white group-hover:text-cyan-400 transition-colors">
+                        User Operations
+                      </p>
+                      <p className="text-[10px] text-zinc-400">Manage consumers & creators</p>
+                    </div>
+                  </div>
+                  <ChevronRight className="w-4 h-4 text-zinc-500 group-hover:text-white transition-colors" />
+                </button>
+
+                <button
+                  onClick={() => navigate('admin-videos')}
+                  className="p-3.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-left transition-all group flex items-center justify-between"
+                >
+                  <div className="flex items-center gap-3">
+                    <Film className="w-4 h-4 text-violet-400" />
+                    <div>
+                      <p className="text-xs font-bold text-white group-hover:text-violet-400 transition-colors">
+                        Video Moderation
+                      </p>
+                      <p className="text-[10px] text-zinc-400">Review & publish media</p>
+                    </div>
+                  </div>
+                  <ChevronRight className="w-4 h-4 text-zinc-500 group-hover:text-white transition-colors" />
+                </button>
+
+                <button
+                  onClick={() => navigate('admin-audit-logs')}
+                  className="p-3.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-left transition-all group flex items-center justify-between"
+                >
+                  <div className="flex items-center gap-3">
+                    <Clock className="w-4 h-4 text-emerald-400" />
+                    <div>
+                      <p className="text-xs font-bold text-white group-hover:text-emerald-400 transition-colors">
+                        Audit Log Trail
+                      </p>
+                      <p className="text-[10px] text-zinc-400">Immutable security logs</p>
+                    </div>
+                  </div>
+                  <ChevronRight className="w-4 h-4 text-zinc-500 group-hover:text-white transition-colors" />
+                </button>
+              </div>
+            </div>
           )}
 
           {/* TAB 2: LIKED VIDEOS */}

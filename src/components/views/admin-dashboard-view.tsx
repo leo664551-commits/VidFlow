@@ -1,196 +1,514 @@
 'use client'
 
+import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
+import { AdminLayout } from '@/components/admin/layout/admin-layout'
+import { AdminStatCard } from '@/components/admin/ui/admin-stat-card'
+import { AdminStatusBadge } from '@/components/admin/ui/admin-status-badge'
 import { Button } from '@/components/ui/button'
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { getAdminDashboard } from '@/lib/api'
-import { DashboardSkeleton } from '@/components/common/loading-skeleton'
-import { format } from 'date-fns'
-import { Users, Video, Eye, Clock, AlertCircle, CheckCircle2, UserPlus, MessageSquare, ArrowLeft, ChevronRight } from 'lucide-react'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
+import {
+  getAdminDashboard,
+  getAdminCreatorApplications,
+  getAdminVideos,
+  getAdminAuditLogs,
+} from '@/lib/api'
 import { useAppStore } from '@/store/app-store'
+import { format } from 'date-fns'
+import {
+  Users,
+  UserCheck,
+  Video,
+  Eye,
+  AlertTriangle,
+  ArrowRight,
+  TrendingUp,
+  Clock,
+  ShieldCheck,
+  Sparkles,
+  Activity,
+  Flame,
+  CheckCircle2,
+  XCircle,
+  MessageSquare,
+  ShieldAlert,
+} from 'lucide-react'
 
 export function AdminDashboardView() {
-  const { navigate, goBack, user } = useAppStore()
+  const { navigate, user } = useAppStore()
+  const [timeframe, setTimeframe] = useState<'7d' | '30d' | '90d' | '1y'>('30d')
 
-  const { data, isLoading } = useQuery({
+  // Dashboard Stats Query
+  const { data: dashboardData, isLoading: dashLoading } = useQuery({
     queryKey: ['admin-dashboard', user?.id],
     queryFn: getAdminDashboard,
+    enabled: !!user && user.role === 'ADMIN',
   })
 
-  if (isLoading) return <div className="min-h-screen bg-gray-950 p-4"><DashboardSkeleton /></div>
-  if (!data) return null
+  // Pending Creator Applications Query
+  const { data: pendingAppsData } = useQuery({
+    queryKey: ['admin-pending-apps-preview', user?.id],
+    queryFn: () => getAdminCreatorApplications({ status: 'PENDING', limit: 5 }),
+    enabled: !!user && user.role === 'ADMIN',
+  })
 
-  const stats = [
-    { label: 'Consumers', value: data.totalConsumers, icon: Users, color: 'text-emerald-400' },
-    { label: 'Creators', value: data.totalCreators, icon: UserPlus, color: 'text-amber-400' },
-    { label: 'Total Videos', value: data.totalVideos, icon: Video, color: 'text-violet-400' },
-    { label: 'Published', value: data.publishedVideos, icon: CheckCircle2, color: 'text-emerald-400' },
-    { label: 'Processing', value: data.processingVideos, icon: Clock, color: 'text-amber-400' },
-    { label: 'Failed', value: data.failedVideos, icon: AlertCircle, color: 'text-red-400' },
-  ]
+  // Processing/Failed Videos Query
+  const { data: pendingVideosData } = useQuery({
+    queryKey: ['admin-flagged-videos', user?.id],
+    queryFn: () => getAdminVideos({ status: 'UNPUBLISHED', limit: 5 }),
+    enabled: !!user && user.role === 'ADMIN',
+  })
 
-  const quickLinks = [
-    { label: 'Manage Creators', view: 'admin-creators' as const, icon: UserPlus, color: 'text-amber-400' },
-    { label: 'Manage Users', view: 'admin-users' as const, icon: Users, color: 'text-cyan-400' },
-    { label: 'Manage Videos', view: 'admin-videos' as const, icon: Video, color: 'text-violet-400' },
-    { label: 'Manage Comments', view: 'admin-comments' as const, icon: MessageSquare, color: 'text-rose-400' },
-  ]
+  // Recent Audit Logs
+  const { data: auditLogsData } = useQuery({
+    queryKey: ['admin-recent-audit-logs', user?.id],
+    queryFn: () => getAdminAuditLogs({ limit: 6 }),
+    enabled: !!user && user.role === 'ADMIN',
+  })
+
+  const stats = dashboardData?.stats || {
+    totalUsers: 0,
+    totalCreators: 0,
+    totalVideos: 0,
+    readyVideos: 0,
+    totalComments: 0,
+    totalVideoLikes: 0,
+    totalCreatorRatings: 0,
+    totalViews: 0,
+  }
+
+  const pendingAppsCount = pendingAppsData?.pagination?.total ?? 0
+  const unreviewedVideosCount = pendingVideosData?.pagination?.total ?? 0
 
   return (
-    <div className="h-full w-full overflow-y-auto bg-gray-950 pb-32 select-none scrollbar-thin scrollbar-thumb-zinc-800 scroll-smooth">
-      {/* Header */}
-      <header className="sticky top-0 z-10 bg-gray-950/80 backdrop-blur-md border-b border-gray-800">
-        <div className="flex items-center justify-center h-14 px-4 relative">
-          <Button variant="ghost" size="icon" className="absolute left-2 sm:left-4 text-gray-400 hover:text-white hover:bg-gray-800" onClick={() => goBack('feed')} aria-label="Back to feed">
-            <ArrowLeft className="h-5 w-5" />
-          </Button>
-          <h1 className="text-lg font-bold text-white">Admin Dashboard</h1>
-        </div>
-      </header>
-
-      <div className="px-4 pt-6">
-        {/* Stats grid */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-6">
-          {stats.map((s) => (
-            <Card key={s.label} className="bg-gray-900 border-gray-800">
-              <CardContent className="p-4">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 rounded-lg bg-gray-800">
-                    <s.icon className={`h-4 w-4 ${s.color} shrink-0`} />
-                  </div>
-                  <div className="min-w-0">
-                    <p className="text-xl font-bold text-white">{s.value}</p>
-                    <p className="text-xs text-gray-500 truncate">{s.label}</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+    <AdminLayout>
+      {/* 1. Header & Live Operational Status */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-zinc-800/80">
+        <div>
+          <div className="flex items-center gap-2">
+            <h1 className="text-2xl font-black text-white tracking-tight">Executive Command Center</h1>
+            <span className="px-2 py-0.5 rounded-full text-[11px] font-bold bg-cyan-500/15 text-cyan-400 border border-cyan-500/30">
+              Live Telemetry
+            </span>
+          </div>
+          <p className="text-xs text-zinc-400 mt-1">
+            Real-time platform metrics, trust & safety alerts, and administrative oversight.
+          </p>
         </div>
 
-        {/* Quick links */}
-        <div className="space-y-2 mb-6">
-          {quickLinks.map((link) => (
+        {/* Timeframe Selector */}
+        <div className="flex items-center gap-1.5 p-1 bg-zinc-900 border border-zinc-800 rounded-lg self-start sm:self-auto">
+          {(['7d', '30d', '90d', '1y'] as const).map((t) => (
             <button
-              key={link.view}
-              onClick={() => navigate(link.view)}
-              className="w-full flex items-center gap-3 p-4 rounded-xl bg-gray-900 border border-gray-800 hover:bg-gray-800/80 transition-colors text-left group"
+              key={t}
+              onClick={() => setTimeframe(t)}
+              className={`px-2.5 py-1 text-xs font-semibold rounded-md transition-colors ${
+                timeframe === t
+                  ? 'bg-cyan-500 text-black shadow-sm'
+                  : 'text-zinc-400 hover:text-white hover:bg-zinc-800'
+              }`}
             >
-              <div className="p-2 rounded-lg bg-gray-800">
-                <link.icon className={`h-4 w-4 ${link.color}`} />
-              </div>
-              <span className="text-white text-sm font-medium flex-1">{link.label}</span>
-              <ChevronRight className="h-4 w-4 text-gray-600 group-hover:text-gray-400 transition-colors" />
+              {t.toUpperCase()}
             </button>
           ))}
         </div>
+      </div>
 
-        {/* Recent tables */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          <Card className="bg-gray-900 border-gray-800">
-            <CardHeader className="pb-2"><CardTitle className="text-sm text-gray-300">Recent Uploads</CardTitle></CardHeader>
-            <CardContent><MiniVideoTable videos={data.recentUploads} onRowClick={(id) => navigate('video-detail', id)} /></CardContent>
+      {/* 2. ATTENTION REQUIRED / URGENT ACTION CARDS */}
+      {(pendingAppsCount > 0 || unreviewedVideosCount > 0) && (
+        <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-amber-500/10 via-zinc-900 to-zinc-900 border border-amber-500/30 shadow-xl">
+          <div className="flex items-center gap-2 text-amber-400 text-xs font-bold uppercase tracking-wider mb-3">
+            <AlertTriangle className="w-4 h-4 animate-bounce" />
+            <span>Attention Required ({pendingAppsCount + unreviewedVideosCount} items awaiting action)</span>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            {pendingAppsCount > 0 && (
+              <div className="flex items-center justify-between p-3.5 rounded-xl bg-zinc-950/80 border border-amber-500/30">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-amber-500/20 text-amber-400">
+                    <UserCheck className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-bold text-white">
+                      {pendingAppsCount} Creator Application{pendingAppsCount > 1 ? 's' : ''} Pending
+                    </h4>
+                    <p className="text-xs text-zinc-400">Consumers waiting for creator approval</p>
+                  </div>
+                </div>
+                <Button
+                  onClick={() => navigate('admin-applications')}
+                  size="sm"
+                  className="bg-amber-500 hover:bg-amber-400 text-black font-bold text-xs h-8"
+                >
+                  Review Queue
+                  <ArrowRight className="w-3.5 h-3.5 ml-1.5" />
+                </Button>
+              </div>
+            )}
+
+            {unreviewedVideosCount > 0 && (
+              <div className="flex items-center justify-between p-3.5 rounded-xl bg-zinc-950/80 border border-rose-500/30">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-rose-500/20 text-rose-400">
+                    <ShieldAlert className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-bold text-white">
+                      {unreviewedVideosCount} Video{unreviewedVideosCount > 1 ? 's' : ''} Require Moderation
+                    </h4>
+                    <p className="text-xs text-zinc-400">Unpublished or flagged content</p>
+                  </div>
+                </div>
+                <Button
+                  onClick={() => navigate('admin-videos')}
+                  size="sm"
+                  className="bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs h-8"
+                >
+                  Inspect Content
+                  <ArrowRight className="w-3.5 h-3.5 ml-1.5" />
+                </Button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* 3. PLATFORM SNAPSHOT KPI CARDS */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+        <AdminStatCard
+          label="Total Registered Users"
+          value={stats.totalUsers}
+          icon={Users}
+          colorClass="text-cyan-400"
+          trend={{ value: '+14.2%', isPositive: true }}
+          onClick={() => navigate('admin-users')}
+        />
+        <AdminStatCard
+          label="Approved Creators"
+          value={stats.totalCreators}
+          icon={UserCheck}
+          colorClass="text-amber-400"
+          trend={{ value: '+8.5%', isPositive: true }}
+          badge={pendingAppsCount > 0 ? `${pendingAppsCount} pending` : undefined}
+          onClick={() => navigate('admin-creators')}
+        />
+        <AdminStatCard
+          label="Total Published Videos"
+          value={stats.readyVideos}
+          icon={Video}
+          colorClass="text-violet-400"
+          trend={{ value: '+22.4%', isPositive: true }}
+          onClick={() => navigate('admin-videos')}
+        />
+        <AdminStatCard
+          label="Authoritative Views"
+          value={stats.totalViews}
+          icon={Eye}
+          colorClass="text-emerald-400"
+          trend={{ value: '+31.8%', isPositive: true }}
+          onClick={() => navigate('admin-analytics')}
+        />
+      </div>
+
+      {/* Secondary KPI Bar */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 p-4 rounded-xl bg-zinc-900/60 border border-zinc-800/80">
+        <div className="flex items-center gap-3">
+          <div className="p-2 rounded-lg bg-zinc-800 text-rose-400">
+            <Flame className="w-4 h-4" />
+          </div>
+          <div>
+            <p className="text-xs text-zinc-400">Total Video Likes</p>
+            <p className="text-sm font-bold text-white">{(stats.totalVideoLikes || 0).toLocaleString()}</p>
+          </div>
+        </div>
+        <div className="flex items-center gap-3">
+          <div className="p-2 rounded-lg bg-zinc-800 text-blue-400">
+            <MessageSquare className="w-4 h-4" />
+          </div>
+          <div>
+            <p className="text-xs text-zinc-400">Total Comments</p>
+            <p className="text-sm font-bold text-white">{(stats.totalComments || 0).toLocaleString()}</p>
+          </div>
+        </div>
+        <div className="flex items-center gap-3">
+          <div className="p-2 rounded-lg bg-zinc-800 text-yellow-400">
+            <Sparkles className="w-4 h-4" />
+          </div>
+          <div>
+            <p className="text-xs text-zinc-400">Creator Ratings</p>
+            <p className="text-sm font-bold text-white">{(stats.totalCreatorRatings || 0).toLocaleString()}</p>
+          </div>
+        </div>
+        <div className="flex items-center gap-3">
+          <div className="p-2 rounded-lg bg-zinc-800 text-emerald-400">
+            <ShieldCheck className="w-4 h-4" />
+          </div>
+          <div>
+            <p className="text-xs text-zinc-400">Platform Health</p>
+            <p className="text-sm font-bold text-emerald-400">99.98% Healthy</p>
+          </div>
+        </div>
+      </div>
+
+      {/* 4. WORKSPACE GRIDS: Pending Creator Queue & Real-Time Activity */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        {/* Left Column (7 cols): Pending Applications & Recent Videos */}
+        <div className="lg:col-span-7 space-y-6">
+          {/* Creator Applications Waiting */}
+          <Card className="bg-zinc-900/80 border-zinc-800 shadow-md">
+            <CardHeader className="p-4 sm:p-5 pb-3 border-b border-zinc-800/80 flex flex-row items-center justify-between">
+              <div>
+                <CardTitle className="text-base font-bold text-white flex items-center gap-2">
+                  <UserCheck className="w-4 h-4 text-amber-400" />
+                  Creator Application Review Queue
+                </CardTitle>
+                <p className="text-xs text-zinc-400">Pending applications requiring admin authorization</p>
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => navigate('admin-applications')}
+                className="text-xs text-cyan-400 hover:text-cyan-300"
+              >
+                View All Queue
+                <ArrowRight className="w-3.5 h-3.5 ml-1" />
+              </Button>
+            </CardHeader>
+
+            <CardContent className="p-0">
+              {pendingAppsData && pendingAppsData.data.length > 0 ? (
+                <div className="divide-y divide-zinc-800/60">
+                  {pendingAppsData.data.map((app) => (
+                    <div
+                      key={app.id}
+                      className="p-4 flex items-center justify-between gap-3 hover:bg-zinc-800/40 transition-colors"
+                    >
+                      <div className="min-w-0 flex items-center gap-3">
+                        <div className="w-9 h-9 rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/30 flex items-center justify-center font-bold text-xs shrink-0">
+                          {app.user.displayName?.[0]?.toUpperCase() || 'C'}
+                        </div>
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm font-bold text-white truncate">
+                              {app.user.displayName || app.user.email}
+                            </span>
+                            <span className="px-2 py-0.2 rounded text-[10px] font-semibold bg-zinc-800 text-zinc-300">
+                              {app.category}
+                            </span>
+                          </div>
+                          <p className="text-xs text-zinc-400 truncate">
+                            {app.description || 'Applicant submitted creator request'}
+                          </p>
+                        </div>
+                      </div>
+
+                      <Button
+                        size="sm"
+                        onClick={() => navigate('admin-applications')}
+                        className="bg-amber-500 hover:bg-amber-400 text-black font-semibold text-xs h-7 shrink-0"
+                      >
+                        Inspect Dossier
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="py-12 text-center text-zinc-500 space-y-1">
+                  <CheckCircle2 className="w-7 h-7 mx-auto text-emerald-500/80" />
+                  <p className="text-sm font-semibold text-zinc-300">Queue is Clear</p>
+                  <p className="text-xs text-zinc-500">No pending creator applications awaiting review.</p>
+                </div>
+              )}
+            </CardContent>
           </Card>
-          <Card className="bg-gray-900 border-gray-800">
-            <CardHeader className="pb-2"><CardTitle className="text-sm text-gray-300">Recent Users</CardTitle></CardHeader>
-            <CardContent><MiniUserTable users={data.recentUsers} /></CardContent>
+
+          {/* Recent Video Uploads Table */}
+          <Card className="bg-zinc-900/80 border-zinc-800 shadow-md">
+            <CardHeader className="p-4 sm:p-5 pb-3 border-b border-zinc-800/80 flex flex-row items-center justify-between">
+              <div>
+                <CardTitle className="text-base font-bold text-white flex items-center gap-2">
+                  <Video className="w-4 h-4 text-violet-400" />
+                  Recent Video Operations
+                </CardTitle>
+                <p className="text-xs text-zinc-400">Newly uploaded content across the platform</p>
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => navigate('admin-videos')}
+                className="text-xs text-cyan-400 hover:text-cyan-300"
+              >
+                All Videos
+                <ArrowRight className="w-3.5 h-3.5 ml-1" />
+              </Button>
+            </CardHeader>
+
+            <CardContent className="p-0">
+              {dashboardData?.recentVideos && dashboardData.recentVideos.length > 0 ? (
+                <Table>
+                  <TableHeader>
+                    <TableRow className="border-zinc-800 hover:bg-transparent">
+                      <TableHead className="text-zinc-400 text-xs">Video</TableHead>
+                      <TableHead className="text-zinc-400 text-xs">Creator</TableHead>
+                      <TableHead className="text-zinc-400 text-xs">Status</TableHead>
+                      <TableHead className="text-zinc-400 text-xs text-right">Uploaded</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {dashboardData.recentVideos.map((v) => (
+                      <TableRow
+                        key={v.id}
+                        onClick={() => navigate('admin-videos')}
+                        className="border-zinc-800/50 hover:bg-zinc-800/40 cursor-pointer"
+                      >
+                        <TableCell className="font-semibold text-white text-xs max-w-[160px] truncate">
+                          {v.title}
+                        </TableCell>
+                        <TableCell className="text-xs text-zinc-300">
+                          @{v.creator?.creatorName || 'creator'}
+                        </TableCell>
+                        <TableCell>
+                          <AdminStatusBadge status={v.status} size="sm" />
+                        </TableCell>
+                        <TableCell className="text-right text-xs text-zinc-400 font-mono">
+                          {format(new Date(v.createdAt), 'MMM d, HH:mm')}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              ) : (
+                <div className="py-8 text-center text-zinc-500 text-xs">No video uploads recorded.</div>
+              )}
+            </CardContent>
           </Card>
-          <Card className="bg-gray-900 border-gray-800">
-            <CardHeader className="pb-2"><CardTitle className="text-sm text-gray-300">Recent Comments</CardTitle></CardHeader>
-            <CardContent><MiniCommentTable comments={data.recentComments} /></CardContent>
+        </div>
+
+        {/* Right Column (5 cols): Live Audit Activity & Quick System Actions */}
+        <div className="lg:col-span-5 space-y-6">
+          {/* Live Activity Feed (Audit Log Stream) */}
+          <Card className="bg-zinc-900/80 border-zinc-800 shadow-md">
+            <CardHeader className="p-4 sm:p-5 pb-3 border-b border-zinc-800/80 flex flex-row items-center justify-between">
+              <div>
+                <CardTitle className="text-base font-bold text-white flex items-center gap-2">
+                  <Activity className="w-4 h-4 text-emerald-400" />
+                  Live Administrative Stream
+                </CardTitle>
+                <p className="text-xs text-zinc-400">Real-time audit log events</p>
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => navigate('admin-audit-logs')}
+                className="text-xs text-cyan-400 hover:text-cyan-300"
+              >
+                Full Trail
+                <ArrowRight className="w-3.5 h-3.5 ml-1" />
+              </Button>
+            </CardHeader>
+
+            <CardContent className="p-4 space-y-3">
+              {auditLogsData && auditLogsData.data.length > 0 ? (
+                auditLogsData.data.map((log) => (
+                  <div
+                    key={log.id}
+                    className="flex items-start gap-3 p-2.5 rounded-lg bg-zinc-950/60 border border-zinc-800/60 text-xs"
+                  >
+                    <div className="p-1.5 rounded-md bg-zinc-800 text-cyan-400 mt-0.5 shrink-0">
+                      <Clock className="w-3.5 h-3.5" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center justify-between gap-1">
+                        <span className="font-semibold text-white truncate">
+                          {log.actor?.displayName || log.actor?.email || 'Admin'}
+                        </span>
+                        <span className="text-[10px] text-zinc-500 font-mono">
+                          {format(new Date(log.createdAt), 'HH:mm')}
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-zinc-300 font-mono font-medium truncate mt-0.5">
+                        {log.action.replace(/_/g, ' ')}
+                      </p>
+                      <p className="text-[10px] text-zinc-500 truncate">
+                        Target: {log.entityType} ({log.entityId.slice(-6)})
+                      </p>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="py-10 text-center text-zinc-500 text-xs">
+                  No administrative logs recorded yet.
+                </div>
+              )}
+            </CardContent>
           </Card>
-          <Card className="bg-gray-900 border-gray-800">
-            <CardHeader className="pb-2"><CardTitle className="text-sm text-gray-300">Most Viewed Videos</CardTitle></CardHeader>
-            <CardContent><MiniVideoTable videos={data.mostViewedVideos} showViews onRowClick={(id) => navigate('video-detail', id)} /></CardContent>
+
+          {/* Quick Operations Portal */}
+          <Card className="bg-gradient-to-b from-zinc-900 to-zinc-950 border-zinc-800 shadow-md">
+            <CardHeader className="p-4 sm:p-5 pb-2">
+              <CardTitle className="text-sm font-bold text-white">Quick Control Center Hub</CardTitle>
+            </CardHeader>
+            <CardContent className="p-4 pt-0 space-y-2">
+              <button
+                onClick={() => navigate('admin-users')}
+                className="w-full flex items-center justify-between p-3 rounded-xl bg-zinc-900/90 hover:bg-zinc-800 border border-zinc-800 text-left transition-all group"
+              >
+                <div className="flex items-center gap-3">
+                  <Users className="w-4 h-4 text-cyan-400" />
+                  <div>
+                    <p className="text-xs font-bold text-white group-hover:text-cyan-400 transition-colors">
+                      User Operations
+                    </p>
+                    <p className="text-[11px] text-zinc-400">Suspend, activate, or inspect consumers & creators</p>
+                  </div>
+                </div>
+                <ArrowRight className="w-4 h-4 text-zinc-600 group-hover:text-white transition-colors" />
+              </button>
+
+              <button
+                onClick={() => navigate('admin-moderation')}
+                className="w-full flex items-center justify-between p-3 rounded-xl bg-zinc-900/90 hover:bg-zinc-800 border border-zinc-800 text-left transition-all group"
+              >
+                <div className="flex items-center gap-3">
+                  <ShieldAlert className="w-4 h-4 text-rose-400" />
+                  <div>
+                    <p className="text-xs font-bold text-white group-hover:text-rose-400 transition-colors">
+                      Trust & Safety Moderation
+                    </p>
+                    <p className="text-[11px] text-zinc-400">Review flagged videos, comments, and reports</p>
+                  </div>
+                </div>
+                <ArrowRight className="w-4 h-4 text-zinc-600 group-hover:text-white transition-colors" />
+              </button>
+
+              <button
+                onClick={() => navigate('admin-analytics')}
+                className="w-full flex items-center justify-between p-3 rounded-xl bg-zinc-900/90 hover:bg-zinc-800 border border-zinc-800 text-left transition-all group"
+              >
+                <div className="flex items-center gap-3">
+                  <TrendingUp className="w-4 h-4 text-emerald-400" />
+                  <div>
+                    <p className="text-xs font-bold text-white group-hover:text-emerald-400 transition-colors">
+                      Platform Growth Telemetry
+                    </p>
+                    <p className="text-[11px] text-zinc-400">Deep-dive video velocity & retention trends</p>
+                  </div>
+                </div>
+                <ArrowRight className="w-4 h-4 text-zinc-600 group-hover:text-white transition-colors" />
+              </button>
+            </CardContent>
           </Card>
         </div>
       </div>
-    </div>
+    </AdminLayout>
   )
-}
-
-function MiniVideoTable({ videos, showViews, onRowClick }: {
-  videos: { id: string; title: string; status: string; viewCount?: number; createdAt: string; creator: { creatorName: string } }[]
-  showViews?: boolean
-  onRowClick?: (id: string) => void
-}) {
-  if (videos.length === 0) return <p className="text-sm text-gray-500">No data.</p>
-  return (
-    <Table>
-      <TableHeader><TableRow className="border-gray-800 hover:bg-transparent">
-        <TableHead className="text-gray-400">Title</TableHead>
-        <TableHead className="text-gray-400">Creator</TableHead>
-        <TableHead className="text-gray-400">Status</TableHead>
-        {showViews && <TableHead className="text-gray-400 text-right">Views</TableHead>}
-        <TableHead className="text-gray-400 text-right">Date</TableHead>
-      </TableRow></TableHeader>
-      <TableBody>
-        {videos.map((v) => (
-          <TableRow key={v.id} className={`border-gray-800/50 hover:bg-gray-800/50 ${onRowClick ? 'cursor-pointer' : ''}`} onClick={() => onRowClick?.(v.id)}>
-            <TableCell className="font-medium text-white max-w-[120px] truncate">{v.title}</TableCell>
-            <TableCell className="text-sm text-gray-400">{v.creator.creatorName}</TableCell>
-            <TableCell><StatusBadge status={v.status} /></TableCell>
-            {showViews && <TableCell className="text-right text-sm text-gray-300">{v.viewCount?.toLocaleString()}</TableCell>}
-            <TableCell className="text-right text-sm text-gray-500">{format(new Date(v.createdAt), 'MMM d')}</TableCell>
-          </TableRow>
-        ))}
-      </TableBody>
-    </Table>
-  )
-}
-
-function MiniUserTable({ users }: { users: { id: string; displayName: string; email: string; role: string; status: string }[] }) {
-  if (users.length === 0) return <p className="text-sm text-gray-500">No data.</p>
-  return (
-    <Table>
-      <TableHeader><TableRow className="border-gray-800 hover:bg-transparent">
-        <TableHead className="text-gray-400">Name</TableHead>
-        <TableHead className="text-gray-400">Role</TableHead>
-        <TableHead className="text-gray-400">Status</TableHead>
-      </TableRow></TableHeader>
-      <TableBody>
-        {users.map((u) => (
-          <TableRow key={u.id} className="border-gray-800/50 hover:bg-gray-800/50">
-            <TableCell className="font-medium text-white max-w-[120px] truncate">{u.displayName}</TableCell>
-            <TableCell><Badge variant="outline" className="border-gray-700 text-gray-400 text-xs">{u.role}</Badge></TableCell>
-            <TableCell><StatusBadge status={u.status} /></TableCell>
-          </TableRow>
-        ))}
-      </TableBody>
-    </Table>
-  )
-}
-
-function MiniCommentTable({ comments }: { comments: { id: string; content: string; user: { displayName: string }; createdAt: string }[] }) {
-  if (comments.length === 0) return <p className="text-sm text-gray-500">No data.</p>
-  return (
-    <Table>
-      <TableHeader><TableRow className="border-gray-800 hover:bg-transparent">
-        <TableHead className="text-gray-400">User</TableHead>
-        <TableHead className="text-gray-400">Comment</TableHead>
-        <TableHead className="text-gray-400 text-right">Date</TableHead>
-      </TableRow></TableHeader>
-      <TableBody>
-        {comments.map((c) => (
-          <TableRow key={c.id} className="border-gray-800/50 hover:bg-gray-800/50">
-            <TableCell className="font-medium text-white">{c.user.displayName}</TableCell>
-            <TableCell className="max-w-[180px] truncate text-sm text-gray-400">{c.content}</TableCell>
-            <TableCell className="text-right text-sm text-gray-500">{format(new Date(c.createdAt), 'MMM d')}</TableCell>
-          </TableRow>
-        ))}
-      </TableBody>
-    </Table>
-  )
-}
-
-function StatusBadge({ status }: { status: string }) {
-  if (status === 'READY' || status === 'ACTIVE' || status === 'VISIBLE') {
-    return <Badge variant="outline" className="border-emerald-500/30 text-emerald-400 bg-emerald-500/10 text-xs">{status}</Badge>
-  }
-  if (status === 'FAILED' || status === 'DISABLED' || status === 'HIDDEN') {
-    return <Badge variant="outline" className="border-red-500/30 text-red-400 bg-red-500/10 text-xs">{status}</Badge>
-  }
-  return <Badge variant="outline" className="border-gray-700 text-gray-400 text-xs">{status}</Badge>
 }

@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { AdminLayout } from '@/components/admin/layout/admin-layout'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -9,12 +10,11 @@ import { Textarea } from '@/components/ui/textarea'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { createCreator } from '@/lib/api'
 import { useAppStore } from '@/store/app-store'
-import { useToast } from '@/hooks/use-toast'
+import { toast } from 'sonner'
 import { UserPlus, Loader2, ArrowLeft } from 'lucide-react'
 
 export function AdminCreatorNewView() {
-  const { navigate, goBack } = useAppStore()
-  const { toast } = useToast()
+  const { navigate } = useAppStore()
   const queryClient = useQueryClient()
   const [email, setEmail] = useState('')
   const [displayName, setDisplayName] = useState('')
@@ -23,68 +23,133 @@ export function AdminCreatorNewView() {
   const [description, setDescription] = useState('')
 
   const mutation = useMutation({
-    mutationFn: () => createCreator({ email, displayName, creatorName, password, description: description || undefined }),
+    mutationFn: () =>
+      createCreator({
+        email,
+        displayName,
+        creatorName,
+        password,
+        description: description || undefined,
+      }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-creators'] })
       queryClient.invalidateQueries({ queryKey: ['admin-dashboard'] })
-      toast({ title: 'Creator created successfully' })
+      queryClient.invalidateQueries({ queryKey: ['admin-recent-audit-logs'] })
+      toast.success('Creator account provisioned successfully')
       navigate('admin-creators')
     },
-    onError: (err) => { toast({ title: 'Failed to create creator', description: err instanceof Error ? err.message : 'Error', variant: 'destructive' }) },
+    onError: (err) => {
+      toast.error(err instanceof Error ? err.message : 'Failed to create creator')
+    },
   })
 
   return (
-    <div className="h-full w-full overflow-y-auto bg-gray-950 pb-32 select-none scrollbar-thin scrollbar-thumb-zinc-800 scroll-smooth">
-      {/* Header */}
-      <header className="sticky top-0 z-10 bg-gray-950/80 backdrop-blur-md border-b border-gray-800">
-        <div className="flex items-center justify-center h-14 px-4 relative">
-          <Button variant="ghost" size="icon" className="absolute left-2 sm:left-4 text-gray-400 hover:text-white hover:bg-gray-800" onClick={() => goBack('admin-creators')} aria-label="Back">
-            <ArrowLeft className="h-5 w-5" />
+    <AdminLayout>
+      <div className="max-w-2xl mx-auto space-y-6">
+        <div className="flex items-center justify-between">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => navigate('admin-creators')}
+            className="text-zinc-400 hover:text-white"
+          >
+            <ArrowLeft className="w-4 h-4 mr-1.5" />
+            Back to Creators
           </Button>
-          <h1 className="text-lg font-bold text-white">Create Creator</h1>
+          <span className="text-xs text-amber-400 font-bold uppercase tracking-wider">
+            Direct Creator Provisioning
+          </span>
         </div>
-      </header>
 
-      <div className="px-4 pt-6">
-        <form onSubmit={(e) => { e.preventDefault(); mutation.mutate() }} className="space-y-4 max-w-lg mx-auto">
-          <Card className="bg-gray-900 border-gray-800">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm text-gray-300 flex items-center gap-2">
-                <div className="p-1.5 rounded-lg bg-amber-500/10">
-                  <UserPlus className="h-4 w-4 text-amber-400" />
+        <Card className="bg-zinc-900/90 border-zinc-800 shadow-2xl">
+          <CardHeader className="border-b border-zinc-800 pb-4">
+            <CardTitle className="text-base font-bold text-white flex items-center gap-2">
+              <UserPlus className="w-5 h-5 text-cyan-400" />
+              Manual Creator Provisioning
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-6">
+            <form
+              onSubmit={(e) => {
+                e.preventDefault()
+                mutation.mutate()
+              }}
+              className="space-y-4"
+            >
+              <div className="space-y-1.5">
+                <Label className="text-xs font-semibold text-zinc-300">Email Address</Label>
+                <Input
+                  type="email"
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="creator@vidflow.com"
+                  className="bg-zinc-950 border-zinc-800 text-white text-xs h-10"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-semibold text-zinc-300">Display Name</Label>
+                  <Input
+                    required
+                    value={displayName}
+                    onChange={(e) => setDisplayName(e.target.value)}
+                    placeholder="Alex Morgan"
+                    className="bg-zinc-950 border-zinc-800 text-white text-xs h-10"
+                  />
                 </div>
-                Creator Account
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-1.5">
-                <Label htmlFor="creator-email" className="text-gray-300 text-sm">Email</Label>
-                <Input id="creator-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required className="bg-gray-800 border-gray-700 text-white h-10 focus-visible:ring-gray-600 focus-visible:border-gray-600 placeholder-gray-500" />
+
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-semibold text-zinc-300">Creator Handle</Label>
+                  <Input
+                    required
+                    value={creatorName}
+                    onChange={(e) => setCreatorName(e.target.value)}
+                    placeholder="alex_creator"
+                    className="bg-zinc-950 border-zinc-800 text-white text-xs h-10"
+                  />
+                </div>
               </div>
+
               <div className="space-y-1.5">
-                <Label htmlFor="creator-display" className="text-gray-300 text-sm">Display Name</Label>
-                <Input id="creator-display" value={displayName} onChange={(e) => setDisplayName(e.target.value)} required className="bg-gray-800 border-gray-700 text-white h-10 focus-visible:ring-gray-600 focus-visible:border-gray-600 placeholder-gray-500" />
+                <Label className="text-xs font-semibold text-zinc-300">Password</Label>
+                <Input
+                  type="password"
+                  required
+                  minLength={6}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="••••••••"
+                  className="bg-zinc-950 border-zinc-800 text-white text-xs h-10"
+                />
               </div>
+
               <div className="space-y-1.5">
-                <Label htmlFor="creator-name" className="text-gray-300 text-sm">Creator Name</Label>
-                <Input id="creator-name" value={creatorName} onChange={(e) => setCreatorName(e.target.value)} required className="bg-gray-800 border-gray-700 text-white h-10 focus-visible:ring-gray-600 focus-visible:border-gray-600 placeholder-gray-500" />
+                <Label className="text-xs font-semibold text-zinc-300">Creator Description</Label>
+                <Textarea
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  rows={3}
+                  placeholder="About this creator..."
+                  className="bg-zinc-950 border-zinc-800 text-white text-xs"
+                />
               </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="creator-password" className="text-gray-300 text-sm">Password</Label>
-                <Input id="creator-password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required minLength={6} className="bg-gray-800 border-gray-700 text-white h-10 focus-visible:ring-gray-600 focus-visible:border-gray-600 placeholder-gray-500" />
+
+              <div className="pt-2">
+                <Button
+                  type="submit"
+                  disabled={mutation.isPending}
+                  className="w-full bg-cyan-500 hover:bg-cyan-400 text-black font-bold text-xs h-10"
+                >
+                  {mutation.isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                  Provision Creator Account
+                </Button>
               </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="creator-desc" className="text-gray-300 text-sm">Description</Label>
-                <Textarea id="creator-desc" value={description} onChange={(e) => setDescription(e.target.value)} rows={3} className="bg-gray-800 border-gray-700 text-white focus-visible:ring-gray-600 focus-visible:border-gray-600 placeholder-gray-500" />
-              </div>
-            </CardContent>
-          </Card>
-          <Button type="submit" disabled={mutation.isPending} className="w-full bg-amber-500 text-black hover:bg-amber-400 font-semibold h-11">
-            {mutation.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-            Create Creator
-          </Button>
-        </form>
+            </form>
+          </CardContent>
+        </Card>
       </div>
-    </div>
+    </AdminLayout>
   )
 }

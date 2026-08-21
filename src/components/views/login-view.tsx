@@ -40,7 +40,11 @@ export function LoginView() {
       const user = await getAuthUser()
       setUser(user)
       toast.success('Welcome back!')
-      navigate('feed')
+      if (user.role === 'ADMIN') {
+        navigate('admin-dashboard')
+      } else {
+        navigate('feed')
+      }
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Login failed')
     } finally {

@@ -3,7 +3,7 @@
 import { useAppStore } from '@/store/app-store'
 import { ConsumerProfileView } from './profile/consumer-profile-view'
 import { CreatorOwnProfileView } from './profile/creator-own-profile-view'
-import { AdminProfileView } from './profile/admin-profile-view'
+import { AdminDashboardView } from './admin-dashboard-view'
 import { User, LogIn, UserPlus } from 'lucide-react'
 
 export function ProfileView() {
@@ -42,7 +42,7 @@ export function ProfileView() {
 
   // Explicit, decoupled role-specific profile routing
   if (user.role === 'ADMIN') {
-    return <AdminProfileView />
+    return <AdminDashboardView />
   }
 
   if (user.role === 'CREATOR') {
