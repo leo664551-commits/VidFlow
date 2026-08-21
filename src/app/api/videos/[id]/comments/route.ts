@@ -4,6 +4,7 @@ import { db } from '@/lib/db';
 import { apiCreated, apiError } from '@/lib/api-response';
 import { commentSchema, paginationSchema } from '@/lib/validation';
 import { logger } from '@/lib/logger';
+import { createNotification } from '@/services/notification';
 import { z } from 'zod';
 
 const replyCommentSchema = commentSchema.extend({
@@ -144,14 +145,18 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     }
 
     // If parentCommentId is provided, validate it belongs to this video
+    let parentCommentUserId: string | null = null;
+    let parentCommentSnippet = '';
     if (parsed.data.parentCommentId) {
       const parentComment = await db.comment.findUnique({
         where: { id: parsed.data.parentCommentId },
-        select: { videoId: true },
+        select: { videoId: true, userId: true, content: true },
       });
       if (!parentComment || parentComment.videoId !== id) {
         return apiError('VALIDATION_ERROR', 'Parent comment not found or does not belong to this video.');
       }
+      parentCommentUserId = parentComment.userId;
+      parentCommentSnippet = parentComment.content.length > 30 ? `${parentComment.content.slice(0, 30)}...` : parentComment.content;
     }
 
     const comment = await db.comment.create({
@@ -165,6 +170,32 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
         user: { select: { id: true, displayName: true, username: true, avatarUrl: true } },
       },
     });
+
+    const actorName = user.displayName || user.username || 'Someone';
+
+    // If it's a reply, notify parent comment author
+    if (parentCommentUserId && parentCommentUserId !== user.id) {
+      await createNotification({
+        userId: parentCommentUserId,
+        actorId: user.id,
+        type: 'COMMENT_REPLY',
+        title: 'New Reply to Your Comment',
+        message: `${actorName} replied to your comment: "${parentCommentSnippet}"`,
+        entityType: 'Comment',
+        entityId: comment.id,
+      });
+    } else if (!parentCommentUserId && video.creatorId !== user.id) {
+      // If it's a top-level comment, notify the creator of the video
+      await createNotification({
+        userId: video.creatorId,
+        actorId: user.id,
+        type: 'VIDEO_COMMENT',
+        title: 'New Comment on Video',
+        message: `${actorName} commented on your video "${video.title}"`,
+        entityType: 'Video',
+        entityId: video.id,
+      });
+    }
 
     return apiCreated({
       id: comment.id,

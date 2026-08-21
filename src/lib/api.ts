@@ -19,12 +19,14 @@ import type {
 } from '@/types'
 
 async function request<T>(url: string, init?: RequestInit): Promise<T> {
+  const isFormData = typeof FormData !== 'undefined' && init?.body instanceof FormData
+  const headers: Record<string, string> = {
+    ...(!isFormData ? { 'Content-Type': 'application/json' } : {}),
+    ...(init?.headers as Record<string, string>),
+  }
   const res = await fetch(url, {
-    headers: {
-      'Content-Type': 'application/json',
-      ...init?.headers,
-    },
     ...init,
+    headers,
   })
   if (!res.ok) {
     const body = await res.json().catch(() => ({}))
@@ -758,11 +760,13 @@ export async function getFeedVideos(params?: {
   page?: number
   limit?: number
   genre?: string
+  seed?: string
 }): Promise<PaginatedResponse<FeedVideo>> {
   const searchParams = new URLSearchParams()
   if (params?.page) searchParams.set('page', String(params.page))
   if (params?.limit) searchParams.set('limit', String(params.limit))
   if (params?.genre) searchParams.set('genre', params.genre)
+  if (params?.seed) searchParams.set('seed', params.seed)
   const qs = searchParams.toString()
   return request<PaginatedResponse<FeedVideo>>(
     `/api/videos/feed${qs ? `?${qs}` : ''}`
@@ -921,4 +925,30 @@ export async function recordVideoWatch(
       body: JSON.stringify(data),
     }
   ).catch(() => ({ videoId, watchDuration: 0, completionPercentage: 0, qualifying: false }))
+}
+
+// Notifications
+export async function getNotifications(params?: {
+  page?: number
+  limit?: number
+}): Promise<import('@/types').NotificationListResponse> {
+  const sp = new URLSearchParams()
+  if (params?.page) sp.set('page', String(params.page))
+  if (params?.limit) sp.set('limit', String(params.limit))
+  const qs = sp.toString()
+  return request<import('@/types').NotificationListResponse>(`/api/notifications${qs ? `?${qs}` : ''}`)
+}
+
+export async function markAllNotificationsAsRead(): Promise<{ success: boolean; message: string }> {
+  return request<{ success: boolean; message: string }>('/api/notifications', {
+    method: 'PATCH',
+  })
+}
+
+export async function markNotificationAsRead(
+  id: string
+): Promise<{ id: string; read: boolean; readAt: string | null }> {
+  return request<{ id: string; read: boolean; readAt: string | null }>(`/api/notifications/${id}/read`, {
+    method: 'PATCH',
+  })
 }

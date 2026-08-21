@@ -14,8 +14,10 @@ import {
   getCreatorApplicationStatus,
   rateCreator,
   deleteCreatorRating,
+  toggleLike,
 } from '@/lib/api'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useVideoKeyboardShortcuts } from '@/hooks/use-video-keyboard-shortcuts'
 import {
   Loader2,
   ArrowLeft,
@@ -149,6 +151,57 @@ export function ConsumerProfileView() {
   const likedVideosList = likedVideosData?.data || []
   const myRatingsList = myRatingsData?.data || []
 
+  const [focusedLikedIndex, setFocusedLikedIndex] = useState<number>(-1)
+
+  // Like mutation for keyboard shortcut
+  const toggleLikeMutation = useMutation({
+    mutationFn: (vidId: string) => toggleLike(vidId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['my-liked-videos'] })
+      queryClient.invalidateQueries({ queryKey: ['feed'] })
+    },
+  })
+
+  const activeLikedVideo =
+    activeTab === 'liked' && focusedLikedIndex >= 0 ? likedVideosList[focusedLikedIndex] : null
+
+  const handleOpenLikedVideo = (v: { id: string }) => {
+    navigate('video-detail', v.id, {
+      source: 'liked-videos',
+      videoIds: likedVideosList.map((item) => item.id),
+    })
+  }
+
+  // Global Video Keyboard Shortcuts for Consumer Liked Videos
+  useVideoKeyboardShortcuts({
+    onNext: () => {
+      if (likedVideosList.length === 0) return
+      setFocusedLikedIndex((prev) => (prev < likedVideosList.length - 1 ? prev + 1 : prev))
+    },
+    onPrev: () => {
+      if (likedVideosList.length === 0) return
+      setFocusedLikedIndex((prev) => (prev > 0 ? prev - 1 : 0))
+    },
+    onTogglePlay: () => {
+      if (activeLikedVideo) {
+        handleOpenLikedVideo(activeLikedVideo)
+      } else if (likedVideosList.length > 0) {
+        handleOpenLikedVideo(likedVideosList[0])
+      }
+    },
+    onToggleLike: () => {
+      if (!activeLikedVideo) return
+      toggleLikeMutation.mutate(activeLikedVideo.id)
+    },
+    enabled:
+      activeTab === 'liked' &&
+      !editModalOpen &&
+      !becomeCreatorModalOpen &&
+      !followModalOpen &&
+      !editingRatingItem &&
+      likedVideosList.length > 0,
+  })
+
   // Open edit modal and populate state
   const handleOpenEditModal = () => {
     setEditDisplayName(activeUser?.displayName || '')
@@ -178,6 +231,10 @@ export function ConsumerProfileView() {
     try {
       const res = await uploadAvatar(file)
       setEditAvatarUrl(res.avatarUrl)
+      if (user) {
+        setUser({ ...user, avatarUrl: res.avatarUrl })
+      }
+      queryClient.invalidateQueries({ queryKey: ['user-me'] })
       toast.success('Avatar uploaded!')
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Avatar upload failed')
@@ -191,6 +248,10 @@ export function ConsumerProfileView() {
     try {
       await deleteAvatar()
       setEditAvatarUrl(null)
+      if (user) {
+        setUser({ ...user, avatarUrl: null })
+      }
+      queryClient.invalidateQueries({ queryKey: ['user-me'] })
       toast.success('Avatar removed')
     } catch {
       setEditAvatarUrl(null)
@@ -583,18 +644,25 @@ export function ConsumerProfileView() {
               </div>
             ) : likedVideosList.length > 0 ? (
               <div className="grid grid-cols-3 gap-2">
-                {likedVideosList.map((v: FeedVideo) => {
+                {likedVideosList.map((v: FeedVideo, idx: number) => {
                   const gradient = GENRE_GRADIENTS[v.genre] || GENRE_GRADIENTS.OTHER
+                  const isFocused = idx === focusedLikedIndex
                   return (
                     <div
                       key={v.id}
-                      onClick={() => navigate('video-detail', v.id)}
-                      className="aspect-[9/16] rounded-xl overflow-hidden relative cursor-pointer group bg-zinc-900 border border-white/10 shadow-md"
+                      onClick={() => handleOpenLikedVideo(v)}
+                      className={`aspect-[9/16] rounded-xl overflow-hidden relative cursor-pointer group bg-zinc-900 border transition-all ${
+                        isFocused
+                          ? 'border-[#25F4EE] ring-2 ring-[#25F4EE] shadow-[0_0_20px_rgba(37,244,238,0.4)] scale-[1.02]'
+                          : 'border-white/10 shadow-md hover:border-white/30'
+                      }`}
                     >
                       <div
                         className={`absolute inset-0 bg-gradient-to-b ${gradient} group-hover:scale-105 transition-transform duration-300`}
                       />
-                      <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/30">
+                      <div className={`absolute inset-0 flex items-center justify-center transition-opacity bg-black/30 ${
+                        isFocused ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
+                      }`}>
                         <Play className="w-8 h-8 text-white fill-white" />
                       </div>
                       <div className="absolute top-2 right-2 z-10 w-6 h-6 rounded-full bg-black/60 flex items-center justify-center">

@@ -23,7 +23,7 @@ export function BottomTabBar() {
     ...(role === 'CREATOR'
       ? [{ icon: <PlusCircle className="h-7 w-7" />, label: '', view: 'creator-upload' as AppView, roles: ['CREATOR'] }]
       : []),
-    { icon: <Bell className="h-6 w-6" />, label: 'Inbox', view: 'notifications' },
+    { icon: <Bell className="h-6 w-6" />, label: 'Notifications', view: 'notifications' },
     {
       icon: user?.avatarUrl ? (
         <UserAvatar

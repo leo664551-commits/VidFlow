@@ -56,7 +56,13 @@ export function apiNoContent() {
   return new NextResponse(null, { status: 204 });
 }
 
-export function apiPaginated<T>(data: T[], page: number, limit: number, total: number): NextResponse<PaginatedResponse<T>> {
+export function apiPaginated<T>(
+  data: T[],
+  page: number,
+  limit: number,
+  total: number,
+  seed?: string
+): NextResponse<PaginatedResponse<T>> {
   return NextResponse.json({
     data,
     pagination: {
@@ -64,6 +70,7 @@ export function apiPaginated<T>(data: T[], page: number, limit: number, total: n
       limit,
       total,
       totalPages: Math.ceil(total / limit),
+      ...(seed ? { seed } : {}),
     },
   });
 }

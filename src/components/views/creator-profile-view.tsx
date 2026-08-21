@@ -9,8 +9,10 @@ import {
   rateCreator,
   deleteCreatorRating,
   toggleFollowCreator,
+  toggleLike,
 } from '@/lib/api'
 import { UserAvatar } from '@/components/common/user-avatar'
+import { useVideoKeyboardShortcuts } from '@/hooks/use-video-keyboard-shortcuts'
 import {
   Loader2,
   ArrowLeft,
@@ -124,6 +126,7 @@ export function CreatorProfileView() {
   const queryClient = useQueryClient()
 
   const [activeTab, setActiveTab] = useState<'videos' | 'reviews'>('videos')
+  const [focusedVideoIndex, setFocusedVideoIndex] = useState<number>(-1)
   const [ratingModalOpen, setRatingModalOpen] = useState(false)
 
   // Multi-dimensional rating form states (1-10 scale)
@@ -145,6 +148,56 @@ export function CreatorProfileView() {
     enabled: !!selectedCreatorId,
   })
 
+  // Toggle video like mutation
+  const toggleLikeMutation = useMutation({
+    mutationFn: (vidId: string) => toggleLike(vidId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['creator-profile', selectedCreatorId] })
+      queryClient.invalidateQueries({ queryKey: ['feed'] })
+      queryClient.invalidateQueries({ queryKey: ['my-liked-videos'] })
+    },
+  })
+
+  const activeVideo =
+    activeTab === 'videos' && data?.videos && focusedVideoIndex >= 0
+      ? data.videos[focusedVideoIndex]
+      : null
+
+  const handleOpenVideo = (vid: { id: string }) => {
+    navigate('video-detail', vid.id, {
+      source: 'creator-profile',
+      videoIds: data?.videos?.map((v) => v.id) || [vid.id],
+    })
+  }
+
+  // Global Video Keyboard Shortcuts for Creator Profile Video Section
+  useVideoKeyboardShortcuts({
+    onNext: () => {
+      if (!data?.videos || data.videos.length === 0) return
+      setFocusedVideoIndex((prev) => (prev < data.videos.length - 1 ? prev + 1 : prev))
+    },
+    onPrev: () => {
+      if (!data?.videos || data.videos.length === 0) return
+      setFocusedVideoIndex((prev) => (prev > 0 ? prev - 1 : 0))
+    },
+    onTogglePlay: () => {
+      if (activeVideo) {
+        handleOpenVideo(activeVideo)
+      } else if (data?.videos && data.videos.length > 0) {
+        handleOpenVideo(data.videos[0])
+      }
+    },
+    onToggleLike: () => {
+      if (!activeVideo) return
+      if (!user) {
+        toast.error('Please log in to like videos')
+        return
+      }
+      toggleLikeMutation.mutate(activeVideo.id)
+    },
+    enabled: activeTab === 'videos' && !ratingModalOpen && !followModalOpen && !isLoading && !!data,
+  })
+
   // Follow mutation
   const followMutation = useMutation({
     mutationFn: () => toggleFollowCreator(selectedCreatorId!),
@@ -158,6 +211,7 @@ export function CreatorProfileView() {
         }
       })
       queryClient.invalidateQueries({ queryKey: ['creator-profile', selectedCreatorId] })
+      queryClient.invalidateQueries({ queryKey: ['feed'] })
       queryClient.invalidateQueries({ queryKey: ['user-me'] })
       toast.success(result.isFollowing ? 'Following creator!' : 'Unfollowed')
     },
@@ -303,7 +357,7 @@ export function CreatorProfileView() {
   const isEligible = eligibility?.eligible || !!data.userRating
 
   return (
-    <div className="min-h-screen bg-black text-white pb-20 select-none">
+    <div className="h-full w-full overflow-y-auto bg-black text-white pb-28 select-none scrollbar-thin scrollbar-thumb-zinc-800 scroll-smooth">
       {/* Sticky Header */}
       <div className="sticky top-0 z-30 bg-black/90 backdrop-blur-md flex items-center justify-between px-4 py-3 border-b border-white/10">
         <button
@@ -588,20 +642,27 @@ export function CreatorProfileView() {
           <div className="p-3">
             {data.videos.length > 0 ? (
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                {data.videos.map((video) => {
+                {data.videos.map((video, idx) => {
                   const gradient = GENRE_GRADIENTS[video.genre] || GENRE_GRADIENTS.OTHER
                   const genreLabel = GENRES.includes(video.genre as (typeof GENRES)[number])
                     ? video.genre.replace('_', ' ')
                     : video.genre
+                  const isFocused = idx === focusedVideoIndex
                   return (
                     <motion.div
                       key={video.id}
-                      onClick={() => navigate('video-detail', video.id)}
+                      onClick={() => handleOpenVideo(video)}
                       whileHover={{ scale: 1.02 }}
-                      className="group relative cursor-pointer overflow-hidden rounded-2xl bg-zinc-900 border border-white/10 aspect-[9/16] shadow-md hover:shadow-2xl hover:border-white/30 transition-all flex flex-col justify-end"
+                      className={`group relative cursor-pointer overflow-hidden rounded-2xl bg-zinc-900 border aspect-[9/16] transition-all flex flex-col justify-end ${
+                        isFocused
+                          ? 'border-[#25F4EE] ring-2 ring-[#25F4EE] shadow-[0_0_20px_rgba(37,244,238,0.4)] scale-[1.02]'
+                          : 'border-white/10 shadow-md hover:shadow-2xl hover:border-white/30'
+                      }`}
                     >
                       <div className={`absolute inset-0 bg-gradient-to-b ${gradient}`} />
-                      <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                      <div className={`absolute inset-0 flex items-center justify-center transition-opacity duration-300 ${
+                        isFocused ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
+                      }`}>
                         <div className="w-12 h-12 rounded-full bg-black/60 backdrop-blur-md flex items-center justify-center shadow-xl border border-white/20">
                           <Play className="w-6 h-6 text-white fill-white ml-0.5" />
                         </div>

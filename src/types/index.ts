@@ -50,6 +50,7 @@ export interface PaginatedResponse<T> {
     limit: number;
     total: number;
     totalPages: number;
+    seed?: string;
   };
 }
 
@@ -89,11 +90,20 @@ export interface VideoWithCreator {
   };
 }
 
-export interface VideoDetail extends VideoWithCreator {
+export interface VideoDetail extends Omit<VideoWithCreator, 'creator'> {
   pinnedCommentId: string | null;
   likeCount?: number;
   commentCount?: number;
   userLiked?: boolean;
+  creator: {
+    id: string;
+    creatorName: string;
+    displayName: string;
+    username?: string | null;
+    avatarUrl?: string | null;
+    isFollowing?: boolean;
+    isSelf?: boolean;
+  };
 }
 
 export interface FeedVideo {
@@ -119,6 +129,8 @@ export interface FeedVideo {
     displayName: string;
     username?: string | null;
     avatarUrl?: string | null;
+    isFollowing?: boolean;
+    isSelf?: boolean;
   };
 }
 
@@ -332,6 +344,33 @@ export interface CreatorRating {
 
 export interface PinCommentResponse {
   pinnedCommentId: string | null;
+}
+
+export interface NotificationItem {
+  id: string;
+  type: 'LIKE_VIDEO' | 'LIKE_COMMENT' | 'COMMENT_REPLY' | 'VIDEO_COMMENT' | 'FOLLOW' | 'CREATOR_RATING' | 'SYSTEM' | string;
+  title: string | null;
+  message: string;
+  entityType: string | null;
+  entityId: string | null;
+  read: boolean;
+  readAt: string | null;
+  createdAt: string;
+  actor: {
+    id: string;
+    displayName: string;
+    username: string | null;
+    avatarUrl: string | null;
+  } | null;
+}
+
+export interface NotificationListResponse {
+  data: NotificationItem[];
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+  unreadCount: number;
 }
 
 export type AppView =

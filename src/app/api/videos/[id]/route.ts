@@ -43,6 +43,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     }
 
     // Track view (deduplicated by user+video+day)
+    let effectiveViewCount = video.viewCount;
     if (user && video.status === 'READY') {
       const today = new Date();
       today.setHours(0, 0, 0, 0);
@@ -58,6 +59,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       });
 
       if (!existingView) {
+        effectiveViewCount += 1;
         await Promise.all([
           db.videoView.create({
             data: { videoId: id, userId: user.id },
@@ -75,13 +77,30 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       where: { videoId: id, status: 'VISIBLE', parentCommentId: null },
     });
 
-    // Get user's like status
+    // Get user's like and follow status
     let userLiked = false;
+    let isFollowingCreator = false;
+    let isCreatorSelf = false;
+
     if (user) {
-      const userLikeRecord = await db.videoLike.findUnique({
-        where: { videoId_userId: { videoId: id, userId: user.id } },
-      });
+      isCreatorSelf = user.id === video.creator.user.id;
+
+      const [userLikeRecord, followRecord] = await Promise.all([
+        db.videoLike.findUnique({
+          where: { videoId_userId: { videoId: id, userId: user.id } },
+        }),
+        db.follow.findUnique({
+          where: {
+            followerId_followingId: {
+              followerId: user.id,
+              followingId: video.creator.user.id,
+            },
+          },
+        }),
+      ]);
+
       if (userLikeRecord) userLiked = true;
+      if (followRecord) isFollowingCreator = true;
     }
 
     return apiSuccess({
@@ -96,7 +115,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       thumbnailBlobName: video.thumbnailBlobName,
       duration: video.duration,
       status: video.status,
-      viewCount: video.viewCount,
+      viewCount: effectiveViewCount,
       pinnedCommentId: video.pinnedCommentId,
       createdAt: video.createdAt.toISOString(),
       updatedAt: video.updatedAt.toISOString(),
@@ -106,6 +125,8 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         displayName: video.creator.user.displayName,
         username: video.creator.user.username || null,
         avatarUrl: video.creator.user.avatarUrl || null,
+        isFollowing: isFollowingCreator,
+        isSelf: isCreatorSelf,
       },
       likeCount: video._count.likes,
       commentCount,

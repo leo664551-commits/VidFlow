@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState, useMemo } from 'react'
 import { useMutation, useQueryClient, useInfiniteQuery } from '@tanstack/react-query'
 import {
   Heart,
@@ -15,10 +15,14 @@ import {
   Star,
   Disc3,
   Play,
+  Eye,
+  RotateCcw,
+  Sparkles,
 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { getFeedVideos, toggleLike, toggleFollowCreator, recordVideoWatch } from '@/lib/api'
 import { useAppStore } from '@/store/app-store'
+import { useVideoKeyboardShortcuts } from '@/hooks/use-video-keyboard-shortcuts'
 import type { FeedVideo } from '@/types'
 import { toast } from 'sonner'
 
@@ -61,7 +65,14 @@ function ActionBar({ video }: { video: FeedVideo }) {
   const queryClient = useQueryClient()
   const [liked, setLiked] = useState(video.userLiked)
   const [likeCount, setLikeCount] = useState(video.likeCount)
-  const [followed, setFollowed] = useState(false)
+
+  useEffect(() => {
+    setLiked(video.userLiked)
+    setLikeCount(video.likeCount)
+  }, [video.userLiked, video.likeCount])
+
+  const isSelf = user?.id === video.creator.id || !!video.creator.isSelf
+  const isFollowing = !!video.creator.isFollowing
 
   const likeMutation = useMutation({
     mutationFn: () => toggleLike(video.id),
@@ -96,12 +107,13 @@ function ActionBar({ video }: { video: FeedVideo }) {
   const followMutation = useMutation({
     mutationFn: () => toggleFollowCreator(video.creator.id),
     onSuccess: (res) => {
-      setFollowed(res.isFollowing)
       toast.success(
         res.isFollowing
           ? `Following @${video.creator.creatorName}`
           : `Unfollowed @${video.creator.creatorName}`
       )
+      queryClient.invalidateQueries({ queryKey: ['feed'] })
+      queryClient.invalidateQueries({ queryKey: ['creator-profile', video.creator.id] })
       queryClient.invalidateQueries({ queryKey: ['creator-followers', video.creator.id] })
       queryClient.invalidateQueries({ queryKey: ['creator-following', video.creator.id] })
       queryClient.invalidateQueries({ queryKey: ['creator', video.creator.id] })
@@ -155,9 +167,10 @@ function ActionBar({ video }: { video: FeedVideo }) {
             )}
           </div>
         </button>
-        {!followed && (
+        {!isFollowing && !isSelf && (
           <button
             onClick={handleFollow}
+            disabled={followMutation.isPending}
             className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 w-5 h-5 rounded-full bg-[#FE2C55] text-white flex items-center justify-center shadow-md hover:scale-110 transition-transform"
             title="Follow"
           >
@@ -220,13 +233,21 @@ function VideoInfoOverlay({ video }: { video: FeedVideo }) {
 
   return (
     <div className="absolute bottom-0 left-0 right-0 p-4 pb-5 bg-gradient-to-t from-black/95 via-black/60 to-transparent z-10 text-left pointer-events-auto">
-      {/* Creator Handle */}
-      <button
-        onClick={handleCreatorTap}
-        className="text-base font-bold text-white hover:underline drop-shadow-md flex items-center gap-1.5 mb-1"
-      >
-        <span>@{video.creator.creatorName}</span>
-      </button>
+      {/* Creator Handle + Following Indicator */}
+      <div className="flex items-center gap-2 mb-1 flex-wrap">
+        <button
+          onClick={handleCreatorTap}
+          className="text-base font-bold text-white hover:underline drop-shadow-md flex items-center gap-1.5"
+        >
+          <span>@{video.creator.creatorName}</span>
+        </button>
+        {video.creator.isFollowing && !video.creator.isSelf && (
+          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-[#25F4EE]/15 text-[#25F4EE] border border-[#25F4EE]/30 backdrop-blur-sm shadow-sm">
+            <span className="w-1.5 h-1.5 rounded-full bg-[#25F4EE] animate-pulse" />
+            Following
+          </span>
+        )}
+      </div>
 
       {/* Title & Description */}
       <h3 className="text-sm font-semibold text-white/95 line-clamp-2 drop-shadow mb-1.5 leading-snug">
@@ -240,7 +261,7 @@ function VideoInfoOverlay({ video }: { video: FeedVideo }) {
         <span>{video.producer}</span>
       </div>
 
-      {/* Genre, Rating & Sound Marquee */}
+      {/* Genre, Rating, Views & Sound Marquee */}
       <div className="flex flex-wrap items-center gap-2">
         <span className="inline-flex items-center gap-1 rounded-full bg-white/20 hover:bg-white/30 backdrop-blur-md px-2.5 py-0.5 text-[11px] font-semibold text-white transition-colors">
           <Music className="h-3 w-3 text-[#25F4EE]" />
@@ -248,6 +269,10 @@ function VideoInfoOverlay({ video }: { video: FeedVideo }) {
         </span>
         <span className="inline-flex rounded-full bg-white/15 backdrop-blur-md px-2.5 py-0.5 text-[11px] font-medium text-gray-200">
           {video.ageRating}
+        </span>
+        <span className="inline-flex items-center gap-1 bg-black/40 backdrop-blur-sm px-2 py-0.5 rounded-full text-[11px] text-gray-300 font-medium border border-white/10">
+          <Eye className="w-3 h-3 text-gray-400" />
+          {(video.viewCount ?? 0).toLocaleString()} views
         </span>
         <span className="inline-flex items-center gap-1 text-[11px] text-gray-400">
           ♫ original sound - {video.creator.creatorName}
@@ -260,12 +285,18 @@ function VideoInfoOverlay({ video }: { video: FeedVideo }) {
 function FeedVideoCard({
   video,
   isActive,
+  muted,
+  onToggleMute,
+  isPlaying,
+  onTogglePlay,
 }: {
   video: FeedVideo
   isActive: boolean
+  muted: boolean
+  onToggleMute: () => void
+  isPlaying: boolean
+  onTogglePlay: () => void
 }) {
-  const [muted, setMuted] = useState(true)
-  const [isPlaying, setIsPlaying] = useState(true)
   const watchTimeRef = useRef(0)
   const lastSyncRef = useRef(0)
   const duration = video.duration || 30
@@ -299,35 +330,32 @@ function FeedVideoCard({
     }
   }, [isActive, isPlaying, video.id, duration])
 
-  const togglePlay = () => {
-    setIsPlaying(!isPlaying)
-  }
-
   return (
     <div className="h-dvh md:h-screen w-full flex items-center justify-center snap-start snap-always py-2 md:py-4 px-2">
       {/* 9:16 Center Video Container + Floating Action Rail */}
       <div className="flex items-end justify-center w-full max-w-lg md:max-w-2xl h-full max-h-[760px] relative">
         {/* Main 9:16 Portrait Card */}
         <div
-          onClick={togglePlay}
+          onClick={onTogglePlay}
           className="relative h-full aspect-[9/16] max-w-[420px] rounded-2xl md:rounded-3xl overflow-hidden bg-zinc-950 shadow-2xl border border-white/10 cursor-pointer group flex-shrink-0"
         >
-          <VideoPlaceholder genre={video.genre} isPlaying={isPlaying} />
+          <VideoPlaceholder genre={video.genre} isPlaying={isActive && isPlaying} />
 
           {/* Sound Mute/Unmute toggle */}
           <button
             onClick={(e) => {
               e.stopPropagation()
-              setMuted(!muted)
+              onToggleMute()
             }}
             className="absolute top-4 right-4 z-20 w-9 h-9 rounded-full bg-black/40 hover:bg-black/60 backdrop-blur-md flex items-center justify-center text-white transition-colors shadow-lg"
+            title={muted ? 'Unmute (M+M)' : 'Mute (M)'}
           >
             {muted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
           </button>
 
           {/* Play/Pause Center Indicator on toggle */}
           <AnimatePresence>
-            {!isPlaying && (
+            {isActive && !isPlaying && (
               <motion.div
                 initial={{ scale: 0.5, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
@@ -360,11 +388,42 @@ function FeedVideoCard({
 export function FeedView() {
   const scrollRef = useRef<HTMLDivElement>(null)
   const [activeIndex, setActiveIndex] = useState(0)
+  const [globalMuted, setGlobalMuted] = useState(true)
+  const [isPlaying, setIsPlaying] = useState(true)
+  const [isRefreshing, setIsRefreshing] = useState(false)
   const user = useAppStore((s) => s.user)
+  const queryClient = useQueryClient()
+
+  // Generate a distinct session seed per feed session for fresh, deterministic recommendations
+  const [feedSeed, setFeedSeed] = useState<string>(
+    () => `${Date.now()}_${Math.random().toString(36).substring(2, 9)}`
+  )
+
+  const handleRefreshFeed = useCallback(() => {
+    setIsRefreshing(true)
+    const newSeed = `${Date.now()}_${Math.random().toString(36).substring(2, 9)}`
+    setFeedSeed(newSeed)
+    setActiveIndex(0)
+    setIsPlaying(true)
+    if (scrollRef.current) {
+      scrollRef.current.scrollTop = 0
+    }
+    setTimeout(() => setIsRefreshing(false), 500)
+  }, [])
+
+  // Auto-refresh feed seed when authenticated account changes (login/logout/switch)
+  useEffect(() => {
+    handleRefreshFeed()
+  }, [user?.id, handleRefreshFeed])
 
   const { data, isLoading, fetchNextPage, hasNextPage, isFetchingNextPage } = useInfiniteQuery({
-    queryKey: ['feed', user?.id],
-    queryFn: ({ pageParam }) => getFeedVideos({ page: pageParam as number, limit: 10 }),
+    queryKey: ['feed', user?.id, feedSeed],
+    queryFn: ({ pageParam }) =>
+      getFeedVideos({
+        page: pageParam as number,
+        limit: 10,
+        seed: feedSeed,
+      }),
     initialPageParam: 1,
     getNextPageParam: (lastPage, _allPages, lastPageParam) => {
       if (lastPage.pagination.page < lastPage.pagination.totalPages) {
@@ -374,7 +433,23 @@ export function FeedView() {
     },
   })
 
-  const videos = data?.pages.flatMap((p) => p.data) ?? []
+  // Deduplicate videos across infinite pages to guarantee 0 session duplicates
+  const videos = useMemo(() => {
+    if (!data?.pages) return []
+    const seen = new Set<string>()
+    const list: FeedVideo[] = []
+    for (const page of data.pages) {
+      for (const video of page.data) {
+        if (!seen.has(video.id)) {
+          seen.add(video.id)
+          list.push(video)
+        }
+      }
+    }
+    return list
+  }, [data])
+
+  const activeVideo = videos[activeIndex]
 
   const scrollToIndex = useCallback((index: number) => {
     const el = scrollRef.current
@@ -383,6 +458,7 @@ export function FeedView() {
     if (target) {
       target.scrollIntoView({ behavior: 'smooth' })
       setActiveIndex(index)
+      setIsPlaying(true)
     }
   }, [])
 
@@ -400,21 +476,34 @@ export function FeedView() {
     }
   }, [activeIndex, scrollToIndex])
 
-  // Keyboard navigation (Up/Down arrow, j/k keys)
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (['input', 'textarea'].includes((e.target as HTMLElement)?.tagName?.toLowerCase())) return
-      if (e.key === 'ArrowDown' || e.key === 'j') {
-        e.preventDefault()
-        handleNext()
-      } else if (e.key === 'ArrowUp' || e.key === 'k') {
-        e.preventDefault()
-        handlePrev()
-      }
+  // Like active video mutation for keyboard shortcut
+  const toggleLikeMutation = useMutation({
+    mutationFn: (vidId: string) => toggleLike(vidId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['feed'] })
+      queryClient.invalidateQueries({ queryKey: ['my-liked-videos'] })
+    },
+  })
+
+  const handleToggleLikeActive = useCallback(() => {
+    if (!activeVideo) return
+    if (!user) {
+      toast.error('Please log in to like videos')
+      return
     }
-    window.addEventListener('keydown', handleKeyDown)
-    return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [handleNext, handlePrev])
+    toggleLikeMutation.mutate(activeVideo.id)
+  }, [activeVideo, user, toggleLikeMutation])
+
+  // Global Video Keyboard Shortcuts (L = Like, M = Mute, M+M = Unmute, Space = Play/Pause, Up/Down = Navigate)
+  useVideoKeyboardShortcuts({
+    onToggleLike: handleToggleLikeActive,
+    onMute: () => setGlobalMuted(true),
+    onUnmute: () => setGlobalMuted(false),
+    onTogglePlay: () => setIsPlaying((p) => !p),
+    onNext: handleNext,
+    onPrev: handlePrev,
+    enabled: videos.length > 0,
+  })
 
   const handleScroll = useCallback(() => {
     const el = scrollRef.current
@@ -458,13 +547,40 @@ export function FeedView() {
 
   return (
     <div className="relative h-dvh md:h-screen w-full bg-black overflow-hidden flex justify-center">
+      {/* Top Floating Feed Header (TikTok style: For You + Refresh) */}
+      <div className="absolute top-0 inset-x-0 z-30 flex items-center justify-between px-4 pt-3 pb-6 bg-gradient-to-b from-black/80 via-black/40 to-transparent pointer-events-none">
+        <div className="flex items-center gap-4 mx-auto pointer-events-auto">
+          <span className="text-base font-bold text-white tracking-wide border-b-2 border-white pb-0.5 shadow-sm">
+            For You
+          </span>
+        </div>
+
+        {/* Quick Refresh Stream Button */}
+        <button
+          onClick={handleRefreshFeed}
+          disabled={isRefreshing}
+          className="absolute right-4 top-3.5 p-2 rounded-full bg-black/40 hover:bg-black/70 backdrop-blur-md border border-white/10 text-white/80 hover:text-white transition-all shadow-md active:scale-90 pointer-events-auto cursor-pointer"
+          title="Refresh stream with new recommendations"
+        >
+          <RotateCcw className={`w-4 h-4 ${isRefreshing ? 'animate-spin text-[#25F4EE]' : ''}`} />
+        </button>
+      </div>
+
       {/* Scrollable vertical feed */}
       <div
         ref={scrollRef}
         className="h-full w-full snap-y snap-mandatory overflow-y-scroll scroll-smooth scrollbar-none"
       >
         {videos.map((video, idx) => (
-          <FeedVideoCard key={video.id} video={video} isActive={idx === activeIndex} />
+          <FeedVideoCard
+            key={video.id}
+            video={video}
+            isActive={idx === activeIndex}
+            muted={globalMuted}
+            onToggleMute={() => setGlobalMuted(!globalMuted)}
+            isPlaying={idx === activeIndex ? isPlaying : false}
+            onTogglePlay={() => setIsPlaying(!isPlaying)}
+          />
         ))}
         {isFetchingNextPage && (
           <div className="flex h-32 items-center justify-center">

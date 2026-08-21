@@ -2,6 +2,7 @@ import { NextRequest } from 'next/server';
 import { getSession } from '@/lib/auth';
 import { db } from '@/lib/db';
 import { apiSuccess, apiNoContent, apiCreated, apiError } from '@/lib/api-response';
+import { createNotification } from '@/services/notification';
 import {
   checkCreatorRatingEligibility,
   calculateCreatorRatingSummary,
@@ -155,6 +156,20 @@ export async function POST(
           review: review || null,
           tags: tagsString,
         },
+      });
+    }
+
+    // Notify creator if rater is not the creator
+    if (creator.userId !== user.id) {
+      const actorName = user.displayName || user.username || 'Someone';
+      await createNotification({
+        userId: creator.userId,
+        actorId: user.id,
+        type: 'CREATOR_RATING',
+        title: 'New Creator Rating',
+        message: `${actorName} rated your creator profile (${finalOverallRating.toFixed(1)}/10)`,
+        entityType: 'CreatorProfile',
+        entityId: creator.id,
       });
     }
 

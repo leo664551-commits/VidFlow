@@ -3,7 +3,7 @@
 import { Play, Eye, Music, Clock } from 'lucide-react'
 import { format } from 'date-fns'
 import type { VideoWithCreator } from '@/types'
-import { useAppStore } from '@/store/app-store'
+import { useAppStore, type VideoContext } from '@/store/app-store'
 import { GENRES } from '@/config'
 
 const GENRE_GRADIENTS: Record<string, string> = {
@@ -22,9 +22,10 @@ const GENRE_GRADIENTS: Record<string, string> = {
 
 interface VideoCardProps {
   video: VideoWithCreator
+  context?: VideoContext
 }
 
-export function VideoCard({ video }: VideoCardProps) {
+export function VideoCard({ video, context }: VideoCardProps) {
   const navigate = useAppStore((s) => s.navigate)
   const gradient = GENRE_GRADIENTS[video.genre] || GENRE_GRADIENTS.OTHER
   const genreLabel = GENRES.includes(video.genre as (typeof GENRES)[number])
@@ -33,7 +34,7 @@ export function VideoCard({ video }: VideoCardProps) {
 
   return (
     <div
-      onClick={() => navigate('video-detail', video.id)}
+      onClick={() => navigate('video-detail', video.id, context)}
       className="group relative cursor-pointer overflow-hidden rounded-2xl bg-zinc-900 border border-white/10 aspect-[9/16] shadow-md hover:shadow-2xl hover:border-white/30 transition-all duration-300 flex flex-col justify-end"
     >
       {/* Background Poster / Gradient */}
@@ -66,9 +67,17 @@ export function VideoCard({ video }: VideoCardProps) {
         <h3 className="font-bold text-sm text-white leading-tight line-clamp-2 mb-1 group-hover:text-[#25F4EE] transition-colors">
           {video.title}
         </h3>
-        <p className="text-xs text-gray-300 font-medium truncate mb-2">
-          @{video.creator.creatorName}
-        </p>
+        <div className="flex items-center gap-1.5 mb-2">
+          <p className="text-xs text-gray-300 font-medium truncate">
+            @{video.creator.creatorName}
+          </p>
+          {(video.creator as any).isFollowing && !(video.creator as any).isSelf && (
+            <span className="shrink-0 inline-flex items-center gap-1 px-1.5 py-0.2 text-[9px] font-semibold bg-[#25F4EE]/15 text-[#25F4EE] border border-[#25F4EE]/30 rounded-full">
+              <span className="w-1 h-1 rounded-full bg-[#25F4EE]" />
+              Following
+            </span>
+          )}
+        </div>
         <div className="flex items-center justify-between text-[11px] text-gray-400">
           <span className="flex items-center gap-1">
             <Music className="w-3 h-3 text-[#FE2C55]" />

@@ -62,6 +62,31 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     await createAuditLog(user.id, 'VIDEO_UPLOAD_COMPLETED', 'Video', id, { title: updated.title });
     logger.info('Upload completed', { videoId: id, userId: user.id });
 
+    // Notify all followers of this creator
+    try {
+      const followers = await db.follow.findMany({
+        where: { followingId: user.id },
+        select: { followerId: true },
+      });
+
+      if (followers.length > 0) {
+        const creatorName = updated.creator?.creatorName || user.displayName || user.username || 'A creator you follow';
+        await db.notification.createMany({
+          data: followers.map((f) => ({
+            userId: f.followerId,
+            actorId: user.id,
+            type: 'NEW_VIDEO',
+            title: 'New Video Uploaded',
+            message: `${creatorName} uploaded a new video: "${updated.title}"`,
+            entityType: 'Video',
+            entityId: updated.id,
+          })),
+        });
+      }
+    } catch (notifErr) {
+      logger.error('Failed to notify followers of new video', { error: (notifErr as Error).message, videoId: id });
+    }
+
     return apiSuccess({
       id: updated.id,
       title: updated.title,

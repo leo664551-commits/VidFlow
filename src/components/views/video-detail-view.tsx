@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useMemo, useCallback } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
   ArrowLeft,
@@ -13,19 +13,16 @@ import {
   Volume2,
   VolumeX,
   Play,
-  Star,
+  Plus,
+  ChevronUp,
+  ChevronDown,
 } from 'lucide-react'
 import { motion } from 'framer-motion'
-import { getVideoDetail, toggleLike, rateCreator, updateCreatorRating } from '@/lib/api'
+import { getVideoDetail, toggleLike, toggleFollowCreator } from '@/lib/api'
 import { useAppStore } from '@/store/app-store'
+import { useVideoKeyboardShortcuts } from '@/hooks/use-video-keyboard-shortcuts'
 import { GENRES } from '@/config'
 import { toast } from 'sonner'
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
 
 const GENRE_GRADIENTS: Record<string, string> = {
   ACTION: 'from-red-600 via-rose-800 to-black',
@@ -49,6 +46,7 @@ function formatNumber(n: number): string {
 
 export function VideoDetailView() {
   const selectedVideoId = useAppStore((s) => s.selectedVideoId)
+  const videoContext = useAppStore((s) => s.videoContext)
   const { navigate, goBack } = useAppStore()
   const setCommentPanelOpen = useAppStore((s) => s.setCommentPanelOpen)
   const setSelectedVideoId = useAppStore((s) => s.setSelectedVideoId)
@@ -58,8 +56,6 @@ export function VideoDetailView() {
 
   const [isPlaying, setIsPlaying] = useState(true)
   const [isMuted, setIsMuted] = useState(false)
-  const [ratingModalOpen, setRatingModalOpen] = useState(false)
-  const [selectedRating, setSelectedRating] = useState(5)
   const [localLiked, setLocalLiked] = useState<boolean | null>(null)
   const [localLikeCount, setLocalLikeCount] = useState<number | null>(null)
 
@@ -80,19 +76,91 @@ export function VideoDetailView() {
     },
   })
 
-  const rateMutation = useMutation({
-    mutationFn: (rating: number) => {
-      if (!video?.creator?.id) return Promise.reject(new Error('Creator not found'))
-      return rateCreator(video.creator.id, rating)
-    },
-    onSuccess: () => {
+  const followMutation = useMutation({
+    mutationFn: (creatorId: string) => toggleFollowCreator(creatorId),
+    onSuccess: (res) => {
+      toast.success(
+        res.isFollowing
+          ? `Following @${video?.creator.creatorName}`
+          : `Unfollowed @${video?.creator.creatorName}`
+      )
       queryClient.invalidateQueries({ queryKey: ['video-detail', selectedVideoId] })
-      setRatingModalOpen(false)
-      toast.success('Thank you for rating this creator!')
+      queryClient.invalidateQueries({ queryKey: ['feed'] })
+      queryClient.invalidateQueries({ queryKey: ['creator-profile', video?.creator.id] })
+      queryClient.invalidateQueries({ queryKey: ['creator-followers', video?.creator.id] })
+      queryClient.invalidateQueries({ queryKey: ['creator-following', video?.creator.id] })
+      queryClient.invalidateQueries({ queryKey: ['user-me'] })
     },
-    onError: (err) => {
-      toast.error(err instanceof Error ? err.message : 'Rating failed')
+    onError: () => {
+      toast.error('Failed to update follow status')
     },
+  })
+
+  const togglePlay = () => {
+    setIsPlaying((prev) => !prev)
+  }
+
+  const handleBack = useCallback(() => {
+    goBack('feed')
+  }, [goBack])
+
+  const currentIndex = useMemo(() => {
+    if (!videoContext?.videoIds || !selectedVideoId) return -1
+    return videoContext.videoIds.indexOf(selectedVideoId)
+  }, [videoContext?.videoIds, selectedVideoId])
+
+  const hasNext = useMemo(() => {
+    if (!videoContext?.videoIds || currentIndex < 0) return false
+    return currentIndex < videoContext.videoIds.length - 1
+  }, [videoContext?.videoIds, currentIndex])
+
+  const hasPrev = useMemo(() => {
+    if (!videoContext?.videoIds || currentIndex < 0) return false
+    return currentIndex > 0
+  }, [videoContext?.videoIds, currentIndex])
+
+  const handleNext = useCallback(() => {
+    if (videoContext?.videoIds && currentIndex >= 0) {
+      if (currentIndex < videoContext.videoIds.length - 1) {
+        const nextId = videoContext.videoIds[currentIndex + 1]
+        setSelectedVideoId(nextId)
+        return
+      }
+      toast.info('No more videos in this collection')
+      return
+    }
+    handleBack()
+  }, [videoContext, currentIndex, setSelectedVideoId, handleBack])
+
+  const handlePrev = useCallback(() => {
+    if (videoContext?.videoIds && currentIndex >= 0) {
+      if (currentIndex > 0) {
+        const prevId = videoContext.videoIds[currentIndex - 1]
+        setSelectedVideoId(prevId)
+        return
+      }
+      toast.info('At the first video in this collection')
+      return
+    }
+    handleBack()
+  }, [videoContext, currentIndex, setSelectedVideoId, handleBack])
+
+  // Global Video Keyboard Shortcuts for Video Detail (Must execute unconditionally before early returns)
+  useVideoKeyboardShortcuts({
+    onToggleLike: () => {
+      if (!video) return
+      if (!user) {
+        toast.error('Please log in to like this video')
+        return
+      }
+      likeMutation.mutate(video.id)
+    },
+    onMute: () => setIsMuted(true),
+    onUnmute: () => setIsMuted(false),
+    onTogglePlay: togglePlay,
+    onPrev: handlePrev,
+    onNext: handleNext,
+    enabled: !!video && !isLoading,
   })
 
   if (isLoading) {
@@ -109,6 +177,8 @@ export function VideoDetailView() {
   const likeCount = localLikeCount ?? video.likeCount ?? 0
   const commentCount = video.commentCount ?? 0
   const viewCount = video.viewCount ?? 0
+  const isFollowing = !!video.creator.isFollowing
+  const isSelf = user?.id === video.creator.id || !!video.creator.isSelf
   const gradient = GENRE_GRADIENTS[video.genre] || GENRE_GRADIENTS.OTHER
   const initial = video.creator.creatorName?.[0]?.toUpperCase() || 'C'
   const genreLabel = GENRES.includes(video.genre as (typeof GENRES)[number])
@@ -116,10 +186,6 @@ export function VideoDetailView() {
     : video.genre
 
   const canInteract = !!user
-
-  const handleBack = () => {
-    goBack('feed')
-  }
 
   const handleComment = () => {
     setSelectedVideoId(video.id)
@@ -134,6 +200,16 @@ export function VideoDetailView() {
     }
   }
 
+  const handleFollow = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    if (!user) {
+      toast.error('Please log in to follow creators')
+      navigate('login')
+      return
+    }
+    followMutation.mutate(video.creator.id)
+  }
+
   const handleShare = (e: React.MouseEvent) => {
     e.stopPropagation()
     if (navigator.share) {
@@ -146,10 +222,6 @@ export function VideoDetailView() {
       navigator.clipboard.writeText(window.location.href)
       toast.success('Video link copied to clipboard!')
     }
-  }
-
-  const togglePlay = () => {
-    setIsPlaying((prev) => !prev)
   }
 
   return (
@@ -213,6 +285,7 @@ export function VideoDetailView() {
               }}
               aria-label="Toggle Sound"
               className="w-10 h-10 rounded-full bg-black/50 backdrop-blur-md text-white hover:bg-white/20 transition-all flex items-center justify-center border border-white/10 shadow-lg"
+              title={isMuted ? 'Unmute (M+M)' : 'Mute (M)'}
             >
               {isMuted ? <VolumeX className="w-5 h-5" /> : <Volume2 className="w-5 h-5" />}
             </button>
@@ -220,13 +293,28 @@ export function VideoDetailView() {
 
           {/* Bottom Info Overlay inside the 9:16 Portrait Card */}
           <div className="absolute bottom-0 left-0 right-0 p-5 bg-gradient-to-t from-black/90 via-black/50 to-transparent z-10 pointer-events-auto">
-            <div className="flex items-center gap-2 mb-2">
+            <div className="flex items-center gap-2 mb-2 flex-wrap">
               <button
                 onClick={handleCreatorTap}
                 className="text-base font-bold text-white hover:underline drop-shadow-md flex items-center gap-1.5"
               >
                 @{video.creator.creatorName}
               </button>
+              {isFollowing && !isSelf && (
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-[#25F4EE]/15 text-[#25F4EE] border border-[#25F4EE]/30 backdrop-blur-sm shadow-sm">
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#25F4EE] animate-pulse" />
+                  Following
+                </span>
+              )}
+              {!isSelf && !isFollowing && (
+                <button
+                  onClick={handleFollow}
+                  disabled={followMutation.isPending}
+                  className="px-2.5 py-0.5 rounded-full text-xs font-semibold transition-all drop-shadow-sm bg-[#FE2C55] hover:bg-[#FE2C55]/90 text-white"
+                >
+                  Follow
+                </button>
+              )}
               <span className="text-xs px-2 py-0.5 rounded-full bg-white/15 text-white/90 font-medium">
                 {video.ageRating}
               </span>
@@ -256,11 +344,31 @@ export function VideoDetailView() {
 
           {/* Mobile Overlay Side Rail (inside card on small screens) */}
           <div className="md:hidden absolute right-3 bottom-20 z-20 flex flex-col items-center gap-4 pointer-events-auto">
-            <button onClick={handleCreatorTap} className="relative group">
-              <div className="w-11 h-11 rounded-full bg-gradient-to-br from-[#FE2C55] to-orange-500 flex items-center justify-center font-bold text-white text-base border-2 border-white shadow-lg">
-                {initial}
-              </div>
-            </button>
+            <div className="relative mb-1">
+              <button onClick={handleCreatorTap} className="relative group">
+                <div className="w-11 h-11 rounded-full bg-gradient-to-br from-[#FE2C55] to-orange-500 flex items-center justify-center font-bold text-white text-base border-2 border-white shadow-lg overflow-hidden">
+                  {video.creator.avatarUrl ? (
+                    <img
+                      src={video.creator.avatarUrl}
+                      alt={video.creator.displayName || video.creator.creatorName}
+                      className="w-full h-full object-cover rounded-full"
+                    />
+                  ) : (
+                    initial
+                  )}
+                </div>
+              </button>
+              {!isFollowing && !isSelf && (
+                <button
+                  onClick={handleFollow}
+                  disabled={followMutation.isPending}
+                  className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 w-4 h-4 rounded-full bg-[#FE2C55] flex items-center justify-center text-white shadow-md hover:scale-110 transition-transform"
+                  title="Follow"
+                >
+                  <Plus className="w-3 h-3 stroke-[3]" />
+                </button>
+              )}
+            </div>
 
             <button
               onClick={(e) => {
@@ -310,10 +418,10 @@ export function VideoDetailView() {
               title={`@${video.creator.creatorName}`}
             >
               <div className="w-full h-full rounded-full bg-zinc-900 flex items-center justify-center font-bold text-white text-base overflow-hidden">
-                {(video.creator as any).avatarUrl ? (
+                {video.creator.avatarUrl ? (
                   <img
-                    src={(video.creator as any).avatarUrl}
-                    alt={(video.creator as any).displayName || video.creator.creatorName}
+                    src={video.creator.avatarUrl}
+                    alt={video.creator.displayName || video.creator.creatorName}
                     className="w-full h-full object-cover rounded-full"
                   />
                 ) : (
@@ -321,12 +429,16 @@ export function VideoDetailView() {
                 )}
               </div>
             </button>
-            <button
-              onClick={handleCreatorTap}
-              className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 w-5 h-5 rounded-full bg-[#FE2C55] flex items-center justify-center text-white text-xs font-bold shadow-md hover:scale-110 transition-transform"
-            >
-              +
-            </button>
+            {!isFollowing && !isSelf && (
+              <button
+                onClick={handleFollow}
+                disabled={followMutation.isPending}
+                className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 w-5 h-5 rounded-full bg-[#FE2C55] flex items-center justify-center text-white text-xs font-bold shadow-md hover:scale-110 transition-transform"
+                title="Follow"
+              >
+                <Plus className="w-3.5 h-3.5 stroke-[3]" />
+              </button>
+            )}
           </div>
 
           {/* Heart Like Button */}
@@ -358,23 +470,6 @@ export function VideoDetailView() {
             <span className="text-xs font-bold text-white drop-shadow">{formatNumber(commentCount)}</span>
           </button>
 
-          {/* Rate Button */}
-          <button
-            onClick={() => {
-              if (!canInteract) {
-                toast.error('Please log in to rate this creator')
-                return
-              }
-              setRatingModalOpen(true)
-            }}
-            className="flex flex-col items-center gap-1 group"
-          >
-            <div className="w-12 h-12 rounded-full bg-zinc-900/90 border border-white/10 hover:bg-zinc-800 flex items-center justify-center text-white shadow-lg transition-all group-hover:scale-110">
-              <Star className="w-6 h-6 text-yellow-400 fill-yellow-400" />
-            </div>
-            <span className="text-xs font-bold text-white drop-shadow">Rate</span>
-          </button>
-
           {/* Share Button */}
           <button onClick={handleShare} className="flex flex-col items-center gap-1 group">
             <div className="w-12 h-12 rounded-full bg-zinc-900/90 border border-white/10 hover:bg-zinc-800 flex items-center justify-center text-white shadow-lg transition-all group-hover:scale-110">
@@ -398,38 +493,25 @@ export function VideoDetailView() {
         </div>
       </div>
 
-      {/* Creator Rating Dialog */}
-      <Dialog open={ratingModalOpen} onOpenChange={setRatingModalOpen}>
-        <DialogContent className="bg-zinc-950 border-white/15 text-white max-w-sm rounded-2xl">
-          <DialogHeader>
-            <DialogTitle className="text-center text-lg font-bold">Rate @{video.creator.creatorName}</DialogTitle>
-          </DialogHeader>
-          <div className="flex flex-col items-center py-4 space-y-4">
-            <div className="flex gap-2">
-              {[1, 2, 3, 4, 5].map((star) => (
-                <button
-                  key={star}
-                  onClick={() => setSelectedRating(star)}
-                  className="p-1 hover:scale-125 transition-transform"
-                >
-                  <Star
-                    className={`w-8 h-8 ${
-                      star <= selectedRating ? 'fill-yellow-400 text-yellow-400' : 'text-zinc-600'
-                    }`}
-                  />
-                </button>
-              ))}
-            </div>
-            <button
-              onClick={() => rateMutation.mutate(selectedRating)}
-              disabled={rateMutation.isPending}
-              className="w-full py-2.5 rounded-xl bg-[#FE2C55] hover:bg-[#FE2C55]/90 text-white font-bold text-sm transition-all"
-            >
-              {rateMutation.isPending ? 'Submitting...' : `Submit ${selectedRating} Star Rating`}
-            </button>
-          </div>
-        </DialogContent>
-      </Dialog>
+      {/* Desktop Up/Down Navigation Floating Controls (TikTok style) */}
+      <div className="hidden lg:flex flex-col gap-2.5 fixed right-8 top-1/2 -translate-y-1/2 z-30 select-none">
+        <button
+          onClick={handlePrev}
+          disabled={!hasPrev && !!videoContext}
+          className="w-11 h-11 rounded-full bg-white/10 hover:bg-white/20 disabled:opacity-30 backdrop-blur-md flex items-center justify-center text-white border border-white/10 transition-all shadow-xl hover:scale-105 active:scale-95 cursor-pointer disabled:cursor-not-allowed"
+          title="Previous video (Arrow Up)"
+        >
+          <ChevronUp className="w-6 h-6" />
+        </button>
+        <button
+          onClick={handleNext}
+          disabled={!hasNext && !!videoContext}
+          className="w-11 h-11 rounded-full bg-white/10 hover:bg-white/20 disabled:opacity-30 backdrop-blur-md flex items-center justify-center text-white border border-white/10 transition-all shadow-xl hover:scale-105 active:scale-95 cursor-pointer disabled:cursor-not-allowed"
+          title="Next video (Arrow Down)"
+        >
+          <ChevronDown className="w-6 h-6" />
+        </button>
+      </div>
     </div>
   )
 }

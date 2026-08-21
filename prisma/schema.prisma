@@ -39,6 +39,8 @@ model User {
   auditLogs           AuditLog[]
   following           Follow[]             @relation("UserFollowing")
   followers           Follow[]             @relation("UserFollowers")
+  notifications       Notification[]       @relation("UserNotifications")
+  actorNotifications  Notification[]       @relation("ActorNotifications")
 }
 
 model Follow {
@@ -217,4 +219,24 @@ model CreatorApplication {
 
   @@index([userId])
   @@index([status])
+}
+
+model Notification {
+  id         String    @id @default(cuid())
+  userId     String
+  actorId    String?
+  type       String
+  title      String?
+  message    String
+  entityType String?
+  entityId   String?
+  read       Boolean   @default(false)
+  readAt     DateTime?
+  createdAt  DateTime  @default(now())
+
+  user  User  @relation("UserNotifications", fields: [userId], references: [id], onDelete: Cascade)
+  actor User? @relation("ActorNotifications", fields: [actorId], references: [id], onDelete: SetNull)
+
+  @@index([userId, read])
+  @@index([userId, createdAt])
 }

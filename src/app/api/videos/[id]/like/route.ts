@@ -2,6 +2,7 @@ import { NextRequest } from 'next/server';
 import { getSession } from '@/lib/auth';
 import { db } from '@/lib/db';
 import { apiSuccess, apiError } from '@/lib/api-response';
+import { createNotification } from '@/services/notification';
 
 export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const user = await getSession(request);
@@ -13,7 +14,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   try {
     const video = await db.video.findUnique({
       where: { id },
-      select: { id: true, status: true },
+      select: { id: true, creatorId: true, title: true, status: true },
     });
     if (!video) return apiError('VIDEO_NOT_FOUND');
     if (video.status !== 'READY') return apiError('VIDEO_NOT_FOUND');
@@ -33,6 +34,21 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
         data: { videoId: id, userId: user.id },
       });
       const likeCount = await db.videoLike.count({ where: { videoId: id } });
+
+      // Notify video creator if different from liker
+      if (video.creatorId !== user.id) {
+        const actorName = user.displayName || user.username || 'Someone';
+        await createNotification({
+          userId: video.creatorId,
+          actorId: user.id,
+          type: 'LIKE_VIDEO',
+          title: 'New Like on Video',
+          message: `${actorName} liked your video "${video.title}"`,
+          entityType: 'Video',
+          entityId: video.id,
+        });
+      }
+
       return apiSuccess({ liked: true, likeCount });
     }
   } catch (error) {

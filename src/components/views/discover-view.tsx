@@ -1,13 +1,13 @@
-'use client'
-
-import { useState, useRef, useEffect, useMemo } from 'react'
-import { useQuery } from '@tanstack/react-query'
+import { useState, useRef, useEffect, useMemo, useCallback } from 'react'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Search, Eye, Clock, Play, AtSign, Sparkles, User, ArrowRight } from 'lucide-react'
 import { motion } from 'framer-motion'
-import { searchVideos, getFeedVideos, searchCreators, type CreatorSearchResult } from '@/lib/api'
+import { searchVideos, getFeedVideos, searchCreators, toggleLike, type CreatorSearchResult } from '@/lib/api'
 import { useAppStore } from '@/store/app-store'
+import { useVideoKeyboardShortcuts } from '@/hooks/use-video-keyboard-shortcuts'
 import { GENRES } from '@/config'
 import type { Genre, FeedVideo } from '@/types'
+import { toast } from 'sonner'
 
 const GENRE_GRADIENTS: Record<string, string> = {
   ACTION: 'from-red-600 to-red-900',
@@ -36,19 +36,33 @@ function formatViews(count: number): string {
   return String(count)
 }
 
-function DiscoverCard({ video, onClick }: { video: FeedVideo; onClick: () => void }) {
+function DiscoverCard({
+  video,
+  onClick,
+  isFocused,
+}: {
+  video: FeedVideo
+  onClick: () => void
+  isFocused?: boolean
+}) {
   const gradient = GENRE_GRADIENTS[video.genre] || GENRE_GRADIENTS.OTHER
 
   return (
     <motion.button
       onClick={onClick}
       whileTap={{ scale: 0.97 }}
-      className="w-full aspect-[9/16] overflow-hidden rounded-2xl relative group bg-zinc-900 border border-white/10 shadow-md hover:shadow-2xl hover:border-white/30 transition-all duration-300 flex flex-col justify-end text-left"
+      className={`w-full aspect-[9/16] overflow-hidden rounded-2xl relative group bg-zinc-900 border transition-all duration-300 flex flex-col justify-end text-left ${
+        isFocused
+          ? 'border-[#25F4EE] ring-2 ring-[#25F4EE] shadow-[0_0_20px_rgba(37,244,238,0.4)] scale-[1.02]'
+          : 'border-white/10 shadow-md hover:shadow-2xl hover:border-white/30'
+      }`}
     >
       {/* Gradient background */}
       <div className={`absolute inset-0 bg-gradient-to-b ${gradient} group-hover:scale-105 transition-transform duration-500`}>
         {/* Play icon overlay */}
-        <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+        <div className={`absolute inset-0 flex items-center justify-center transition-opacity duration-300 ${
+          isFocused ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
+        }`}>
           <div className="h-12 w-12 rounded-full bg-black/60 backdrop-blur-md flex items-center justify-center shadow-xl border border-white/20">
             <Play className="h-6 w-6 text-white fill-white ml-0.5" />
           </div>
@@ -85,9 +99,11 @@ function DiscoverCard({ video, onClick }: { video: FeedVideo; onClick: () => voi
 }
 
 export function DiscoverView() {
-  const { navigate, setSelectedCreatorId, searchQuery, setSearchQuery } = useAppStore()
+  const { navigate, setSelectedCreatorId, searchQuery, setSearchQuery, user } = useAppStore()
+  const queryClient = useQueryClient()
   const [activeGenre, setActiveGenre] = useState<string | null>(null)
   const [debouncedQuery, setDebouncedQuery] = useState('')
+  const [focusedIndex, setFocusedIndex] = useState<number>(-1)
   const debounceRef = useRef<ReturnType<typeof setTimeout>>(undefined)
   const pillScrollRef = useRef<HTMLDivElement>(null)
 
@@ -139,9 +155,12 @@ export function DiscoverView() {
     ? searchResult.isLoading && creatorsResult.isLoading
     : genreResult.isLoading
 
-  const handleCardClick = (video: FeedVideo) => {
-    navigate('video-detail', video.id)
-  }
+  const handleCardClick = useCallback((video: FeedVideo) => {
+    navigate('video-detail', video.id, {
+      source: 'discover',
+      videoIds: videos.map((v) => v.id),
+    })
+  }, [navigate, videos])
 
   const handleCreatorClick = (creatorId: string) => {
     setSelectedCreatorId(creatorId)
@@ -156,7 +175,49 @@ export function DiscoverView() {
       // Clear search when selecting genre
       if (searchQuery) setSearchQuery('')
     }
+    setFocusedIndex(-1)
   }
+
+  // Like active video mutation for keyboard shortcut
+  const toggleLikeMutation = useMutation({
+    mutationFn: (vidId: string) => toggleLike(vidId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['discover-genre'] })
+      queryClient.invalidateQueries({ queryKey: ['discover-search'] })
+      queryClient.invalidateQueries({ queryKey: ['feed'] })
+      queryClient.invalidateQueries({ queryKey: ['my-liked-videos'] })
+    },
+  })
+
+  const activeVideo = focusedIndex >= 0 ? videos[focusedIndex] : null
+
+  // Global Video Keyboard Shortcuts for Discover / Explore
+  useVideoKeyboardShortcuts({
+    onNext: () => {
+      if (videos.length === 0) return
+      setFocusedIndex((prev) => (prev < videos.length - 1 ? prev + 1 : prev))
+    },
+    onPrev: () => {
+      if (videos.length === 0) return
+      setFocusedIndex((prev) => (prev > 0 ? prev - 1 : 0))
+    },
+    onTogglePlay: () => {
+      if (activeVideo) {
+        handleCardClick(activeVideo)
+      } else if (videos.length > 0) {
+        handleCardClick(videos[0])
+      }
+    },
+    onToggleLike: () => {
+      if (!activeVideo) return
+      if (!user) {
+        toast.error('Please log in to like videos')
+        return
+      }
+      toggleLikeMutation.mutate(activeVideo.id)
+    },
+    enabled: videos.length > 0,
+  })
 
   return (
     <div className="h-full w-full overflow-y-auto bg-black text-white pb-32 select-none scrollbar-thin scrollbar-thumb-zinc-800 scroll-smooth">
@@ -303,7 +364,11 @@ export function DiscoverView() {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: Math.min(idx * 0.04, 0.4), duration: 0.3 }}
                 >
-                  <DiscoverCard video={video} onClick={() => handleCardClick(video)} />
+                  <DiscoverCard
+                    video={video}
+                    isFocused={idx === focusedIndex}
+                    onClick={() => handleCardClick(video)}
+                  />
                 </motion.div>
               ))}
             </div>

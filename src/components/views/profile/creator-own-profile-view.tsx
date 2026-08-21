@@ -11,8 +11,10 @@ import {
   getCreatorVideos,
   getMyLikedVideos,
   getCreatorDashboard,
+  toggleLike,
 } from '@/lib/api'
-import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useVideoKeyboardShortcuts } from '@/hooks/use-video-keyboard-shortcuts'
 import {
   Loader2,
   ArrowLeft,
@@ -144,6 +146,56 @@ export function CreatorOwnProfileView() {
   const videosList = creatorVideosData?.data || []
   const likedVideosList = likedVideosData?.data || []
   const ratingsSummary = dashboardData?.ratings
+
+  const [focusedVideoIndex, setFocusedVideoIndex] = useState<number>(-1)
+
+  // Like mutation for keyboard shortcut
+  const toggleLikeMutation = useMutation({
+    mutationFn: (vidId: string) => toggleLike(vidId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['creator-videos'] })
+      queryClient.invalidateQueries({ queryKey: ['my-liked-videos'] })
+      queryClient.invalidateQueries({ queryKey: ['feed'] })
+    },
+  })
+
+  const currentList = activeTab === 'videos' ? videosList : activeTab === 'liked' ? likedVideosList : []
+  const activeVideo = focusedVideoIndex >= 0 && currentList[focusedVideoIndex] ? currentList[focusedVideoIndex] : null
+
+  const handleOpenVideo = (v: { id: string }) => {
+    navigate('video-detail', v.id, {
+      source: activeTab === 'liked' ? 'liked-videos' : 'creator-videos',
+      videoIds: currentList.map((item) => item.id),
+    })
+  }
+
+  // Global Video Keyboard Shortcuts for Creator's Own Profile
+  useVideoKeyboardShortcuts({
+    onNext: () => {
+      if (currentList.length === 0) return
+      setFocusedVideoIndex((prev) => (prev < currentList.length - 1 ? prev + 1 : prev))
+    },
+    onPrev: () => {
+      if (currentList.length === 0) return
+      setFocusedVideoIndex((prev) => (prev > 0 ? prev - 1 : 0))
+    },
+    onTogglePlay: () => {
+      if (activeVideo) {
+        handleOpenVideo(activeVideo)
+      } else if (currentList.length > 0) {
+        handleOpenVideo(currentList[0])
+      }
+    },
+    onToggleLike: () => {
+      if (!activeVideo) return
+      toggleLikeMutation.mutate(activeVideo.id)
+    },
+    enabled:
+      (activeTab === 'videos' || activeTab === 'liked') &&
+      !editModalOpen &&
+      !followModalOpen &&
+      currentList.length > 0,
+  })
 
   const hasSocialLinks =
     activeUser?.instagram ||
@@ -589,18 +641,25 @@ export function CreatorOwnProfileView() {
               </div>
             ) : videosList.length > 0 ? (
               <div className="grid grid-cols-3 gap-2">
-                {videosList.map((v: VideoWithCreator) => {
+                {videosList.map((v: VideoWithCreator, idx: number) => {
                   const gradient = GENRE_GRADIENTS[v.genre] || GENRE_GRADIENTS.OTHER
+                  const isFocused = activeTab === 'videos' && idx === focusedVideoIndex
                   return (
                     <div
                       key={v.id}
-                      onClick={() => navigate('video-detail', v.id)}
-                      className="aspect-[9/16] rounded-xl overflow-hidden relative cursor-pointer group bg-zinc-900 border border-white/10 shadow-md"
+                      onClick={() => handleOpenVideo(v)}
+                      className={`aspect-[9/16] rounded-xl overflow-hidden relative cursor-pointer group bg-zinc-900 border transition-all ${
+                        isFocused
+                          ? 'border-[#25F4EE] ring-2 ring-[#25F4EE] shadow-[0_0_20px_rgba(37,244,238,0.4)] scale-[1.02]'
+                          : 'border-white/10 shadow-md hover:border-white/30'
+                      }`}
                     >
                       <div
                         className={`absolute inset-0 bg-gradient-to-b ${gradient} group-hover:scale-105 transition-transform duration-300`}
                       />
-                      <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/30">
+                      <div className={`absolute inset-0 flex items-center justify-center transition-opacity bg-black/30 ${
+                        isFocused ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
+                      }`}>
                         <Play className="w-8 h-8 text-white fill-white" />
                       </div>
                       <div className="absolute bottom-0 inset-x-0 p-2 bg-gradient-to-t from-black/90 via-black/40 to-transparent flex items-center justify-between text-[11px] font-semibold text-white">
@@ -638,18 +697,25 @@ export function CreatorOwnProfileView() {
               </div>
             ) : likedVideosList.length > 0 ? (
               <div className="grid grid-cols-3 gap-2">
-                {likedVideosList.map((v: FeedVideo) => {
+                {likedVideosList.map((v: FeedVideo, idx: number) => {
                   const gradient = GENRE_GRADIENTS[v.genre] || GENRE_GRADIENTS.OTHER
+                  const isFocused = activeTab === 'liked' && idx === focusedVideoIndex
                   return (
                     <div
                       key={v.id}
-                      onClick={() => navigate('video-detail', v.id)}
-                      className="aspect-[9/16] rounded-xl overflow-hidden relative cursor-pointer group bg-zinc-900 border border-white/10 shadow-md"
+                      onClick={() => handleOpenVideo(v)}
+                      className={`aspect-[9/16] rounded-xl overflow-hidden relative cursor-pointer group bg-zinc-900 border transition-all ${
+                        isFocused
+                          ? 'border-[#25F4EE] ring-2 ring-[#25F4EE] shadow-[0_0_20px_rgba(37,244,238,0.4)] scale-[1.02]'
+                          : 'border-white/10 shadow-md hover:border-white/30'
+                      }`}
                     >
                       <div
                         className={`absolute inset-0 bg-gradient-to-b ${gradient} group-hover:scale-105 transition-transform duration-300`}
                       />
-                      <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/30">
+                      <div className={`absolute inset-0 flex items-center justify-center transition-opacity bg-black/30 ${
+                        isFocused ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
+                      }`}>
                         <Play className="w-8 h-8 text-white fill-white" />
                       </div>
                       <div className="absolute top-2 right-2 z-10 w-6 h-6 rounded-full bg-black/60 flex items-center justify-center">

@@ -2,6 +2,7 @@ import { NextRequest } from 'next/server';
 import { getSession } from '@/lib/auth';
 import { db } from '@/lib/db';
 import { apiSuccess, apiError } from '@/lib/api-response';
+import { createNotification } from '@/services/notification';
 
 async function resolveTargetUserId(id: string): Promise<string | null> {
   const creator = await db.creatorProfile.findFirst({
@@ -87,6 +88,20 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       },
     });
     isFollowing = true;
+
+    // Notify followed user
+    if (targetUserId !== user.id) {
+      const actorName = user.displayName || user.username || 'Someone';
+      await createNotification({
+        userId: targetUserId,
+        actorId: user.id,
+        type: 'FOLLOW',
+        title: 'New Follower',
+        message: `${actorName} started following you`,
+        entityType: 'User',
+        entityId: user.id,
+      });
+    }
   }
 
   const [followerCount, followingCount] = await Promise.all([

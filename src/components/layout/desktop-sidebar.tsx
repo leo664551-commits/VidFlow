@@ -49,7 +49,7 @@ export function DesktopSidebar() {
   }[] = [
     { label: 'For You', view: 'feed', icon: Home },
     { label: 'Explore', view: 'discover', icon: Compass },
-    { label: 'Inbox', view: 'notifications', icon: Bell },
+    { label: 'Notifications', view: 'notifications', icon: Bell },
     { label: 'Profile', view: 'profile', icon: User },
   ]
 

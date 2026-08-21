@@ -22,12 +22,16 @@ export async function GET(request: NextRequest) {
 
   if (searchTerm) {
     const cleanSearch = searchTerm.trim().replace(/^@/, '');
+    const cleanTag = searchTerm.trim().replace(/^#/, '');
     conditions.push({
       OR: [
         { title: { contains: searchTerm } },
+        { title: { contains: cleanTag } },
         { publisher: { contains: searchTerm } },
         { producer: { contains: searchTerm } },
         { description: { contains: searchTerm } },
+        { description: { contains: cleanTag } },
+        { description: { contains: `#${cleanTag}` } },
         { creator: { creatorName: { contains: searchTerm } } },
         { creator: { user: { username: { contains: cleanSearch } } } },
         { creator: { user: { displayName: { contains: searchTerm } } } },
