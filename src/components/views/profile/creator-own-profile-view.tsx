@@ -104,7 +104,7 @@ export function CreatorOwnProfileView() {
 
   // Authoritative fresh user profile from DB
   const { data: userProfile } = useQuery({
-    queryKey: ['user-me'],
+    queryKey: ['user-me', user?.id],
     queryFn: getMyProfile,
     enabled: !!user,
   })
@@ -118,14 +118,14 @@ export function CreatorOwnProfileView() {
 
   // Creator's private liked videos
   const { data: likedVideosData, isLoading: likedLoading } = useQuery({
-    queryKey: ['my-liked-videos'],
+    queryKey: ['my-liked-videos', user?.id],
     queryFn: getMyLikedVideos,
     enabled: !!user,
   })
 
   // Creator's received ratings & reviews from dashboard
   const { data: dashboardData } = useQuery({
-    queryKey: ['creator-dashboard'],
+    queryKey: ['creator-dashboard', user?.id],
     queryFn: getCreatorDashboard,
     enabled: !!user,
   })
@@ -227,7 +227,7 @@ export function CreatorOwnProfileView() {
         displayName: editDisplayName.trim(),
         username: cleanUsername,
         bio: editBio.trim(),
-        avatarUrl: editAvatarUrl || undefined,
+        avatarUrl: editAvatarUrl === null ? null : editAvatarUrl || undefined,
         gender: editGender,
         website: editWebsite.trim() || undefined,
         instagram: editInstagram.trim().replace(/^@/, '') || undefined,
@@ -273,7 +273,7 @@ export function CreatorOwnProfileView() {
   }
 
   const handleShare = async () => {
-    const url = `${window.location.origin}/platform/@${displayUsername}`
+    const url = window.location.origin
     if (navigator.share) {
       try {
         await navigator.share({

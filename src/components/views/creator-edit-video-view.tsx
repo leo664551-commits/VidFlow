@@ -33,12 +33,13 @@ interface FormData {
 
 export function CreatorEditVideoView() {
   const selectedVideoId = useAppStore((s) => s.selectedVideoId)
+  const user = useAppStore((s) => s.user)
   const { navigate, goBack } = useAppStore()
   const { toast } = useToast()
   const queryClient = useQueryClient()
 
   const { data: video, isLoading } = useQuery({
-    queryKey: ['video-detail', selectedVideoId],
+    queryKey: ['video-detail', selectedVideoId, user?.id],
     queryFn: () => getVideoDetail(selectedVideoId!),
     enabled: !!selectedVideoId,
   })

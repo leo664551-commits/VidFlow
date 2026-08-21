@@ -26,7 +26,7 @@ import { format } from 'date-fns'
 import type { VideoStatus } from '@/types'
 
 export function CreatorVideosView() {
-  const { navigate, goBack } = useAppStore()
+  const { user, navigate, goBack } = useAppStore()
   const queryClient = useQueryClient()
   const [page, setPage] = useState(1)
   const [status, setStatus] = useState<VideoStatus | 'ALL'>('ALL')
@@ -34,7 +34,7 @@ export function CreatorVideosView() {
   const [deleteId, setDeleteId] = useState<string | null>(null)
 
   const { data, isLoading } = useQuery({
-    queryKey: ['creator-videos', page, status],
+    queryKey: ['creator-videos', user?.id, page, status],
     queryFn: () =>
       getCreatorVideos({
         page,
@@ -49,6 +49,9 @@ export function CreatorVideosView() {
       setDeleteId(null)
       queryClient.invalidateQueries({ queryKey: ['creator-videos'] })
       queryClient.invalidateQueries({ queryKey: ['creator-dashboard'] })
+      queryClient.invalidateQueries({ queryKey: ['creator-my-videos'] })
+      queryClient.invalidateQueries({ queryKey: ['user-me'] })
+      queryClient.invalidateQueries({ queryKey: ['feed'] })
       toast.success('Video deleted successfully')
     },
     onError: (err) => {

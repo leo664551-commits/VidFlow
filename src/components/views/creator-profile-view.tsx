@@ -140,7 +140,7 @@ export function CreatorProfileView() {
   const [followModalTab, setFollowModalTab] = useState<'followers' | 'following'>('followers')
 
   const { data, isLoading, isError } = useQuery({
-    queryKey: ['creator-profile', selectedCreatorId],
+    queryKey: ['creator-profile', selectedCreatorId, user?.id],
     queryFn: () => getCreatorProfile(selectedCreatorId!),
     enabled: !!selectedCreatorId,
   })
@@ -149,7 +149,7 @@ export function CreatorProfileView() {
   const followMutation = useMutation({
     mutationFn: () => toggleFollowCreator(selectedCreatorId!),
     onSuccess: (result) => {
-      queryClient.setQueryData(['creator-profile', selectedCreatorId], (old: any) => {
+      queryClient.setQueryData(['creator-profile', selectedCreatorId, user?.id], (old: any) => {
         if (!old) return old
         return {
           ...old,
@@ -568,7 +568,7 @@ export function CreatorProfileView() {
             }`}
           >
             <Play className="w-4 h-4" />
-            Videos ({data.videos.length})
+            Videos ({data.postCount})
           </button>
           <button
             onClick={() => setActiveTab('reviews')}

@@ -94,35 +94,35 @@ export function AdminProfileView() {
 
   // Authoritative fresh profile query
   const { data: userProfile } = useQuery({
-    queryKey: ['user-me'],
+    queryKey: ['user-me', user?.id],
     queryFn: getMyProfile,
     enabled: !!user,
   })
 
   // Admin Dashboard stats
   const { data: adminStats } = useQuery({
-    queryKey: ['admin-dashboard'],
+    queryKey: ['admin-dashboard', user?.id],
     queryFn: getAdminDashboard,
     enabled: !!user,
   })
 
   // Pending creator applications
   const { data: applicationsData, isLoading: appsLoading } = useQuery({
-    queryKey: ['admin-creator-applications', 'PENDING'],
+    queryKey: ['admin-creator-applications', user?.id, 'PENDING'],
     queryFn: () => getAdminCreatorApplications({ status: 'PENDING', limit: 20 }),
     enabled: !!user,
   })
 
   // Fetch personal liked videos
   const { data: likedVideosData, isLoading: likedLoading } = useQuery({
-    queryKey: ['my-liked-videos'],
+    queryKey: ['my-liked-videos', user?.id],
     queryFn: getMyLikedVideos,
     enabled: !!user,
   })
 
   // Fetch personal submitted ratings
   const { data: myRatingsData, isLoading: ratingsLoading } = useQuery({
-    queryKey: ['my-ratings'],
+    queryKey: ['my-ratings', user?.id],
     queryFn: getMyRatings,
     enabled: !!user,
   })
@@ -204,7 +204,7 @@ export function AdminProfileView() {
         displayName: editDisplayName.trim(),
         username: cleanUsername,
         bio: editBio.trim(),
-        avatarUrl: editAvatarUrl || undefined,
+        avatarUrl: editAvatarUrl === null ? null : editAvatarUrl,
         gender: editGender,
       })
 

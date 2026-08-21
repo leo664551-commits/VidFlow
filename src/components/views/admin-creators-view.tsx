@@ -51,7 +51,7 @@ import { UserAvatar } from '@/components/common/user-avatar'
 import { CreatorApplicationItem } from '@/types'
 
 export function AdminCreatorsView() {
-  const { navigate, goBack } = useAppStore()
+  const { navigate, goBack, user } = useAppStore()
   const { toast } = useToast()
   const queryClient = useQueryClient()
   const [activeTab, setActiveTab] = useState<'creators' | 'applications'>('creators')
@@ -62,14 +62,14 @@ export function AdminCreatorsView() {
 
   // Active creators query
   const { data, isLoading } = useQuery({
-    queryKey: ['admin-creators', page, search],
+    queryKey: ['admin-creators', user?.id, page, search],
     queryFn: () => getAdminCreators({ page, limit: 10, search: search || undefined }),
     enabled: activeTab === 'creators',
   })
 
   // Pending applications query
   const { data: appsData, isLoading: appsLoading } = useQuery({
-    queryKey: ['admin-creator-applications', 'PENDING'],
+    queryKey: ['admin-creator-applications', user?.id, 'PENDING'],
     queryFn: () => getAdminCreatorApplications({ status: 'PENDING', limit: 20 }),
     enabled: activeTab === 'applications',
   })

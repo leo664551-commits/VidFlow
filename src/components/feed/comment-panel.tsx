@@ -298,7 +298,7 @@ export function CommentPanel() {
   const inputRef = useRef<HTMLInputElement>(null)
 
   const { data, isLoading } = useQuery({
-    queryKey: ['comments', selectedVideoId],
+    queryKey: ['comments', selectedVideoId, user?.id],
     queryFn: () => getVideoComments(selectedVideoId!, { limit: 50 }),
     enabled: commentPanelOpen && !!selectedVideoId,
   })

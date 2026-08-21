@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { useMutation } from '@tanstack/react-query'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -15,6 +15,7 @@ import { UserPlus, Loader2, ArrowLeft } from 'lucide-react'
 export function AdminCreatorNewView() {
   const { navigate, goBack } = useAppStore()
   const { toast } = useToast()
+  const queryClient = useQueryClient()
   const [email, setEmail] = useState('')
   const [displayName, setDisplayName] = useState('')
   const [creatorName, setCreatorName] = useState('')
@@ -23,7 +24,12 @@ export function AdminCreatorNewView() {
 
   const mutation = useMutation({
     mutationFn: () => createCreator({ email, displayName, creatorName, password, description: description || undefined }),
-    onSuccess: () => { toast({ title: 'Creator created successfully' }); navigate('admin-creators') },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-creators'] })
+      queryClient.invalidateQueries({ queryKey: ['admin-dashboard'] })
+      toast({ title: 'Creator created successfully' })
+      navigate('admin-creators')
+    },
     onError: (err) => { toast({ title: 'Failed to create creator', description: err instanceof Error ? err.message : 'Error', variant: 'destructive' }) },
   })
 

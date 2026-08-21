@@ -360,9 +360,10 @@ function FeedVideoCard({
 export function FeedView() {
   const scrollRef = useRef<HTMLDivElement>(null)
   const [activeIndex, setActiveIndex] = useState(0)
+  const user = useAppStore((s) => s.user)
 
   const { data, isLoading, fetchNextPage, hasNextPage, isFetchingNextPage } = useInfiniteQuery({
-    queryKey: ['feed'],
+    queryKey: ['feed', user?.id],
     queryFn: ({ pageParam }) => getFeedVideos({ page: pageParam as number, limit: 10 }),
     initialPageParam: 1,
     getNextPageParam: (lastPage, _allPages, lastPageParam) => {

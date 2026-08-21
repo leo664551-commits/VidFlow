@@ -30,7 +30,7 @@ import { Users, Ban, CheckCircle2, ArrowLeft } from 'lucide-react'
 import type { UserStatus } from '@/types'
 
 export function AdminUsersView() {
-  const { navigate, goBack } = useAppStore()
+  const { navigate, goBack, user } = useAppStore()
   const { toast } = useToast()
   const queryClient = useQueryClient()
   const [page, setPage] = useState(1)
@@ -39,7 +39,7 @@ export function AdminUsersView() {
   const [statusFilter, setStatusFilter] = useState<string>('ALL')
 
   const { data, isLoading } = useQuery({
-    queryKey: ['admin-users', page, search, roleFilter, statusFilter],
+    queryKey: ['admin-users', user?.id, page, search, roleFilter, statusFilter],
     queryFn: () =>
       getAdminUsers({
         page, limit: 10,

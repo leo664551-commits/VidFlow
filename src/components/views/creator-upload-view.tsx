@@ -199,6 +199,8 @@ export function CreatorUploadView() {
       setUploadSuccess(true)
       queryClient.invalidateQueries({ queryKey: ['creator-videos'] })
       queryClient.invalidateQueries({ queryKey: ['creator-dashboard'] })
+      queryClient.invalidateQueries({ queryKey: ['creator-my-videos'] })
+      queryClient.invalidateQueries({ queryKey: ['user-me'] })
       queryClient.invalidateQueries({ queryKey: ['feed'] })
       toast.success('Your video has been posted successfully!')
     },

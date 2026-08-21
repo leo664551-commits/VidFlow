@@ -12,10 +12,10 @@ import { Users, Video, Eye, Clock, AlertCircle, CheckCircle2, UserPlus, MessageS
 import { useAppStore } from '@/store/app-store'
 
 export function AdminDashboardView() {
-  const { navigate, goBack } = useAppStore()
+  const { navigate, goBack, user } = useAppStore()
 
   const { data, isLoading } = useQuery({
-    queryKey: ['admin-dashboard'],
+    queryKey: ['admin-dashboard', user?.id],
     queryFn: getAdminDashboard,
   })
 

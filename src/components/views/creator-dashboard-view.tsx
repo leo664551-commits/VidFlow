@@ -64,7 +64,7 @@ export function CreatorDashboardView() {
   const [reviewSearch, setReviewSearch] = useState('')
 
   const { data, isLoading } = useQuery({
-    queryKey: ['creator-dashboard'],
+    queryKey: ['creator-dashboard', user?.id],
     queryFn: getCreatorDashboard,
   })
 

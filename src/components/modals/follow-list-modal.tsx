@@ -41,7 +41,7 @@ export function FollowListModal({
     data: followersData,
     isLoading: loadingFollowers,
   } = useQuery({
-    queryKey: ['creator-followers', userId],
+    queryKey: ['creator-followers', userId, currentUser?.id],
     queryFn: () => getCreatorFollowers(userId),
     enabled: isOpen,
     staleTime: 5000,
@@ -52,7 +52,7 @@ export function FollowListModal({
     data: followingData,
     isLoading: loadingFollowing,
   } = useQuery({
-    queryKey: ['creator-following', userId],
+    queryKey: ['creator-following', userId, currentUser?.id],
     queryFn: () => getCreatorFollowing(userId),
     enabled: isOpen,
     staleTime: 5000,
@@ -84,8 +84,8 @@ export function FollowListModal({
       queryClient.invalidateQueries({ queryKey: ['creator-following', userId] })
       queryClient.invalidateQueries({ queryKey: ['creator-followers', targetId] })
       queryClient.invalidateQueries({ queryKey: ['creator-following', targetId] })
-      queryClient.invalidateQueries({ queryKey: ['creator', userId] })
-      queryClient.invalidateQueries({ queryKey: ['creator', targetId] })
+      queryClient.invalidateQueries({ queryKey: ['creator-profile', userId] })
+      queryClient.invalidateQueries({ queryKey: ['creator-profile', targetId] })
       queryClient.invalidateQueries({ queryKey: ['user-me'] })
       queryClient.invalidateQueries({ queryKey: ['creator-dashboard'] })
       queryClient.invalidateQueries({ queryKey: ['feed'] })

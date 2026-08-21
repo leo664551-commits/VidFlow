@@ -40,7 +40,7 @@ import { MessageSquare, Trash2, Eye, EyeOff, ArrowLeft } from 'lucide-react'
 import type { CommentStatus } from '@/types'
 
 export function AdminCommentsView() {
-  const { navigate, goBack } = useAppStore()
+  const { navigate, goBack, user } = useAppStore()
   const { toast } = useToast()
   const queryClient = useQueryClient()
   const [page, setPage] = useState(1)
@@ -48,7 +48,7 @@ export function AdminCommentsView() {
   const [deleteId, setDeleteId] = useState<string | null>(null)
 
   const { data, isLoading } = useQuery({
-    queryKey: ['admin-comments', page, statusFilter],
+    queryKey: ['admin-comments', user?.id, page, statusFilter],
     queryFn: () =>
       getAdminComments({
         page, limit: 10,

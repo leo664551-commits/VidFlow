@@ -41,7 +41,7 @@ import { Video, Trash2, Eye, EyeOff, ArrowLeft } from 'lucide-react'
 import type { VideoStatus, Genre } from '@/types'
 
 export function AdminVideosView() {
-  const { navigate, goBack } = useAppStore()
+  const { navigate, goBack, user } = useAppStore()
   const { toast } = useToast()
   const queryClient = useQueryClient()
   const [page, setPage] = useState(1)
@@ -51,7 +51,7 @@ export function AdminVideosView() {
   const [deleteId, setDeleteId] = useState<string | null>(null)
 
   const { data, isLoading } = useQuery({
-    queryKey: ['admin-videos', page, search, statusFilter, genreFilter],
+    queryKey: ['admin-videos', user?.id, page, search, statusFilter, genreFilter],
     queryFn: () =>
       getAdminVideos({
         page, limit: 10,

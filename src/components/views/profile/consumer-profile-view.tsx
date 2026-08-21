@@ -112,28 +112,28 @@ export function ConsumerProfileView() {
 
   // Authoritative fresh profile query
   const { data: userProfile } = useQuery({
-    queryKey: ['user-me'],
+    queryKey: ['user-me', user?.id],
     queryFn: getMyProfile,
     enabled: !!user,
   })
 
   // Check creator application status
   const { data: applicationStatus } = useQuery({
-    queryKey: ['creator-application-status'],
+    queryKey: ['creator-application-status', user?.id],
     queryFn: getCreatorApplicationStatus,
     enabled: !!user,
   })
 
   // Fetch private liked videos
   const { data: likedVideosData, isLoading: likedLoading } = useQuery({
-    queryKey: ['my-liked-videos'],
+    queryKey: ['my-liked-videos', user?.id],
     queryFn: getMyLikedVideos,
     enabled: !!user,
   })
 
   // Fetch private submitted ratings
   const { data: myRatingsData, isLoading: ratingsLoading } = useQuery({
-    queryKey: ['my-ratings'],
+    queryKey: ['my-ratings', user?.id],
     queryFn: getMyRatings,
     enabled: !!user,
   })
@@ -217,7 +217,7 @@ export function ConsumerProfileView() {
         displayName: editDisplayName.trim(),
         username: cleanUsername,
         bio: editBio.trim(),
-        avatarUrl: editAvatarUrl || undefined,
+        avatarUrl: editAvatarUrl === null ? null : editAvatarUrl || undefined,
         gender: editGender,
       })
 
@@ -296,6 +296,8 @@ export function ConsumerProfileView() {
       })
 
       queryClient.invalidateQueries({ queryKey: ['my-ratings'] })
+      queryClient.invalidateQueries({ queryKey: ['creator-profile', editingRatingItem.creatorId] })
+      queryClient.invalidateQueries({ queryKey: ['creator', editingRatingItem.creatorId] })
       toast.success('Your rating has been updated!')
       setEditingRatingItem(null)
     } catch (err) {
@@ -310,6 +312,8 @@ export function ConsumerProfileView() {
     try {
       await deleteCreatorRating(creatorId)
       queryClient.invalidateQueries({ queryKey: ['my-ratings'] })
+      queryClient.invalidateQueries({ queryKey: ['creator-profile', creatorId] })
+      queryClient.invalidateQueries({ queryKey: ['creator', creatorId] })
       toast.success('Rating deleted')
       setEditingRatingItem(null)
     } catch (err) {
@@ -326,7 +330,7 @@ export function ConsumerProfileView() {
   }
 
   const handleShare = async () => {
-    const url = `${window.location.origin}/platform/@${displayUsername}`
+    const url = window.location.origin
     if (navigator.share) {
       try {
         await navigator.share({
@@ -645,7 +649,10 @@ export function ConsumerProfileView() {
                     {/* Creator Info & Overall Score */}
                     <div className="flex items-center justify-between">
                       <div
-                        onClick={() => navigate('creator-profile', item.creator.id)}
+                        onClick={() => {
+                          useAppStore.getState().setSelectedCreatorId(item.creator.id)
+                          navigate('creator-profile')
+                        }}
                         className="flex items-center gap-3 cursor-pointer group"
                       >
                         <UserAvatar

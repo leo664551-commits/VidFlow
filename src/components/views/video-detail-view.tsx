@@ -64,7 +64,7 @@ export function VideoDetailView() {
   const [localLikeCount, setLocalLikeCount] = useState<number | null>(null)
 
   const { data: video, isLoading } = useQuery({
-    queryKey: ['video-detail', selectedVideoId],
+    queryKey: ['video-detail', selectedVideoId, user?.id],
     queryFn: () => getVideoDetail(selectedVideoId!),
     enabled: !!selectedVideoId,
   })
