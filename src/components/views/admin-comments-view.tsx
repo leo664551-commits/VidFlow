@@ -119,7 +119,7 @@ export function AdminCommentsView() {
         <div>
           <div className="flex items-center gap-2">
             <h1 className="text-2xl font-black text-white tracking-tight">Comment Moderation Center</h1>
-            <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-rose-500/15 text-rose-400 border border-rose-500/30">
+            <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-[#5E70FF]/15 text-[#5E70FF] border border-[#5E70FF]/30">
               Community Safety
             </span>
           </div>
@@ -169,7 +169,7 @@ export function AdminCommentsView() {
         <CardContent className="p-0">
           {isLoading ? (
             <div className="p-12 flex flex-col items-center justify-center gap-3 text-zinc-400">
-              <Loader2 className="w-8 h-8 text-rose-400 animate-spin" />
+              <Loader2 className="w-8 h-8 text-[#5E70FF] animate-spin" />
               <p className="text-xs">Loading comment records...</p>
             </div>
           ) : filteredComments.length > 0 ? (
@@ -239,7 +239,7 @@ export function AdminCommentsView() {
                               size="sm"
                               variant="ghost"
                               onClick={() => statusMutation.mutate({ id: c.id, status: 'HIDDEN' })}
-                              className="h-7 px-2 text-xs text-amber-400 hover:text-amber-300 hover:bg-amber-500/10"
+                              className="h-7 px-2 text-xs text-[#FF8D28] hover:text-[#FF8D28]/80 hover:bg-[#FF8D28]/10"
                               title="Hide Comment"
                             >
                               <EyeOff className="w-3.5 h-3.5" />
@@ -249,7 +249,7 @@ export function AdminCommentsView() {
                               size="sm"
                               variant="ghost"
                               onClick={() => statusMutation.mutate({ id: c.id, status: 'VISIBLE' })}
-                              className="h-7 px-2 text-xs text-emerald-400 hover:text-emerald-300 hover:bg-emerald-500/10"
+                              className="h-7 px-2 text-xs text-[#48B321] hover:text-[#48B321]/80 hover:bg-[#48B321]/10"
                               title="Show Comment"
                             >
                               <Eye className="w-3.5 h-3.5" />
@@ -260,7 +260,7 @@ export function AdminCommentsView() {
                             size="sm"
                             variant="ghost"
                             onClick={() => setDeleteDialogComment(c)}
-                            className="h-7 px-2 text-xs text-rose-400 hover:text-rose-300 hover:bg-rose-500/10"
+                            className="h-7 px-2 text-xs text-[#DF4D50] hover:text-[#DF4D50]/80 hover:bg-[#DF4D50]/10"
                             title="Delete Comment"
                           >
                             <Trash2 className="w-3.5 h-3.5" />
@@ -307,7 +307,7 @@ export function AdminCommentsView() {
               <Button
                 variant="outline"
                 onClick={() => setDeleteDialogComment(selectedComment)}
-                className="bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border-rose-500/30 text-xs"
+                className="bg-[#DF4D50]/10 hover:bg-[#DF4D50]/20 text-[#DF4D50] border-[#DF4D50]/30 text-xs"
               >
                 <Trash2 className="w-3.5 h-3.5 mr-1.5" />
                 Delete Comment
@@ -316,7 +316,7 @@ export function AdminCommentsView() {
               {selectedComment.status === 'VISIBLE' ? (
                 <Button
                   onClick={() => statusMutation.mutate({ id: selectedComment.id, status: 'HIDDEN' })}
-                  className="bg-amber-600 hover:bg-amber-500 text-white font-bold text-xs"
+                  className="bg-[#FF8D28] hover:bg-[#FF8D28]/90 text-black font-bold text-xs"
                 >
                   <EyeOff className="w-3.5 h-3.5 mr-1.5" />
                   Hide from Public Feed
@@ -324,7 +324,7 @@ export function AdminCommentsView() {
               ) : (
                 <Button
                   onClick={() => statusMutation.mutate({ id: selectedComment.id, status: 'VISIBLE' })}
-                  className="bg-emerald-500 hover:bg-emerald-400 text-black font-bold text-xs"
+                  className="bg-[#48B321] hover:bg-[#48B321]/90 text-white font-bold text-xs"
                 >
                   <Eye className="w-3.5 h-3.5 mr-1.5" />
                   Make Visible

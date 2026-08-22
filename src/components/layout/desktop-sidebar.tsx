@@ -14,13 +14,21 @@ import {
   Flame,
 } from 'lucide-react'
 import { useAppStore } from '@/store/app-store'
-import { logout } from '@/lib/api'
+import { useQuery } from '@tanstack/react-query'
+import { logout, getNotifications } from '@/lib/api'
 import type { AppView } from '@/types'
 import { UserAvatar } from '@/components/common/user-avatar'
 
 export function DesktopSidebar() {
   const { user, currentView, navigate, setUser } = useAppStore()
   const [searchQuery, setSearchQuery] = useState('')
+
+  const { data: notifsData } = useQuery({
+    queryKey: ['notifications', user?.id],
+    queryFn: () => getNotifications({ page: 1, limit: 1 }),
+    enabled: !!user,
+  })
+  const unreadCount = notifsData?.unreadCount || 0
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()
@@ -57,12 +65,12 @@ export function DesktopSidebar() {
     <aside className="hidden md:flex flex-col w-60 lg:w-64 h-screen fixed left-0 top-0 bottom-0 bg-black border-r border-white/10 z-30 select-none overflow-y-auto scrollbar-none">
       {/* Brand Logo */}
       <div className="px-5 py-4 flex items-center gap-2 cursor-pointer" onClick={() => navigate('feed')}>
-        <div className="relative flex items-center justify-center w-9 h-9 rounded-xl bg-gradient-to-tr from-[#FE2C55] to-[#25F4EE] shadow-lg shadow-[#FE2C55]/20">
+        <div className="relative flex items-center justify-center w-9 h-9 rounded-xl bg-gradient-to-tr from-[#5E70FF] to-[#24BBA9] shadow-lg shadow-[#5E70FF]/20">
           <Flame className="w-5 h-5 text-white fill-white" />
         </div>
         <div className="flex flex-col">
           <span className="text-xl font-black tracking-tight text-white flex items-center gap-1">
-            Vid<span className="text-[#FE2C55]">Flow</span>
+            Vid<span className="text-[#5E70FF]">Flow</span>
           </span>
         </div>
       </div>
@@ -75,7 +83,7 @@ export function DesktopSidebar() {
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search videos..."
-            className="w-full h-10 pl-10 pr-4 rounded-full bg-white/10 border border-white/10 text-white placeholder-gray-400 text-sm focus:outline-none focus:border-[#FE2C55]/50 focus:bg-white/15 transition-all"
+            className="w-full h-10 pl-10 pr-4 rounded-full bg-white/10 border border-white/10 text-white placeholder-gray-400 text-sm focus:outline-none focus:border-[#5E70FF] focus:bg-white/15 transition-all"
           />
           <Search className="w-4 h-4 text-gray-400 absolute left-3.5 top-3" />
         </form>
@@ -86,18 +94,24 @@ export function DesktopSidebar() {
         {navItems.map((item) => {
           const Icon = item.icon
           const isActive = currentView === item.view
+          const isNotifs = item.view === 'notifications'
           return (
             <button
               key={item.view}
               onClick={() => navigate(item.view)}
               className={`w-full flex items-center gap-3.5 px-4 py-3 rounded-xl font-semibold text-base transition-all ${
                 isActive
-                  ? 'text-[#FE2C55] bg-white/10 shadow-sm'
-                  : 'text-gray-300 hover:text-white hover:bg-white/5'
+                  ? 'text-[#5E70FF] bg-[#5E70FF]/15 border border-[#5E70FF]/30 shadow-sm'
+                  : 'text-gray-300 hover:text-white hover:bg-white/5 border border-transparent'
               }`}
             >
-              <Icon className={`w-6 h-6 ${isActive ? 'text-[#FE2C55]' : 'text-gray-400'}`} />
+              <Icon className={`w-6 h-6 ${isActive ? 'text-[#5E70FF]' : 'text-gray-400'}`} />
               <span>{item.label}</span>
+              {isNotifs && unreadCount > 0 && (
+                <span className="ml-auto px-2 py-0.5 text-xs font-bold bg-[#5E70FF] text-white rounded-full">
+                  {unreadCount > 99 ? '99+' : unreadCount}
+                </span>
+              )}
             </button>
           )
         })}
@@ -112,8 +126,8 @@ export function DesktopSidebar() {
               onClick={() => navigate('creator-upload')}
               className={`w-full flex items-center gap-3.5 px-4 py-2.5 rounded-xl font-semibold text-sm transition-all ${
                 currentView === 'creator-upload'
-                  ? 'text-[#FE2C55] bg-white/10'
-                  : 'text-gray-300 hover:text-white hover:bg-white/5'
+                  ? 'text-[#5E70FF] bg-[#5E70FF]/15 border border-[#5E70FF]/30'
+                  : 'text-gray-300 hover:text-white hover:bg-white/5 border border-transparent'
               }`}
             >
               <PlusSquare className="w-5 h-5 text-gray-400" />
@@ -123,8 +137,8 @@ export function DesktopSidebar() {
               onClick={() => navigate('creator-dashboard')}
               className={`w-full flex items-center gap-3.5 px-4 py-2.5 rounded-xl font-semibold text-sm transition-all ${
                 currentView === 'creator-dashboard' || currentView === 'creator-videos'
-                  ? 'text-[#FE2C55] bg-white/10'
-                  : 'text-gray-300 hover:text-white hover:bg-white/5'
+                  ? 'text-[#5E70FF] bg-[#5E70FF]/15 border border-[#5E70FF]/30'
+                  : 'text-gray-300 hover:text-white hover:bg-white/5 border border-transparent'
               }`}
             >
               <Film className="w-5 h-5 text-gray-400" />
@@ -143,11 +157,11 @@ export function DesktopSidebar() {
               onClick={() => navigate('admin-dashboard')}
               className={`w-full flex items-center gap-3.5 px-4 py-2.5 rounded-xl font-semibold text-sm transition-all ${
                 currentView.startsWith('admin-')
-                  ? 'text-[#FE2C55] bg-white/10'
+                  ? 'text-[#5E70FF] bg-white/10'
                   : 'text-gray-300 hover:text-white hover:bg-white/5'
               }`}
             >
-              <Shield className="w-5 h-5 text-[#25F4EE]" />
+              <Shield className="w-5 h-5 text-[#24BBA9]" />
               <span>Admin Portal</span>
             </button>
           </>
@@ -171,13 +185,13 @@ export function DesktopSidebar() {
               />
               <div className="flex-1 min-w-0">
                 <p
-                  className="text-sm font-semibold text-white truncate group-hover:text-[#FE2C55] transition-colors"
+                  className="text-sm font-semibold text-white truncate group-hover:text-[#5E70FF] transition-colors"
                   title={user.displayName || user.email}
                 >
                   {user.displayName || user.email}
                 </p>
                 <div className="flex items-center gap-1.5">
-                  <span className="inline-block px-1.5 py-0.5 text-[10px] font-medium rounded bg-white/10 text-gray-400 uppercase">
+                  <span className="inline-block px-1.5 py-0.5 text-[10px] font-medium rounded bg-[#5E70FF]/15 text-[#5E70FF] border border-[#5E70FF]/30 uppercase">
                     {user.role}
                   </span>
                   {user.username && (
@@ -195,7 +209,7 @@ export function DesktopSidebar() {
                 onClick={handleLogout}
                 aria-label="Sign Out"
                 title="Sign Out"
-                className="w-8 h-8 rounded-lg flex items-center justify-center text-gray-400 hover:text-[#FE2C55] hover:bg-white/10 transition-colors"
+                className="w-8 h-8 rounded-lg flex items-center justify-center text-gray-400 hover:text-[#DF4D50] hover:bg-white/10 transition-colors"
               >
                 <LogOut className="w-4 h-4" />
               </button>
@@ -212,7 +226,7 @@ export function DesktopSidebar() {
             <p className="text-xs text-gray-400 px-1">Log in to like videos, leave comments, and follow creators.</p>
             <button
               onClick={() => navigate('login')}
-              className="w-full py-2.5 rounded-xl bg-[#FE2C55] hover:bg-[#FE2C55]/90 text-white font-bold text-sm shadow-lg shadow-[#FE2C55]/30 transition-all"
+              className="w-full py-2.5 rounded-xl bg-[#5E70FF] hover:bg-[#4D5FE8] text-white font-bold text-sm shadow-lg shadow-[#5E70FF]/30 transition-all"
             >
               Log in
             </button>
@@ -221,7 +235,7 @@ export function DesktopSidebar() {
 
         {/* Footer info */}
         <div className="mt-4 pt-3 border-t border-white/5 text-[11px] text-gray-600 space-y-1">
-          <p>© 2026 VidFlow • TikTok Web UI</p>
+          <p>© 2026 VidFlow • Social Platform</p>
         </div>
       </div>
     </aside>

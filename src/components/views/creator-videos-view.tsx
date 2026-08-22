@@ -78,18 +78,18 @@ export function CreatorVideosView() {
           </button>
           <div className="flex items-center gap-2">
             <span className="text-lg font-black tracking-tight text-white flex items-center gap-1">
-              Vid<span className="text-[#FE2C55]">Flow</span>
+              Vid<span className="text-[#5E70FF]">Flow</span>
             </span>
             <span className="text-base font-bold text-gray-300">Creator Center</span>
-            <span className="px-2 py-0.5 rounded-md bg-[#FE2C55]/20 text-[#FE2C55] text-[10px] font-black uppercase tracking-wider border border-[#FE2C55]/30">
-              Beta
+            <span className="px-2 py-0.5 rounded-md bg-[#5E70FF]/20 text-[#5E70FF] text-[10px] font-black uppercase tracking-wider border border-[#5E70FF]/30">
+              Studio
             </span>
           </div>
         </div>
 
         <button
           onClick={() => navigate('creator-upload')}
-          className="hidden sm:flex items-center gap-2 px-5 py-2 rounded-xl bg-[#FE2C55] hover:bg-[#FE2C55]/90 text-white font-bold text-sm shadow-lg shadow-[#FE2C55]/20 transition-all hover:scale-[1.02]"
+          className="hidden sm:flex items-center gap-2 px-5 py-2 rounded-xl bg-[#5E70FF] hover:bg-[#4D5FE8] text-white font-bold text-sm shadow-lg shadow-[#5E70FF]/20 transition-all hover:scale-[1.02]"
         >
           <Upload className="w-4 h-4" />
           Upload
@@ -103,7 +103,7 @@ export function CreatorVideosView() {
           <div className="lg:col-span-3 space-y-4">
             <button
               onClick={() => navigate('creator-upload')}
-              className="w-full py-3.5 rounded-2xl bg-[#FE2C55] hover:bg-[#FE2C55]/90 text-white font-bold text-base shadow-xl shadow-[#FE2C55]/25 flex items-center justify-center gap-2 transition-all hover:scale-[1.01]"
+              className="w-full py-3.5 rounded-2xl bg-[#5E70FF] hover:bg-[#4D5FE8] text-white font-bold text-base shadow-xl shadow-[#5E70FF]/25 flex items-center justify-center gap-2 transition-all hover:scale-[1.01]"
             >
               <Upload className="w-5 h-5" />
               Upload
@@ -119,7 +119,7 @@ export function CreatorVideosView() {
               </button>
 
               <button
-                className="w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm bg-white/10 text-[#FE2C55]"
+                className="w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm bg-[#5E70FF]/15 text-[#5E70FF] border border-[#5E70FF]/30"
               >
                 <Film className="w-5 h-5" />
                 <span>Posts</span>
@@ -145,7 +145,7 @@ export function CreatorVideosView() {
                   <button onClick={() => navigate('creator-dashboard')} className="w-full text-left py-1.5 px-3 rounded-lg text-xs font-semibold text-gray-400 hover:text-white transition-colors">
                     Key metrics
                   </button>
-                  <button className="w-full text-left py-1.5 px-3 rounded-lg text-xs font-semibold text-[#FE2C55] bg-white/5">
+                  <button className="w-full text-left py-1.5 px-3 rounded-lg text-xs font-semibold text-[#5E70FF] bg-[#5E70FF]/10">
                     Content
                   </button>
                   <button onClick={() => navigate('profile')} className="w-full text-left py-1.5 px-3 rounded-lg text-xs font-semibold text-gray-400 hover:text-white transition-colors">
@@ -173,7 +173,7 @@ export function CreatorVideosView() {
                     value={searchFilter}
                     onChange={(e) => setSearchFilter(e.target.value)}
                     placeholder="Search posts..."
-                    className="w-full h-10 pl-9 pr-3 rounded-xl bg-zinc-900 border border-white/15 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-[#FE2C55]"
+                    className="w-full h-10 pl-9 pr-3 rounded-xl bg-zinc-900 border border-white/15 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-[#5E70FF]"
                   />
                   <Search className="w-4 h-4 text-gray-500 absolute left-3 top-3" />
                 </div>
@@ -189,7 +189,7 @@ export function CreatorVideosView() {
                   <p className="text-xs text-gray-400">You haven&apos;t uploaded any videos matching this filter yet.</p>
                   <button
                     onClick={() => navigate('creator-upload')}
-                    className="mt-2 px-6 py-2.5 rounded-xl bg-[#FE2C55] hover:bg-[#FE2C55]/90 text-white font-bold text-xs"
+                    className="mt-2 px-6 py-2.5 rounded-xl bg-[#5E70FF] hover:bg-[#4D5FE8] text-white font-bold text-xs shadow-lg shadow-[#5E70FF]/25 transition-all"
                   >
                     Upload your first video
                   </button>
@@ -230,7 +230,7 @@ export function CreatorVideosView() {
                               <div className="flex-1 min-w-0">
                                 <h4
                                   onClick={() => navigate('video-detail', video.id)}
-                                  className="text-sm font-bold text-white group-hover:text-[#25F4EE] transition-colors cursor-pointer line-clamp-2 leading-snug"
+                                  className="text-sm font-bold text-white group-hover:text-[#24BBA9] transition-colors cursor-pointer line-clamp-2 leading-snug"
                                 >
                                   {video.title}
                                 </h4>
@@ -244,16 +244,10 @@ export function CreatorVideosView() {
                                     ▶ {(video.viewCount ?? 0).toLocaleString()}
                                   </span>
                                   <span className="flex items-center gap-1">
-                                    ❤️ {Math.floor((video.viewCount ?? 0) * 0.12)}
+                                    ❤️ {(video.likeCount ?? 0).toLocaleString()}
                                   </span>
                                   <span className="flex items-center gap-1">
-                                    💬 {Math.floor((video.viewCount ?? 0) * 0.04)}
-                                  </span>
-                                  <span className="flex items-center gap-1">
-                                    ↗ 0
-                                  </span>
-                                  <span className="flex items-center gap-1">
-                                    🔖 1
+                                    💬 {(video.commentCount ?? 0).toLocaleString()}
                                   </span>
                                 </div>
                               </div>
@@ -282,7 +276,7 @@ export function CreatorVideosView() {
                               </button>
                               <button
                                 onClick={() => setDeleteId(video.id)}
-                                className="p-2 rounded-xl text-gray-400 hover:text-red-400 hover:bg-red-500/10 transition-colors"
+                                className="p-2 rounded-xl text-gray-400 hover:text-[#DF4D50] hover:bg-[#DF4D50]/10 transition-colors"
                                 title="Delete Video"
                               >
                                 <Trash2 className="w-4 h-4" />
@@ -293,7 +287,7 @@ export function CreatorVideosView() {
                           {/* Status Column */}
                           <td className="py-4 px-4 whitespace-nowrap">
                             <div className="space-y-1">
-                              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/15 text-emerald-400 border border-emerald-500/20">
+                              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#48B321]/15 text-[#48B321] border border-[#48B321]/30">
                                 Posted
                               </span>
                               <p className="text-[11px] text-gray-400">

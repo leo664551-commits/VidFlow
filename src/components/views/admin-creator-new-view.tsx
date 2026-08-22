@@ -56,7 +56,7 @@ export function AdminCreatorNewView() {
             <ArrowLeft className="w-4 h-4 mr-1.5" />
             Back to Creators
           </Button>
-          <span className="text-xs text-amber-400 font-bold uppercase tracking-wider">
+          <span className="text-xs text-[#24BBA9] font-bold uppercase tracking-wider">
             Direct Creator Provisioning
           </span>
         </div>
@@ -64,7 +64,7 @@ export function AdminCreatorNewView() {
         <Card className="bg-zinc-900/90 border-zinc-800 shadow-2xl">
           <CardHeader className="border-b border-zinc-800 pb-4">
             <CardTitle className="text-base font-bold text-white flex items-center gap-2">
-              <UserPlus className="w-5 h-5 text-cyan-400" />
+              <UserPlus className="w-5 h-5 text-[#5E70FF]" />
               Manual Creator Provisioning
             </CardTitle>
           </CardHeader>
@@ -140,7 +140,7 @@ export function AdminCreatorNewView() {
                 <Button
                   type="submit"
                   disabled={mutation.isPending}
-                  className="w-full bg-cyan-500 hover:bg-cyan-400 text-black font-bold text-xs h-10"
+                  className="w-full bg-[#5E70FF] hover:bg-[#4D5FE8] text-white font-bold text-xs h-10 shadow-lg shadow-[#5E70FF]/25"
                 >
                   {mutation.isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
                   Provision Creator Account

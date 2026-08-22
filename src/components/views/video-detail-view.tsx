@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo, useCallback } from 'react'
+import { useState, useMemo, useCallback, useEffect, useRef } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
   ArrowLeft,
@@ -18,7 +18,7 @@ import {
   ChevronDown,
 } from 'lucide-react'
 import { motion } from 'framer-motion'
-import { getVideoDetail, toggleLike, toggleFollowCreator } from '@/lib/api'
+import { getVideoDetail, toggleLike, toggleFollowCreator, recordVideoShare, recordVideoWatch } from '@/lib/api'
 import { useAppStore } from '@/store/app-store'
 import { useVideoKeyboardShortcuts } from '@/hooks/use-video-keyboard-shortcuts'
 import { GENRES } from '@/config'
@@ -65,6 +65,39 @@ export function VideoDetailView() {
     enabled: !!selectedVideoId,
   })
 
+  const watchTimeRef = useRef(0)
+  const lastSyncRef = useRef(0)
+  const duration = video?.duration || 30
+
+  useEffect(() => {
+    if (!video || !isPlaying) return
+
+    watchTimeRef.current = 0
+    lastSyncRef.current = 0
+
+    const interval = setInterval(() => {
+      watchTimeRef.current += 1
+      const currentWatch = watchTimeRef.current
+      if (currentWatch - lastSyncRef.current >= 4 || currentWatch >= Math.ceil(duration * 0.5)) {
+        lastSyncRef.current = currentWatch
+        recordVideoWatch(video.id, {
+          watchDuration: currentWatch,
+          videoDuration: duration,
+        })
+      }
+    }, 1000)
+
+    return () => {
+      clearInterval(interval)
+      if (watchTimeRef.current > lastSyncRef.current) {
+        recordVideoWatch(video.id, {
+          watchDuration: watchTimeRef.current,
+          videoDuration: duration,
+        })
+      }
+    }
+  }, [video?.id, isPlaying, duration])
+
   const likeMutation = useMutation({
     mutationFn: toggleLike,
     onSuccess: (result) => {
@@ -104,20 +137,22 @@ export function VideoDetailView() {
     goBack('feed')
   }, [goBack])
 
+  const videoIds = videoContext?.videoIds
+
   const currentIndex = useMemo(() => {
-    if (!videoContext?.videoIds || !selectedVideoId) return -1
-    return videoContext.videoIds.indexOf(selectedVideoId)
-  }, [videoContext?.videoIds, selectedVideoId])
+    if (!videoIds || !selectedVideoId) return -1
+    return videoIds.indexOf(selectedVideoId)
+  }, [videoIds, selectedVideoId])
 
   const hasNext = useMemo(() => {
-    if (!videoContext?.videoIds || currentIndex < 0) return false
-    return currentIndex < videoContext.videoIds.length - 1
-  }, [videoContext?.videoIds, currentIndex])
+    if (!videoIds || currentIndex < 0) return false
+    return currentIndex < videoIds.length - 1
+  }, [videoIds, currentIndex])
 
   const hasPrev = useMemo(() => {
-    if (!videoContext?.videoIds || currentIndex < 0) return false
+    if (!videoIds || currentIndex < 0) return false
     return currentIndex > 0
-  }, [videoContext?.videoIds, currentIndex])
+  }, [videoIds, currentIndex])
 
   const handleNext = useCallback(() => {
     if (videoContext?.videoIds && currentIndex >= 0) {
@@ -166,7 +201,7 @@ export function VideoDetailView() {
   if (isLoading) {
     return (
       <div className="flex h-full w-full items-center justify-center bg-black">
-        <Loader2 className="h-10 w-10 animate-spin text-[#FE2C55]" />
+        <Loader2 className="h-10 w-10 animate-spin text-[#5E70FF]" />
       </div>
     )
   }
@@ -212,13 +247,16 @@ export function VideoDetailView() {
 
   const handleShare = (e: React.MouseEvent) => {
     e.stopPropagation()
-    if (navigator.share) {
+    if (!video) return
+    const isNativeShare = typeof navigator !== 'undefined' && typeof navigator.share === 'function'
+    recordVideoShare(video.id, isNativeShare ? 'NATIVE_SHARE' : 'CLIPBOARD')
+    if (isNativeShare) {
       navigator.share({
         title: video.title,
         text: `Watch "${video.title}" on VidFlow`,
         url: window.location.href,
       }).catch(() => {})
-    } else {
+    } else if (typeof navigator !== 'undefined' && navigator.clipboard) {
       navigator.clipboard.writeText(window.location.href)
       toast.success('Video link copied to clipboard!')
     }
@@ -301,8 +339,8 @@ export function VideoDetailView() {
                 @{video.creator.creatorName}
               </button>
               {isFollowing && !isSelf && (
-                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-[#25F4EE]/15 text-[#25F4EE] border border-[#25F4EE]/30 backdrop-blur-sm shadow-sm">
-                  <span className="w-1.5 h-1.5 rounded-full bg-[#25F4EE] animate-pulse" />
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-[#24BBA9]/15 text-[#24BBA9] border border-[#24BBA9]/30 backdrop-blur-sm shadow-sm">
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#24BBA9] animate-pulse" />
                   Following
                 </span>
               )}
@@ -310,7 +348,7 @@ export function VideoDetailView() {
                 <button
                   onClick={handleFollow}
                   disabled={followMutation.isPending}
-                  className="px-2.5 py-0.5 rounded-full text-xs font-semibold transition-all drop-shadow-sm bg-[#FE2C55] hover:bg-[#FE2C55]/90 text-white"
+                  className="px-2.5 py-0.5 rounded-full text-xs font-semibold transition-all drop-shadow-sm bg-[#5E70FF] hover:bg-[#4D5FE8] text-white"
                 >
                   Follow
                 </button>
@@ -332,7 +370,7 @@ export function VideoDetailView() {
 
             <div className="flex items-center gap-3 text-xs text-white/80 font-medium">
               <span className="flex items-center gap-1.5 bg-black/40 backdrop-blur-sm px-2.5 py-1 rounded-full border border-white/10">
-                <Music className="w-3.5 h-3.5 text-[#25F4EE]" />
+                <Music className="w-3.5 h-3.5 text-[#5E70FF]" />
                 {genreLabel}
               </span>
               <span className="flex items-center gap-1 bg-black/40 backdrop-blur-sm px-2.5 py-1 rounded-full border border-white/10">
@@ -346,7 +384,7 @@ export function VideoDetailView() {
           <div className="md:hidden absolute right-3 bottom-20 z-20 flex flex-col items-center gap-4 pointer-events-auto">
             <div className="relative mb-1">
               <button onClick={handleCreatorTap} className="relative group">
-                <div className="w-11 h-11 rounded-full bg-gradient-to-br from-[#FE2C55] to-orange-500 flex items-center justify-center font-bold text-white text-base border-2 border-white shadow-lg overflow-hidden">
+                <div className="w-11 h-11 rounded-full bg-gradient-to-br from-[#5E70FF] to-[#24BBA9] flex items-center justify-center font-bold text-white text-base border-2 border-white shadow-lg overflow-hidden">
                   {video.creator.avatarUrl ? (
                     <img
                       src={video.creator.avatarUrl}
@@ -362,7 +400,7 @@ export function VideoDetailView() {
                 <button
                   onClick={handleFollow}
                   disabled={followMutation.isPending}
-                  className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 w-4 h-4 rounded-full bg-[#FE2C55] flex items-center justify-center text-white shadow-md hover:scale-110 transition-transform"
+                  className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 w-4 h-4 rounded-full bg-[#5E70FF] flex items-center justify-center text-white shadow-md hover:scale-110 transition-transform"
                   title="Follow"
                 >
                   <Plus className="w-3 h-3 stroke-[3]" />
@@ -382,7 +420,7 @@ export function VideoDetailView() {
               className="flex flex-col items-center gap-1"
             >
               <div className="w-10 h-10 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center text-white">
-                <Heart className={`w-6 h-6 ${isLiked ? 'fill-[#FE2C55] text-[#FE2C55]' : 'text-white'}`} />
+                <Heart className={`w-6 h-6 ${isLiked ? 'fill-[#DF4D50] text-[#DF4D50]' : 'text-white'}`} />
               </div>
               <span className="text-[11px] font-bold text-white">{formatNumber(likeCount)}</span>
             </button>
@@ -414,7 +452,7 @@ export function VideoDetailView() {
           <div className="relative mb-2">
             <button
               onClick={handleCreatorTap}
-              className="w-12 h-12 rounded-full p-[2px] bg-gradient-to-br from-[#FE2C55] to-orange-500 hover:scale-105 transition-transform overflow-hidden shadow-xl"
+              className="w-12 h-12 rounded-full p-[2px] bg-gradient-to-br from-[#5E70FF] to-[#24BBA9] hover:scale-105 transition-transform overflow-hidden shadow-xl"
               title={`@${video.creator.creatorName}`}
             >
               <div className="w-full h-full rounded-full bg-zinc-900 flex items-center justify-center font-bold text-white text-base overflow-hidden">
@@ -433,7 +471,7 @@ export function VideoDetailView() {
               <button
                 onClick={handleFollow}
                 disabled={followMutation.isPending}
-                className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 w-5 h-5 rounded-full bg-[#FE2C55] flex items-center justify-center text-white text-xs font-bold shadow-md hover:scale-110 transition-transform"
+                className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 w-5 h-5 rounded-full bg-[#5E70FF] flex items-center justify-center text-white text-xs font-bold shadow-md hover:scale-110 transition-transform"
                 title="Follow"
               >
                 <Plus className="w-3.5 h-3.5 stroke-[3]" />
@@ -455,7 +493,7 @@ export function VideoDetailView() {
             <div className="w-12 h-12 rounded-full bg-zinc-900/90 border border-white/10 hover:bg-zinc-800 flex items-center justify-center text-white shadow-lg transition-all group-hover:scale-110">
               <Heart
                 className={`w-6 h-6 transition-colors ${
-                  isLiked ? 'fill-[#FE2C55] text-[#FE2C55]' : 'text-white group-hover:text-[#FE2C55]'
+                  isLiked ? 'fill-[#DF4D50] text-[#DF4D50]' : 'text-white group-hover:text-[#DF4D50]'
                 }`}
               />
             </div>
@@ -465,7 +503,7 @@ export function VideoDetailView() {
           {/* Comment Button */}
           <button onClick={handleComment} className="flex flex-col items-center gap-1 group">
             <div className="w-12 h-12 rounded-full bg-zinc-900/90 border border-white/10 hover:bg-zinc-800 flex items-center justify-center text-white shadow-lg transition-all group-hover:scale-110">
-              <MessageCircle className="w-6 h-6 text-white group-hover:text-[#25F4EE] transition-colors" />
+              <MessageCircle className="w-6 h-6 text-white group-hover:text-[#24BBA9] transition-colors" />
             </div>
             <span className="text-xs font-bold text-white drop-shadow">{formatNumber(commentCount)}</span>
           </button>
@@ -473,19 +511,19 @@ export function VideoDetailView() {
           {/* Share Button */}
           <button onClick={handleShare} className="flex flex-col items-center gap-1 group">
             <div className="w-12 h-12 rounded-full bg-zinc-900/90 border border-white/10 hover:bg-zinc-800 flex items-center justify-center text-white shadow-lg transition-all group-hover:scale-110">
-              <Share2 className="w-6 h-6 text-white group-hover:text-[#25F4EE] transition-colors" />
+              <Share2 className="w-6 h-6 text-white group-hover:text-[#24BBA9] transition-colors" />
             </div>
             <span className="text-xs font-bold text-white drop-shadow">Share</span>
           </button>
 
-          {/* Spinning Vinyl Record (TikTok Trademark) */}
+          {/* Spinning Vinyl Record */}
           <div className="mt-2">
             <motion.div
               animate={{ rotate: isPlaying ? 360 : 0 }}
               transition={{ duration: 5, repeat: Infinity, ease: 'linear' }}
               className="w-12 h-12 rounded-full bg-zinc-950 border-4 border-zinc-800 flex items-center justify-center shadow-2xl"
             >
-              <div className="w-5 h-5 rounded-full bg-gradient-to-tr from-[#FE2C55] to-[#25F4EE] flex items-center justify-center">
+              <div className="w-5 h-5 rounded-full bg-gradient-to-tr from-[#5E70FF] to-[#24BBA9] flex items-center justify-center">
                 <div className="w-1.5 h-1.5 rounded-full bg-black" />
               </div>
             </motion.div>

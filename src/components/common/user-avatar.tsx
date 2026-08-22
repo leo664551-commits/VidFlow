@@ -50,7 +50,7 @@ export function UserAvatar({
   if (bordered) {
     return (
       <div
-        className={`relative shrink-0 rounded-full p-[2px] bg-gradient-to-tr from-amber-400 via-[#FE2C55] to-purple-600 shadow-md ${sizeClasses} ${className}`}
+        className={`relative shrink-0 rounded-full p-[2px] bg-gradient-to-tr from-[#5E70FF] via-[#24BBA9] to-[#5E70FF] shadow-md ${sizeClasses} ${className}`}
       >
         <div className="w-full h-full rounded-full overflow-hidden bg-black flex items-center justify-center">
           {content}

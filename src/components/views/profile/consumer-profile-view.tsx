@@ -461,7 +461,7 @@ export function ConsumerProfileView() {
             {/* Quick edit photo overlay */}
             <button
               onClick={handleOpenEditModal}
-              className="absolute bottom-0 right-0 w-8 h-8 rounded-full bg-[#FE2C55] text-white flex items-center justify-center border-2 border-black shadow-lg hover:scale-110 transition-transform"
+              className="absolute bottom-0 right-0 w-8 h-8 rounded-full bg-[#5E70FF] hover:bg-[#4D5FE8] text-white flex items-center justify-center border-2 border-black shadow-lg hover:scale-110 transition-transform"
               aria-label="Change photo"
             >
               <Camera className="w-4 h-4" />
@@ -474,7 +474,7 @@ export function ConsumerProfileView() {
               <h1 className="text-xl sm:text-2xl font-black text-white truncate">
                 {activeUser?.displayName || 'User'}
               </h1>
-              <span className="text-xs px-2.5 py-0.5 rounded-full font-bold uppercase tracking-wider bg-blue-500/20 text-blue-300 border border-blue-500/30">
+              <span className="text-xs px-2.5 py-0.5 rounded-full font-bold uppercase tracking-wider bg-[#5E70FF]/20 text-[#5E70FF] border border-[#5E70FF]/30">
                 CONSUMER
               </span>
             </div>
@@ -486,10 +486,10 @@ export function ConsumerProfileView() {
                 className="group inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-semibold text-gray-300 hover:text-white transition-all"
                 title="Click to copy username"
               >
-                <AtSign className="w-3 h-3 text-[#FE2C55]" />
+                <AtSign className="w-3 h-3 text-[#5E70FF]" />
                 <span>{displayUsername}</span>
                 {copiedUsername ? (
-                  <Check className="w-3 h-3 text-emerald-400" />
+                  <Check className="w-3 h-3 text-[#48B321]" />
                 ) : (
                   <Copy className="w-3 h-3 text-gray-500 group-hover:text-gray-300 opacity-0 group-hover:opacity-100 transition-opacity" />
                 )}
@@ -506,7 +506,7 @@ export function ConsumerProfileView() {
                 }}
                 className="flex flex-col sm:flex-row sm:items-center sm:gap-1 group cursor-pointer hover:opacity-80 transition-opacity text-left"
               >
-                <span className="font-bold text-white text-base group-hover:text-[#FE2C55] transition-colors">
+                <span className="font-bold text-white text-base group-hover:text-[#5E70FF] transition-colors">
                   {formatNumber(followersCount)}
                 </span>
                 <span className="text-gray-400 text-xs sm:text-sm">followers</span>
@@ -519,7 +519,7 @@ export function ConsumerProfileView() {
                 }}
                 className="flex flex-col sm:flex-row sm:items-center sm:gap-1 group cursor-pointer hover:opacity-80 transition-opacity text-left"
               >
-                <span className="font-bold text-white text-base group-hover:text-[#FE2C55] transition-colors">
+                <span className="font-bold text-white text-base group-hover:text-[#5E70FF] transition-colors">
                   {formatNumber(followingCount)}
                 </span>
                 <span className="text-gray-400 text-xs sm:text-sm">following</span>
@@ -530,7 +530,7 @@ export function ConsumerProfileView() {
 
         {/* Bio & Role details */}
         <div className="mt-4 space-y-2">
-          <p className="text-xs font-bold text-[#25F4EE] flex items-center gap-1">
+          <p className="text-xs font-bold text-[#24BBA9] flex items-center gap-1">
             <Sparkles className="w-3.5 h-3.5" />
             VidFlow Viewer
           </p>
@@ -542,7 +542,7 @@ export function ConsumerProfileView() {
           ) : (
             <button
               onClick={handleOpenEditModal}
-              className="text-xs font-semibold text-[#FE2C55] hover:underline flex items-center gap-1"
+              className="text-xs font-semibold text-[#5E70FF] hover:underline flex items-center gap-1"
             >
               <Plus className="w-3.5 h-3.5" />
               Add a bio to your profile
@@ -552,10 +552,10 @@ export function ConsumerProfileView() {
 
         {/* Pending Creator Application Notice */}
         {isApplicationPending && (
-          <div className="mt-3 p-3 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center gap-2.5">
-            <Clock className="w-4 h-4 text-amber-400 shrink-0" />
+          <div className="mt-3 p-3 rounded-2xl bg-[#FF8D28]/10 border border-[#FF8D28]/20 flex items-center gap-2.5">
+            <Clock className="w-4 h-4 text-[#FF8D28] shrink-0" />
             <div className="text-xs">
-              <span className="font-bold text-amber-300">Creator Application Under Review: </span>
+              <span className="font-bold text-[#FF8D28]">Creator Application Under Review: </span>
               <span className="text-gray-300">
                 You applied for {applicationStatus?.application?.category} niche. An administrator will review your application soon.
               </span>
@@ -576,13 +576,13 @@ export function ConsumerProfileView() {
           {!isApplicationPending ? (
             <button
               onClick={() => setBecomeCreatorModalOpen(true)}
-              className="flex-1 min-w-[150px] py-2.5 rounded-xl bg-gradient-to-r from-[#FE2C55] to-purple-600 hover:opacity-90 text-white font-bold text-sm transition-all shadow-lg flex items-center justify-center gap-2"
+              className="flex-1 min-w-[150px] py-2.5 rounded-xl bg-gradient-to-r from-[#5E70FF] to-[#24BBA9] hover:opacity-90 text-white font-bold text-sm transition-all shadow-lg flex items-center justify-center gap-2"
             >
               <Sparkles className="w-4 h-4" />
               Become a Creator
             </button>
           ) : (
-            <div className="flex-1 min-w-[150px] py-2.5 rounded-xl bg-zinc-900 border border-amber-500/30 text-amber-300 font-bold text-xs flex items-center justify-center gap-1.5">
+            <div className="flex-1 min-w-[150px] py-2.5 rounded-xl bg-zinc-900 border border-[#FF8D28]/30 text-[#FF8D28] font-bold text-xs flex items-center justify-center gap-1.5">
               <Clock className="w-3.5 h-3.5" />
               Application Pending
             </div>
@@ -612,7 +612,7 @@ export function ConsumerProfileView() {
             {activeTab === 'liked' && (
               <motion.div
                 layoutId="consumerProfileTabLine"
-                className="absolute bottom-0 inset-x-6 h-0.5 bg-[#FE2C55]"
+                className="absolute bottom-0 inset-x-6 h-0.5 bg-[#5E70FF]"
               />
             )}
           </button>
@@ -623,12 +623,12 @@ export function ConsumerProfileView() {
               activeTab === 'ratings' ? 'text-white' : 'text-gray-500 hover:text-gray-300'
             }`}
           >
-            <Star className="w-4 h-4 text-amber-400 fill-amber-400/20" />
+            <Star className="w-4 h-4 text-[#FF8D28] fill-[#FF8D28]/20" />
             <span>My Ratings</span>
             {activeTab === 'ratings' && (
               <motion.div
                 layoutId="consumerProfileTabLine"
-                className="absolute bottom-0 inset-x-6 h-0.5 bg-[#FE2C55]"
+                className="absolute bottom-0 inset-x-6 h-0.5 bg-[#5E70FF]"
               />
             )}
           </button>
@@ -640,7 +640,7 @@ export function ConsumerProfileView() {
           {activeTab === 'liked' && (
             likedLoading ? (
               <div className="py-20 flex justify-center">
-                <Loader2 className="w-8 h-8 animate-spin text-[#FE2C55]" />
+                <Loader2 className="w-8 h-8 animate-spin text-[#5E70FF]" />
               </div>
             ) : likedVideosList.length > 0 ? (
               <div className="grid grid-cols-3 gap-2">
@@ -653,7 +653,7 @@ export function ConsumerProfileView() {
                       onClick={() => handleOpenLikedVideo(v)}
                       className={`aspect-[9/16] rounded-xl overflow-hidden relative cursor-pointer group bg-zinc-900 border transition-all ${
                         isFocused
-                          ? 'border-[#25F4EE] ring-2 ring-[#25F4EE] shadow-[0_0_20px_rgba(37,244,238,0.4)] scale-[1.02]'
+                          ? 'border-[#24BBA9] ring-2 ring-[#24BBA9] shadow-[0_0_20px_rgba(36,187,169,0.4)] scale-[1.02]'
                           : 'border-white/10 shadow-md hover:border-white/30'
                       }`}
                     >
@@ -683,7 +683,7 @@ export function ConsumerProfileView() {
               </div>
             ) : (
               <div className="py-16 text-center text-gray-500 space-y-3">
-                <div className="w-14 h-14 rounded-full bg-rose-500/10 border border-rose-500/20 text-rose-500 flex items-center justify-center mx-auto">
+                <div className="w-14 h-14 rounded-full bg-[#DF4D50]/10 border border-[#DF4D50]/30 text-[#DF4D50] flex items-center justify-center mx-auto">
                   <Heart className="w-7 h-7" />
                 </div>
                 <h3 className="text-base font-bold text-white">No liked videos yet</h3>
@@ -705,7 +705,7 @@ export function ConsumerProfileView() {
           {activeTab === 'ratings' && (
             ratingsLoading ? (
               <div className="py-20 flex justify-center">
-                <Loader2 className="w-8 h-8 animate-spin text-[#FE2C55]" />
+                <Loader2 className="w-8 h-8 animate-spin text-[#5E70FF]" />
               </div>
             ) : myRatingsList.length > 0 ? (
               <div className="space-y-3">
@@ -730,7 +730,7 @@ export function ConsumerProfileView() {
                           bordered
                         />
                         <div>
-                          <h4 className="text-sm font-bold text-white group-hover:text-[#FE2C55] transition-colors">
+                          <h4 className="text-sm font-bold text-white group-hover:text-[#5E70FF] transition-colors">
                             {item.creator.displayName || item.creator.creatorName}
                           </h4>
                           <p className="text-[11px] text-gray-400 font-mono">
@@ -740,8 +740,8 @@ export function ConsumerProfileView() {
                       </div>
 
                       <div className="flex items-center gap-2">
-                        <div className="px-3 py-1 rounded-xl bg-gradient-to-r from-amber-500/20 to-orange-500/20 border border-amber-500/30 text-amber-300 font-black text-sm flex items-center gap-1.5">
-                          <Star className="w-4 h-4 fill-amber-400 text-amber-400" />
+                        <div className="px-3 py-1 rounded-xl bg-gradient-to-r from-[#FF8D28]/20 to-[#FF8D28]/10 border border-[#FF8D28]/30 text-[#FF8D28] font-black text-sm flex items-center gap-1.5">
+                          <Star className="w-4 h-4 fill-[#FF8D28] text-[#FF8D28]" />
                           <span>{item.overallRating.toFixed(1)} / 10</span>
                         </div>
                         <button
@@ -813,7 +813,7 @@ export function ConsumerProfileView() {
               </div>
             ) : (
               <div className="py-16 text-center text-gray-500 space-y-3">
-                <div className="w-14 h-14 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-400 flex items-center justify-center mx-auto">
+                <div className="w-14 h-14 rounded-full bg-[#FF8D28]/10 border border-[#FF8D28]/20 text-[#FF8D28] flex items-center justify-center mx-auto">
                   <Star className="w-7 h-7" />
                 </div>
                 <h3 className="text-base font-bold text-white">No ratings submitted yet</h3>
@@ -892,7 +892,7 @@ export function ConsumerProfileView() {
                   <button
                     type="button"
                     onClick={handleRemoveAvatar}
-                    className="px-3 py-1.5 rounded-lg bg-red-950/40 hover:bg-red-900/50 border border-red-500/20 text-xs font-semibold text-red-400 transition-colors flex items-center gap-1.5"
+                    className="px-3 py-1.5 rounded-lg bg-[#DF4D50]/15 hover:bg-[#DF4D50]/25 border border-[#DF4D50]/30 text-xs font-semibold text-[#DF4D50] transition-colors flex items-center gap-1.5"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
                     Remove
@@ -905,7 +905,7 @@ export function ConsumerProfileView() {
             <div className="space-y-1.5">
               <label className="text-xs font-bold text-gray-300 flex items-center justify-between">
                 <span>Unique Username</span>
-                <span className="text-[10px] text-[#25F4EE] font-normal">Cannot be duplicated</span>
+                <span className="text-[10px] text-[#24BBA9] font-normal">Cannot be duplicated</span>
               </label>
               <div className="relative">
                 <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 text-sm font-bold">
@@ -920,7 +920,7 @@ export function ConsumerProfileView() {
                   placeholder="username"
                   maxLength={30}
                   required
-                  className="w-full rounded-xl bg-zinc-900 border border-white/10 pl-8 pr-3.5 py-2.5 text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-[#FE2C55] transition-all font-mono"
+                  className="w-full rounded-xl bg-zinc-900 border border-white/10 pl-8 pr-3.5 py-2.5 text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-[#5E70FF] transition-all font-mono"
                 />
               </div>
               <p className="text-[11px] text-gray-500">
@@ -938,7 +938,7 @@ export function ConsumerProfileView() {
                 placeholder="Your Display Name"
                 maxLength={50}
                 required
-                className="w-full rounded-xl bg-zinc-900 border border-white/10 px-3.5 py-2.5 text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-[#FE2C55] transition-all"
+                className="w-full rounded-xl bg-zinc-900 border border-white/10 px-3.5 py-2.5 text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-[#5E70FF] transition-all"
               />
             </div>
 
@@ -954,7 +954,7 @@ export function ConsumerProfileView() {
                 maxLength={500}
                 rows={3}
                 placeholder="Tell the community about yourself..."
-                className="w-full rounded-xl bg-zinc-900 border border-white/10 p-3 text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-[#FE2C55] transition-all resize-none"
+                className="w-full rounded-xl bg-zinc-900 border border-white/10 p-3 text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-[#5E70FF] transition-all resize-none"
               />
             </div>
 
@@ -964,7 +964,7 @@ export function ConsumerProfileView() {
               <select
                 value={editGender}
                 onChange={(e) => setEditGender(e.target.value)}
-                className="w-full rounded-xl bg-zinc-900 border border-white/10 px-3.5 py-2.5 text-sm text-white focus:outline-none focus:ring-1 focus:ring-[#FE2C55] transition-all"
+                className="w-full rounded-xl bg-zinc-900 border border-white/10 px-3.5 py-2.5 text-sm text-white focus:outline-none focus:ring-1 focus:ring-[#5E70FF] transition-all"
               >
                 <option value="PREFER_NOT_TO_SAY">Prefer not to say</option>
                 <option value="FEMALE">Female</option>
@@ -985,7 +985,7 @@ export function ConsumerProfileView() {
               <button
                 type="submit"
                 disabled={saving}
-                className="flex-1 py-2.5 rounded-xl bg-[#FE2C55] hover:bg-[#FE2C55]/90 text-white font-bold text-xs shadow-lg transition-all flex items-center justify-center gap-1.5 disabled:opacity-50"
+                className="flex-1 py-2.5 rounded-xl bg-[#5E70FF] hover:bg-[#4D5FE8] text-white font-bold text-xs shadow-lg transition-all flex items-center justify-center gap-1.5 disabled:opacity-50"
               >
                 {saving ? (
                   <>
@@ -1006,7 +1006,7 @@ export function ConsumerProfileView() {
         <DialogContent className="bg-zinc-950 border border-white/10 text-white sm:max-w-md max-h-[90vh] overflow-y-auto rounded-3xl p-6 shadow-2xl">
           <DialogHeader>
             <DialogTitle className="text-xl font-black text-white flex items-center gap-2">
-              <Sparkles className="w-5 h-5 text-[#FE2C55]" />
+              <Sparkles className="w-5 h-5 text-[#5E70FF]" />
               <span>Apply to Become a Creator</span>
             </DialogTitle>
           </DialogHeader>
@@ -1031,7 +1031,7 @@ export function ConsumerProfileView() {
                       onClick={() => setApplyCategory(key)}
                       className={`px-3 py-2 rounded-xl text-xs font-bold flex items-center gap-2 transition-all border text-left ${
                         isSelected
-                          ? 'bg-[#FE2C55] text-white border-[#FE2C55] shadow-md scale-[1.02]'
+                          ? 'bg-[#5E70FF] text-white border-[#5E70FF] shadow-md scale-[1.02]'
                           : 'bg-zinc-900 text-gray-300 border-white/10 hover:bg-zinc-800'
                       }`}
                     >
@@ -1050,7 +1050,7 @@ export function ConsumerProfileView() {
                     onChange={(e) => setApplyCustomCategory(e.target.value)}
                     placeholder="Enter custom niche..."
                     maxLength={40}
-                    className="w-full rounded-xl bg-zinc-900 border border-white/10 px-3.5 py-2 text-xs text-white placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-[#FE2C55]"
+                    className="w-full rounded-xl bg-zinc-900 border border-white/10 px-3.5 py-2 text-xs text-white placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-[#5E70FF]"
                   />
                 </div>
               )}
@@ -1067,7 +1067,7 @@ export function ConsumerProfileView() {
                 maxLength={400}
                 rows={2}
                 placeholder="What topics will your videos cover?"
-                className="w-full rounded-xl bg-zinc-900 border border-white/10 p-3 text-xs text-white placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-[#FE2C55] transition-all resize-none"
+                className="w-full rounded-xl bg-zinc-900 border border-white/10 p-3 text-xs text-white placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-[#5E70FF] transition-all resize-none"
               />
             </div>
 
@@ -1081,7 +1081,7 @@ export function ConsumerProfileView() {
                 value={applySocialLink}
                 onChange={(e) => setApplySocialLink(e.target.value)}
                 placeholder="https://youtube.com/@yourchannel or instagram.com/..."
-                className="w-full rounded-xl bg-zinc-900 border border-white/10 px-3.5 py-2 text-xs text-white placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-[#FE2C55]"
+                className="w-full rounded-xl bg-zinc-900 border border-white/10 px-3.5 py-2 text-xs text-white placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-[#5E70FF]"
               />
             </div>
 
@@ -1097,7 +1097,7 @@ export function ConsumerProfileView() {
               <button
                 type="submit"
                 disabled={applying}
-                className="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-[#FE2C55] to-purple-600 text-white font-bold text-xs shadow-lg transition-all flex items-center justify-center gap-1.5 disabled:opacity-50"
+                className="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-[#5E70FF] to-[#24BBA9] text-white font-bold text-xs shadow-lg transition-all flex items-center justify-center gap-1.5 disabled:opacity-50"
               >
                 {applying ? (
                   <>
@@ -1122,7 +1122,7 @@ export function ConsumerProfileView() {
           <DialogHeader>
             <DialogTitle className="text-xl font-black text-white flex items-center justify-between">
               <span>Edit Your Rating</span>
-              <span className="text-xs font-bold text-amber-400">
+              <span className="text-xs font-bold text-[#FF8D28]">
                 ⭐ {editRatingScore.toFixed(1)} / 10
               </span>
             </DialogTitle>
@@ -1151,7 +1151,7 @@ export function ConsumerProfileView() {
               <div className="space-y-2 p-3.5 rounded-2xl bg-zinc-900 border border-white/10">
                 <div className="flex items-center justify-between text-xs font-bold">
                   <span className="text-gray-300">Overall Rating</span>
-                  <span className="text-amber-400 font-black text-base">
+                  <span className="text-[#FF8D28] font-black text-base">
                     {editRatingScore.toFixed(1)} / 10
                   </span>
                 </div>
@@ -1162,7 +1162,7 @@ export function ConsumerProfileView() {
                   step="0.5"
                   value={editRatingScore}
                   onChange={(e) => setEditRatingScore(parseFloat(e.target.value))}
-                  className="w-full accent-[#FE2C55] h-2 bg-zinc-800 rounded-lg cursor-pointer"
+                  className="w-full accent-[#5E70FF] h-2 bg-zinc-800 rounded-lg cursor-pointer"
                 />
               </div>
 
@@ -1184,7 +1184,7 @@ export function ConsumerProfileView() {
                     max="10"
                     value={editQuality}
                     onChange={(e) => setEditQuality(parseInt(e.target.value))}
-                    className="w-full accent-[#FE2C55] h-1.5 bg-zinc-800 rounded-lg cursor-pointer"
+                    className="w-full accent-[#5E70FF] h-1.5 bg-zinc-800 rounded-lg cursor-pointer"
                   />
                 </div>
 
@@ -1200,7 +1200,7 @@ export function ConsumerProfileView() {
                     max="10"
                     value={editValue}
                     onChange={(e) => setEditValue(parseInt(e.target.value))}
-                    className="w-full accent-[#FE2C55] h-1.5 bg-zinc-800 rounded-lg cursor-pointer"
+                    className="w-full accent-[#5E70FF] h-1.5 bg-zinc-800 rounded-lg cursor-pointer"
                   />
                 </div>
 
@@ -1216,7 +1216,7 @@ export function ConsumerProfileView() {
                     max="10"
                     value={editCreativity}
                     onChange={(e) => setEditCreativity(parseInt(e.target.value))}
-                    className="w-full accent-[#FE2C55] h-1.5 bg-zinc-800 rounded-lg cursor-pointer"
+                    className="w-full accent-[#5E70FF] h-1.5 bg-zinc-800 rounded-lg cursor-pointer"
                   />
                 </div>
 
@@ -1232,7 +1232,7 @@ export function ConsumerProfileView() {
                     max="10"
                     value={editEntertainment}
                     onChange={(e) => setEditEntertainment(parseInt(e.target.value))}
-                    className="w-full accent-[#FE2C55] h-1.5 bg-zinc-800 rounded-lg cursor-pointer"
+                    className="w-full accent-[#5E70FF] h-1.5 bg-zinc-800 rounded-lg cursor-pointer"
                   />
                 </div>
 
@@ -1248,7 +1248,7 @@ export function ConsumerProfileView() {
                     max="10"
                     value={editConsistency}
                     onChange={(e) => setEditConsistency(parseInt(e.target.value))}
-                    className="w-full accent-[#FE2C55] h-1.5 bg-zinc-800 rounded-lg cursor-pointer"
+                    className="w-full accent-[#5E70FF] h-1.5 bg-zinc-800 rounded-lg cursor-pointer"
                   />
                 </div>
               </div>
@@ -1266,7 +1266,7 @@ export function ConsumerProfileView() {
                         onClick={() => toggleTag(tag)}
                         className={`px-2.5 py-1 rounded-full text-xs font-semibold transition-all border ${
                           isSelected
-                            ? 'bg-[#FE2C55] text-white border-[#FE2C55]'
+                            ? 'bg-[#5E70FF] text-white border-[#5E70FF]'
                             : 'bg-zinc-900 text-gray-300 border-white/10 hover:bg-zinc-800'
                         }`}
                       >
@@ -1288,7 +1288,7 @@ export function ConsumerProfileView() {
                   maxLength={500}
                   rows={2}
                   placeholder="Share details on why you rated this creator..."
-                  className="w-full rounded-xl bg-zinc-900 border border-white/10 p-3 text-xs text-white placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-[#FE2C55] resize-none"
+                  className="w-full rounded-xl bg-zinc-900 border border-white/10 p-3 text-xs text-white placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-[#5E70FF] resize-none"
                 />
               </div>
 
@@ -1297,7 +1297,7 @@ export function ConsumerProfileView() {
                 <button
                   type="button"
                   onClick={() => handleDeleteRating(editingRatingItem.creatorId)}
-                  className="px-3 py-2.5 rounded-xl bg-red-950/40 hover:bg-red-900/50 text-red-400 border border-red-500/20 text-xs font-bold flex items-center gap-1.5"
+                  className="px-3 py-2.5 rounded-xl bg-[#DF4D50]/15 hover:bg-[#DF4D50]/25 text-[#DF4D50] border border-[#DF4D50]/30 text-xs font-bold flex items-center gap-1.5"
                 >
                   <Trash2 className="w-3.5 h-3.5" />
                   Delete
@@ -1312,7 +1312,7 @@ export function ConsumerProfileView() {
                 <button
                   type="submit"
                   disabled={submittingRating}
-                  className="flex-1 py-2.5 rounded-xl bg-[#FE2C55] hover:bg-[#FE2C55]/90 text-white font-bold text-xs shadow-lg flex items-center justify-center gap-1.5 disabled:opacity-50"
+                  className="flex-1 py-2.5 rounded-xl bg-[#5E70FF] hover:bg-[#4D5FE8] text-white font-bold text-xs shadow-lg flex items-center justify-center gap-1.5 disabled:opacity-50"
                 >
                   {submittingRating ? (
                     <>

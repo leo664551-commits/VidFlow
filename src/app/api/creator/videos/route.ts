@@ -28,6 +28,14 @@ export async function GET(request: NextRequest) {
         orderBy: { createdAt: 'desc' },
         skip,
         take: limit,
+        include: {
+          _count: {
+            select: {
+              likes: true,
+              comments: true,
+            },
+          },
+        },
       }),
       db.video.count({ where }),
     ]);
@@ -42,6 +50,8 @@ export async function GET(request: NextRequest) {
         ageRating: v.ageRating,
         status: v.status,
         viewCount: v.viewCount,
+        likeCount: v._count?.likes ?? 0,
+        commentCount: v._count?.comments ?? 0,
         createdAt: v.createdAt.toISOString(),
         updatedAt: v.updatedAt.toISOString(),
       })),

@@ -171,7 +171,7 @@ export function FollowListModal({
               {activeTab === 'followers' && (
                 <motion.div
                   layoutId="followTabIndicator"
-                  className="absolute bottom-0 left-0 right-0 h-[2px] bg-[#FE2C55]"
+                  className="absolute bottom-0 left-0 right-0 h-[2px] bg-[#5E70FF]"
                 />
               )}
             </button>
@@ -187,7 +187,7 @@ export function FollowListModal({
               {activeTab === 'following' && (
                 <motion.div
                   layoutId="followTabIndicator"
-                  className="absolute bottom-0 left-0 right-0 h-[2px] bg-[#FE2C55]"
+                  className="absolute bottom-0 left-0 right-0 h-[2px] bg-[#5E70FF]"
                 />
               )}
             </button>
@@ -195,7 +195,7 @@ export function FollowListModal({
 
           {/* Search Input Bar */}
           <div className="p-3 border-b border-white/10 bg-zinc-900/40">
-            <div className="flex items-center gap-2.5 px-3 py-2 rounded-xl bg-zinc-900 border border-white/10 focus-within:border-[#FE2C55]/60 transition-colors">
+            <div className="flex items-center gap-2.5 px-3 py-2 rounded-xl bg-zinc-900 border border-white/10 focus-within:border-[#5E70FF] transition-colors">
               <Search className="w-4 h-4 text-gray-400 shrink-0" />
               <input
                 type="text"
@@ -219,7 +219,7 @@ export function FollowListModal({
           <div className="flex-1 overflow-y-auto p-3 space-y-1.5 scrollbar-thin scrollbar-thumb-zinc-700">
             {isLoading ? (
               <div className="py-16 flex flex-col items-center justify-center text-gray-400 gap-3">
-                <Loader2 className="w-7 h-7 animate-spin text-[#FE2C55]" />
+                <Loader2 className="w-7 h-7 animate-spin text-[#5E70FF]" />
                 <span className="text-xs">Loading list...</span>
               </div>
             ) : filteredList.length === 0 ? (
@@ -259,11 +259,11 @@ export function FollowListModal({
 
                       <div className="min-w-0">
                         <div className="flex items-center gap-1.5">
-                          <p className="text-sm font-bold text-white truncate group-hover:text-[#FE2C55] transition-colors">
+                          <p className="text-sm font-bold text-white truncate group-hover:text-[#5E70FF] transition-colors">
                             {item.displayName}
                           </p>
                           {item.role === 'CREATOR' && (
-                            <span className="inline-block px-1.5 py-0.2 rounded text-[9px] font-bold bg-[#FE2C55]/20 text-[#FE2C55] uppercase">
+                            <span className="inline-block px-1.5 py-0.2 rounded text-[9px] font-bold bg-[#5E70FF]/15 text-[#5E70FF] border border-[#5E70FF]/30 uppercase">
                               Creator
                             </span>
                           )}
@@ -288,15 +288,15 @@ export function FollowListModal({
                       ) : item.isFollowing ? (
                         <button
                           onClick={(e) => handleToggleFollow(e, item)}
-                          className="px-3.5 py-1.5 rounded-xl text-xs font-bold bg-zinc-800 hover:bg-red-500/15 border border-white/20 hover:border-red-500/50 text-white hover:text-red-400 transition-all flex items-center gap-1.5 shadow-sm"
+                          className="px-3.5 py-1.5 rounded-xl text-xs font-bold bg-zinc-800 hover:bg-red-500/15 border border-white/20 hover:border-red-500/50 text-white hover:text-[#DF4D50] transition-all flex items-center gap-1.5 shadow-sm"
                         >
-                          <UserCheck className="w-3.5 h-3.5 text-[#25F4EE]" />
+                          <UserCheck className="w-3.5 h-3.5 text-[#24BBA9]" />
                           Following
                         </button>
                       ) : (
                         <button
                           onClick={(e) => handleToggleFollow(e, item)}
-                          className="px-4 py-1.5 rounded-xl text-xs font-bold bg-[#FE2C55] hover:bg-[#FE2C55]/90 text-white transition-all flex items-center gap-1.5 shadow-md shadow-[#FE2C55]/20 hover:scale-105 active:scale-95"
+                          className="px-4 py-1.5 rounded-xl text-xs font-bold bg-[#5E70FF] hover:bg-[#4D5FE8] text-white transition-all flex items-center gap-1.5 shadow-md shadow-[#5E70FF]/25 hover:scale-105 active:scale-95"
                         >
                           <UserPlus className="w-3.5 h-3.5" />
                           Follow

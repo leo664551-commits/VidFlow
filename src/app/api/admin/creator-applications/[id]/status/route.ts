@@ -3,6 +3,7 @@ import { getSession } from '@/lib/auth';
 import { db } from '@/lib/db';
 import { apiSuccess, apiError } from '@/lib/api-response';
 import { createAuditLog } from '@/services/audit';
+import { createNotification } from '@/services/notification';
 
 export async function PATCH(
   request: NextRequest,
@@ -79,6 +80,24 @@ export async function PATCH(
       id,
       { applicantUserId: application.userId, status, reason: reason || undefined }
     );
+
+    // Notify applicant of review decision
+    try {
+      await createNotification({
+        userId: application.userId,
+        actorId: user.id,
+        type: status === 'APPROVED' ? 'CREATOR_APPLICATION_APPROVED' : 'CREATOR_APPLICATION_REJECTED',
+        title: status === 'APPROVED' ? 'Creator Application Approved! 🎉' : 'Creator Application Update',
+        message:
+          status === 'APPROVED'
+            ? 'Congratulations! Your creator application has been approved. Welcome to VidFlow Creator Studio!'
+            : `Your creator application was not approved${reason ? `: ${reason}` : '. You may reapply with updated channel details.'}`,
+        entityType: 'User',
+        entityId: application.userId,
+      });
+    } catch (notifErr) {
+      console.error('Failed to notify applicant:', notifErr);
+    }
 
     return apiSuccess({
       success: true,

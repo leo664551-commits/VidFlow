@@ -19,13 +19,13 @@ export function LandingView() {
         className="relative z-10 flex flex-col items-center text-center max-w-sm w-full"
       >
         {/* Logo icon */}
-        <div className="w-16 h-16 rounded-2xl bg-white/10 flex items-center justify-center mb-6">
-          <Play className="h-8 w-8 text-white ml-1" />
+        <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-[#5E70FF] to-[#24BBA9] flex items-center justify-center mb-6 shadow-xl shadow-[#5E70FF]/25">
+          <Play className="h-8 w-8 text-white ml-1 fill-white" />
         </div>
 
         {/* App name */}
         <h1 className="text-4xl font-extrabold text-white tracking-tight mb-2">
-          VidFlow
+          Vid<span className="text-[#5E70FF]">Flow</span>
         </h1>
         <p className="text-gray-400 text-sm mb-10">
           Short videos, big entertainment
@@ -35,13 +35,13 @@ export function LandingView() {
         <div className="w-full flex flex-col items-center gap-3">
           <button
             onClick={() => navigate('login')}
-            className="w-64 h-12 bg-white text-black font-semibold rounded-full text-sm hover:bg-white/90 transition-colors"
+            className="w-64 h-12 bg-[#5E70FF] hover:bg-[#4D5FE8] text-white font-semibold rounded-full text-sm shadow-lg shadow-[#5E70FF]/30 transition-all"
           >
             Sign In
           </button>
           <button
             onClick={() => navigate('register')}
-            className="w-64 h-12 border border-white/30 text-white font-semibold rounded-full text-sm hover:bg-white/5 transition-colors"
+            className="w-64 h-12 border border-white/20 text-white font-semibold rounded-full text-sm hover:bg-white/10 transition-colors"
           >
             Register
           </button>

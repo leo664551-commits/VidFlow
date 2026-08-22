@@ -41,6 +41,9 @@ model User {
   followers           Follow[]             @relation("UserFollowers")
   notifications       Notification[]       @relation("UserNotifications")
   actorNotifications  Notification[]       @relation("ActorNotifications")
+  profileViewsReceived ProfileView[]       @relation("ProfileViewsReceived")
+  profileViewsMade     ProfileView[]       @relation("ProfileViewsMade")
+  videoShares          VideoShare[]
 }
 
 model Follow {
@@ -93,6 +96,7 @@ model Video {
   views    VideoView[]
   watches  VideoWatch[]
   likes    VideoLike[]
+  shares   VideoShare[]
 }
 
 model Comment {
@@ -189,6 +193,9 @@ model VideoView {
 
   video Video @relation(fields: [videoId], references: [id], onDelete: Cascade)
   user  User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([videoId, userId, viewedAt])
+  @@index([videoId, viewedAt])
 }
 
 model AuditLog {
@@ -239,4 +246,31 @@ model Notification {
 
   @@index([userId, read])
   @@index([userId, createdAt])
+}
+
+model ProfileView {
+  id            String   @id @default(cuid())
+  profileUserId String
+  viewerUserId  String?
+  viewedAt      DateTime @default(now())
+
+  profileUser User  @relation("ProfileViewsReceived", fields: [profileUserId], references: [id], onDelete: Cascade)
+  viewerUser  User? @relation("ProfileViewsMade", fields: [viewerUserId], references: [id], onDelete: SetNull)
+
+  @@index([profileUserId, viewedAt])
+  @@index([profileUserId, viewerUserId])
+}
+
+model VideoShare {
+  id        String   @id @default(cuid())
+  videoId   String
+  userId    String?
+  platform  String?  @default("LINK")
+  sharedAt  DateTime @default(now())
+
+  video Video @relation(fields: [videoId], references: [id], onDelete: Cascade)
+  user  User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([videoId, sharedAt])
+  @@index([userId])
 }

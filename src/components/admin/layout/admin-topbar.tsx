@@ -2,6 +2,8 @@
 
 import { useState } from 'react'
 import { useAppStore } from '@/store/app-store'
+import { useQuery } from '@tanstack/react-query'
+import { getAdminCreatorApplications } from '@/lib/api'
 import { Search, Bell, Shield, ArrowUpRight, Menu } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { AdminGlobalSearchModal } from './admin-global-search-modal'
@@ -28,7 +30,16 @@ const VIEW_TITLES: Record<string, { category: string; title: string }> = {
 export function AdminTopbar({ onOpenMobileSidebar }: AdminTopbarProps) {
   const currentView = useAppStore((s) => s.currentView)
   const navigate = useAppStore((s) => s.navigate)
+  const user = useAppStore((s) => s.user)
   const [searchOpen, setSearchOpen] = useState(false)
+
+  const { data: pendingAppsData } = useQuery({
+    queryKey: ['admin-creator-applications-count', user?.id],
+    queryFn: () => getAdminCreatorApplications({ status: 'PENDING', limit: 1 }),
+    enabled: !!user && user.role === 'ADMIN',
+    refetchInterval: 15000,
+  })
+  const pendingCount = pendingAppsData?.pagination?.total ?? 0
 
   const meta = VIEW_TITLES[currentView] || { category: 'ADMIN', title: 'Admin Control Center' }
 
@@ -49,7 +60,7 @@ export function AdminTopbar({ onOpenMobileSidebar }: AdminTopbarProps) {
             <div className="flex items-center gap-1.5 text-[10px] font-bold text-zinc-500 uppercase tracking-wider">
               <span>ADMIN</span>
               <span>/</span>
-              <span className="text-cyan-400">{meta.category}</span>
+              <span className="text-[#5E70FF]">{meta.category}</span>
             </div>
             <h1 className="text-base font-bold text-white leading-tight">{meta.title}</h1>
           </div>
@@ -61,7 +72,7 @@ export function AdminTopbar({ onOpenMobileSidebar }: AdminTopbarProps) {
             onClick={() => setSearchOpen(true)}
             className="flex items-center gap-3 px-3.5 py-1.5 rounded-full bg-zinc-900 hover:bg-zinc-800/90 border border-zinc-800 text-zinc-400 hover:text-zinc-200 text-xs transition-all shadow-inner group"
           >
-            <Search className="w-3.5 h-3.5 text-zinc-500 group-hover:text-cyan-400 transition-colors" />
+            <Search className="w-3.5 h-3.5 text-zinc-500 group-hover:text-[#5E70FF] transition-colors" />
             <span className="hidden sm:inline">Search platform entities...</span>
             <span className="inline sm:hidden">Search...</span>
             <kbd className="hidden md:inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] font-mono bg-zinc-800 border border-zinc-700/60 text-zinc-400">
@@ -76,9 +87,14 @@ export function AdminTopbar({ onOpenMobileSidebar }: AdminTopbarProps) {
             onClick={() => navigate('admin-applications')}
             size="sm"
             variant="outline"
-            className="hidden sm:flex items-center gap-1.5 h-8 text-xs bg-amber-500/10 text-amber-300 border-amber-500/30 hover:bg-amber-500/20"
+            className="hidden sm:flex items-center gap-1.5 h-8 text-xs bg-[#FF8D28]/10 text-[#FF8D28] border-[#FF8D28]/30 hover:bg-[#FF8D28]/20"
           >
             <span>Review Applications</span>
+            {pendingCount > 0 && (
+              <span className="px-1.5 py-0.2 rounded-full text-[10px] font-bold bg-[#FF8D28] text-black">
+                {pendingCount}
+              </span>
+            )}
             <ArrowUpRight className="w-3 h-3" />
           </Button>
 
@@ -90,7 +106,9 @@ export function AdminTopbar({ onOpenMobileSidebar }: AdminTopbarProps) {
             title="Moderation Center"
           >
             <Bell className="w-4 h-4" />
-            <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-cyan-400" />
+            {pendingCount > 0 && (
+              <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-[#FF8D28] animate-pulse" />
+            )}
           </button>
         </div>
       </header>

@@ -132,7 +132,7 @@ export function AdminVideosView() {
         <div>
           <div className="flex items-center gap-2">
             <h1 className="text-2xl font-black text-white tracking-tight">Content Moderation & Catalog</h1>
-            <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-violet-500/15 text-violet-400 border border-violet-500/30">
+            <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-[#5E70FF]/15 text-[#5E70FF] border border-[#5E70FF]/30">
               Media Asset Center
             </span>
           </div>
@@ -205,7 +205,7 @@ export function AdminVideosView() {
         <CardContent className="p-0">
           {isLoading ? (
             <div className="p-12 flex flex-col items-center justify-center gap-3 text-zinc-400">
-              <Loader2 className="w-8 h-8 text-violet-400 animate-spin" />
+              <Loader2 className="w-8 h-8 text-[#5E70FF] animate-spin" />
               <p className="text-xs">Loading video catalog...</p>
             </div>
           ) : videos.length > 0 ? (
@@ -277,11 +277,11 @@ export function AdminVideosView() {
                         <TableCell className="py-2.5 text-right">
                           <div className="inline-flex items-center gap-2.5 text-[11px] text-zinc-400">
                             <span className="flex items-center gap-0.5">
-                              <Heart className="w-3 h-3 text-rose-400" />
+                              <Heart className="w-3 h-3 text-[#DF4D50]" />
                               {(v as any).likeCount ?? 0}
                             </span>
                             <span className="flex items-center gap-0.5">
-                              <MessageSquare className="w-3 h-3 text-cyan-400" />
+                              <MessageSquare className="w-3 h-3 text-[#24BBA9]" />
                               {(v as any).commentCount ?? 0}
                             </span>
                           </div>
@@ -303,7 +303,7 @@ export function AdminVideosView() {
                                 size="sm"
                                 variant="ghost"
                                 onClick={() => statusMutation.mutate({ id: v.id, status: 'UNPUBLISHED' })}
-                                className="h-7 px-2 text-xs text-amber-400 hover:text-amber-300 hover:bg-amber-500/10"
+                                className="h-7 px-2 text-xs text-[#FF8D28] hover:text-[#FF8D28]/80 hover:bg-[#FF8D28]/10"
                                 title="Unpublish / Hide Video"
                               >
                                 <EyeOff className="w-3.5 h-3.5" />
@@ -313,7 +313,7 @@ export function AdminVideosView() {
                                 size="sm"
                                 variant="ghost"
                                 onClick={() => statusMutation.mutate({ id: v.id, status: 'READY' })}
-                                className="h-7 px-2 text-xs text-emerald-400 hover:text-emerald-300 hover:bg-emerald-500/10"
+                                className="h-7 px-2 text-xs text-[#48B321] hover:text-[#48B321]/80 hover:bg-[#48B321]/10"
                                 title="Publish Video"
                               >
                                 <Eye className="w-3.5 h-3.5" />
@@ -324,7 +324,7 @@ export function AdminVideosView() {
                               size="sm"
                               variant="ghost"
                               onClick={() => setDeleteDialogVideo(v)}
-                              className="h-7 px-2 text-xs text-rose-400 hover:text-rose-300 hover:bg-rose-500/10"
+                              className="h-7 px-2 text-xs text-[#DF4D50] hover:text-[#DF4D50]/80 hover:bg-[#DF4D50]/10"
                               title="Delete Video"
                             >
                               <Trash2 className="w-3.5 h-3.5" />
@@ -372,7 +372,7 @@ export function AdminVideosView() {
               <Button
                 variant="outline"
                 onClick={() => setDeleteDialogVideo(selectedVideo)}
-                className="bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border-rose-500/30 text-xs"
+                className="bg-[#DF4D50]/10 hover:bg-[#DF4D50]/20 text-[#DF4D50] border-[#DF4D50]/30 text-xs"
               >
                 <Trash2 className="w-3.5 h-3.5 mr-1.5" />
                 Delete Video
@@ -383,7 +383,7 @@ export function AdminVideosView() {
                   <Button
                     onClick={() => statusMutation.mutate({ id: selectedVideo.id, status: 'UNPUBLISHED' })}
                     disabled={statusMutation.isPending}
-                    className="bg-amber-600 hover:bg-amber-500 text-white font-bold text-xs"
+                    className="bg-[#FF8D28] hover:bg-[#FF8D28]/90 text-black font-bold text-xs"
                   >
                     <EyeOff className="w-3.5 h-3.5 mr-1.5" />
                     Unpublish Content
@@ -392,7 +392,7 @@ export function AdminVideosView() {
                   <Button
                     onClick={() => statusMutation.mutate({ id: selectedVideo.id, status: 'READY' })}
                     disabled={statusMutation.isPending}
-                    className="bg-emerald-500 hover:bg-emerald-400 text-black font-bold text-xs"
+                    className="bg-[#48B321] hover:bg-[#48B321]/90 text-white font-bold text-xs"
                   >
                     <Eye className="w-3.5 h-3.5 mr-1.5" />
                     Approve & Publish
@@ -416,7 +416,7 @@ export function AdminVideosView() {
             </div>
 
             <div className="relative z-10 space-y-1">
-              <span className="px-2 py-0.5 rounded bg-black/70 backdrop-blur-md text-[10px] font-bold text-cyan-400 border border-cyan-500/30">
+              <span className="px-2 py-0.5 rounded bg-black/70 backdrop-blur-md text-[10px] font-bold text-[#5E70FF] border border-[#5E70FF]/30">
                 {selectedVideo.genre}
               </span>
               <h3 className="text-sm font-bold text-white leading-tight">{selectedVideo.title}</h3>

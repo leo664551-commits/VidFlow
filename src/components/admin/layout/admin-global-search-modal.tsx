@@ -75,7 +75,7 @@ export function AdminGlobalSearchModal({ open, onClose }: AdminGlobalSearchModal
             className="border-0 bg-transparent text-white placeholder-zinc-500 focus-visible:ring-0 focus-visible:ring-offset-0 text-base h-9 p-0"
             autoFocus
           />
-          {isLoading && <Loader2 className="w-4 h-4 text-cyan-400 animate-spin shrink-0" />}
+          {isLoading && <Loader2 className="w-4 h-4 text-[#5E70FF] animate-spin shrink-0" />}
         </DialogHeader>
 
         <div className="max-h-[60vh] overflow-y-auto p-4 space-y-4 scrollbar-thin scrollbar-thumb-zinc-800">
@@ -95,7 +95,7 @@ export function AdminGlobalSearchModal({ open, onClose }: AdminGlobalSearchModal
               {usersData && usersData.data.length > 0 && (
                 <div>
                   <h4 className="text-xs font-bold uppercase tracking-wider text-zinc-400 mb-2 flex items-center gap-2">
-                    <Users className="w-3.5 h-3.5 text-cyan-400" />
+                    <Users className="w-3.5 h-3.5 text-[#5E70FF]" />
                     Users
                   </h4>
                   <div className="space-y-1.5">
@@ -110,7 +110,7 @@ export function AdminGlobalSearchModal({ open, onClose }: AdminGlobalSearchModal
                             {u.displayName?.[0]?.toUpperCase() || 'U'}
                           </div>
                           <div>
-                            <p className="text-sm font-semibold text-white group-hover:text-cyan-400 transition-colors">
+                            <p className="text-sm font-semibold text-white group-hover:text-[#5E70FF] transition-colors">
                               {u.displayName || u.email}
                             </p>
                             <p className="text-xs text-zinc-400">{u.email}</p>
@@ -131,7 +131,7 @@ export function AdminGlobalSearchModal({ open, onClose }: AdminGlobalSearchModal
               {creatorsData && creatorsData.data.length > 0 && (
                 <div>
                   <h4 className="text-xs font-bold uppercase tracking-wider text-zinc-400 mb-2 flex items-center gap-2">
-                    <UserPlus className="w-3.5 h-3.5 text-amber-400" />
+                    <UserPlus className="w-3.5 h-3.5 text-[#24BBA9]" />
                     Creators
                   </h4>
                   <div className="space-y-1.5">
@@ -142,7 +142,7 @@ export function AdminGlobalSearchModal({ open, onClose }: AdminGlobalSearchModal
                         className="w-full flex items-center justify-between p-2.5 rounded-lg bg-zinc-900/60 hover:bg-zinc-800/80 border border-zinc-800/60 transition-colors text-left group"
                       >
                         <div>
-                          <p className="text-sm font-semibold text-white group-hover:text-amber-400 transition-colors">
+                          <p className="text-sm font-semibold text-white group-hover:text-[#24BBA9] transition-colors">
                             @{c.creatorName}
                           </p>
                           <p className="text-xs text-zinc-400">{c.user.email} • {c.videoCount} videos</p>
@@ -158,7 +158,7 @@ export function AdminGlobalSearchModal({ open, onClose }: AdminGlobalSearchModal
               {videosData && videosData.data.length > 0 && (
                 <div>
                   <h4 className="text-xs font-bold uppercase tracking-wider text-zinc-400 mb-2 flex items-center gap-2">
-                    <Video className="w-3.5 h-3.5 text-violet-400" />
+                    <Video className="w-3.5 h-3.5 text-[#5E70FF]" />
                     Videos
                   </h4>
                   <div className="space-y-1.5">
@@ -169,7 +169,7 @@ export function AdminGlobalSearchModal({ open, onClose }: AdminGlobalSearchModal
                         className="w-full flex items-center justify-between p-2.5 rounded-lg bg-zinc-900/60 hover:bg-zinc-800/80 border border-zinc-800/60 transition-colors text-left group"
                       >
                         <div className="min-w-0">
-                          <p className="text-sm font-semibold text-white truncate group-hover:text-violet-400 transition-colors">
+                          <p className="text-sm font-semibold text-white truncate group-hover:text-[#5E70FF] transition-colors">
                             {v.title}
                           </p>
                           <p className="text-xs text-zinc-400">By @{v.creator.creatorName} • {v.genre}</p>

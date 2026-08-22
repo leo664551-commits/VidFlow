@@ -380,7 +380,7 @@ export function CreatorOwnProfileView() {
             {/* Quick edit photo overlay */}
             <button
               onClick={handleOpenEditModal}
-              className="absolute bottom-0 right-0 w-8 h-8 rounded-full bg-[#FE2C55] text-white flex items-center justify-center border-2 border-black shadow-lg hover:scale-110 transition-transform"
+              className="absolute bottom-0 right-0 w-8 h-8 rounded-full bg-[#5E70FF] text-white flex items-center justify-center border-2 border-black shadow-lg hover:scale-110 transition-transform"
               aria-label="Change photo"
             >
               <Camera className="w-4 h-4" />
@@ -393,7 +393,7 @@ export function CreatorOwnProfileView() {
               <h1 className="text-xl sm:text-2xl font-black text-white truncate">
                 {activeUser?.displayName || 'Creator'}
               </h1>
-              <span className="text-xs px-2.5 py-0.5 rounded-full font-bold uppercase tracking-wider bg-purple-500/20 text-purple-300 border border-purple-500/30">
+              <span className="text-xs px-2.5 py-0.5 rounded-full font-bold uppercase tracking-wider bg-[#5E70FF]/20 text-[#5E70FF] border border-[#5E70FF]/30">
                 CREATOR
               </span>
             </div>
@@ -405,10 +405,10 @@ export function CreatorOwnProfileView() {
                 className="group inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-semibold text-gray-300 hover:text-white transition-all"
                 title="Click to copy username"
               >
-                <AtSign className="w-3 h-3 text-[#FE2C55]" />
+                <AtSign className="w-3 h-3 text-[#5E70FF]" />
                 <span>{displayUsername}</span>
                 {copiedUsername ? (
-                  <Check className="w-3 h-3 text-emerald-400" />
+                  <Check className="w-3 h-3 text-[#48B321]" />
                 ) : (
                   <Copy className="w-3 h-3 text-gray-500 group-hover:text-gray-300 opacity-0 group-hover:opacity-100 transition-opacity" />
                 )}
@@ -429,7 +429,7 @@ export function CreatorOwnProfileView() {
                 }}
                 className="flex flex-col sm:flex-row sm:items-center sm:gap-1 group cursor-pointer hover:opacity-80 transition-opacity text-left"
               >
-                <span className="font-bold text-white text-base group-hover:text-[#FE2C55] transition-colors">
+                <span className="font-bold text-white text-base group-hover:text-[#5E70FF] transition-colors">
                   {formatNumber(followersCount)}
                 </span>
                 <span className="text-gray-400 text-xs sm:text-sm">followers</span>
@@ -442,7 +442,7 @@ export function CreatorOwnProfileView() {
                 }}
                 className="flex flex-col sm:flex-row sm:items-center sm:gap-1 group cursor-pointer hover:opacity-80 transition-opacity text-left"
               >
-                <span className="font-bold text-white text-base group-hover:text-[#FE2C55] transition-colors">
+                <span className="font-bold text-white text-base group-hover:text-[#5E70FF] transition-colors">
                   {formatNumber(followingCount)}
                 </span>
                 <span className="text-gray-400 text-xs sm:text-sm">following</span>
@@ -454,12 +454,12 @@ export function CreatorOwnProfileView() {
         {/* Bio & Niche Category */}
         <div className="mt-4 space-y-2">
           <div className="flex flex-wrap items-center gap-2">
-            <p className="text-xs font-bold text-[#25F4EE] flex items-center gap-1">
+            <p className="text-xs font-bold text-[#24BBA9] flex items-center gap-1">
               <Sparkles className="w-3.5 h-3.5" />
               Digital creator
             </p>
             {activeUser?.category && (
-              <span className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-gradient-to-r from-purple-500/20 to-pink-500/20 border border-purple-500/30 text-xs font-bold text-purple-300 shadow-sm">
+              <span className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-[#5E70FF]/15 border border-[#5E70FF]/30 text-xs font-bold text-[#5E70FF] shadow-sm">
                 <span>{getCategoryEmoji(activeUser.category)}</span>
                 <span>{activeUser.category}</span>
               </span>
@@ -473,7 +473,7 @@ export function CreatorOwnProfileView() {
           ) : (
             <button
               onClick={handleOpenEditModal}
-              className="text-xs font-semibold text-[#FE2C55] hover:underline flex items-center gap-1"
+              className="text-xs font-semibold text-[#5E70FF] hover:underline flex items-center gap-1"
             >
               <Plus className="w-3.5 h-3.5" />
               Add a bio to your profile
@@ -541,9 +541,9 @@ export function CreatorOwnProfileView() {
               {activeUser?.contactEmail && (
                 <a
                   href={`mailto:${activeUser.contactEmail}`}
-                  className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-amber-950/40 border border-amber-500/20 text-xs font-semibold text-amber-300 hover:scale-105 transition-all"
+                  className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-[#FF8D28]/10 border border-[#FF8D28]/30 text-xs font-semibold text-[#FF8D28] hover:scale-105 transition-all"
                 >
-                  <Mail className="w-3.5 h-3.5 text-amber-400" />
+                  <Mail className="w-3.5 h-3.5 text-[#FF8D28]" />
                   <span>{activeUser.contactEmail}</span>
                 </a>
               )}
@@ -563,7 +563,7 @@ export function CreatorOwnProfileView() {
 
           <button
             onClick={() => navigate('creator-dashboard')}
-            className="flex-1 min-w-[140px] py-2.5 rounded-xl bg-[#FE2C55] hover:bg-[#FE2C55]/90 text-white font-bold text-sm transition-all shadow-lg flex items-center justify-center gap-2"
+            className="flex-1 min-w-[140px] py-2.5 rounded-xl bg-[#5E70FF] hover:bg-[#4D5FE8] text-white font-bold text-sm transition-all shadow-lg shadow-[#5E70FF]/25 flex items-center justify-center gap-2"
           >
             <LayoutDashboard className="w-4 h-4" />
             Creator Studio
@@ -593,7 +593,7 @@ export function CreatorOwnProfileView() {
             {activeTab === 'videos' && (
               <motion.div
                 layoutId="creatorProfileTabLine"
-                className="absolute bottom-0 inset-x-6 h-0.5 bg-[#FE2C55]"
+                className="absolute bottom-0 inset-x-6 h-0.5 bg-[#5E70FF]"
               />
             )}
           </button>
@@ -609,7 +609,7 @@ export function CreatorOwnProfileView() {
             {activeTab === 'liked' && (
               <motion.div
                 layoutId="creatorProfileTabLine"
-                className="absolute bottom-0 inset-x-6 h-0.5 bg-[#FE2C55]"
+                className="absolute bottom-0 inset-x-6 h-0.5 bg-[#5E70FF]"
               />
             )}
           </button>
@@ -620,12 +620,12 @@ export function CreatorOwnProfileView() {
               activeTab === 'reviews' ? 'text-white' : 'text-gray-500 hover:text-gray-300'
             }`}
           >
-            <Star className="w-4 h-4 text-amber-400 fill-amber-400/20" />
+            <Star className="w-4 h-4 text-yellow-400 fill-yellow-400/20" />
             <span>Ratings & Reviews</span>
             {activeTab === 'reviews' && (
               <motion.div
                 layoutId="creatorProfileTabLine"
-                className="absolute bottom-0 inset-x-6 h-0.5 bg-[#FE2C55]"
+                className="absolute bottom-0 inset-x-6 h-0.5 bg-[#5E70FF]"
               />
             )}
           </button>
@@ -637,7 +637,7 @@ export function CreatorOwnProfileView() {
           {activeTab === 'videos' && (
             videosLoading ? (
               <div className="py-20 flex justify-center">
-                <Loader2 className="w-8 h-8 animate-spin text-[#FE2C55]" />
+                <Loader2 className="w-8 h-8 animate-spin text-[#5E70FF]" />
               </div>
             ) : videosList.length > 0 ? (
               <div className="grid grid-cols-3 gap-2">
@@ -650,7 +650,7 @@ export function CreatorOwnProfileView() {
                       onClick={() => handleOpenVideo(v)}
                       className={`aspect-[9/16] rounded-xl overflow-hidden relative cursor-pointer group bg-zinc-900 border transition-all ${
                         isFocused
-                          ? 'border-[#25F4EE] ring-2 ring-[#25F4EE] shadow-[0_0_20px_rgba(37,244,238,0.4)] scale-[1.02]'
+                          ? 'border-[#24BBA9] ring-2 ring-[#24BBA9] shadow-[0_0_20px_rgba(36,187,169,0.4)] scale-[1.02]'
                           : 'border-white/10 shadow-md hover:border-white/30'
                       }`}
                     >
@@ -680,7 +680,7 @@ export function CreatorOwnProfileView() {
                 <p className="text-sm font-semibold">No videos uploaded yet</p>
                 <button
                   onClick={() => navigate('creator-upload')}
-                  className="px-5 py-2.5 rounded-xl bg-[#FE2C55] text-white font-bold text-xs shadow-lg inline-flex items-center gap-2 hover:bg-[#FE2C55]/90 transition-all"
+                  className="px-5 py-2.5 rounded-xl bg-[#5E70FF] text-white font-bold text-xs shadow-lg inline-flex items-center gap-2 hover:bg-[#4D5FE8] transition-all"
                 >
                   <Upload className="w-4 h-4" />
                   Upload your first video
@@ -693,7 +693,7 @@ export function CreatorOwnProfileView() {
           {activeTab === 'liked' && (
             likedLoading ? (
               <div className="py-20 flex justify-center">
-                <Loader2 className="w-8 h-8 animate-spin text-[#FE2C55]" />
+                <Loader2 className="w-8 h-8 animate-spin text-[#5E70FF]" />
               </div>
             ) : likedVideosList.length > 0 ? (
               <div className="grid grid-cols-3 gap-2">
@@ -706,7 +706,7 @@ export function CreatorOwnProfileView() {
                       onClick={() => handleOpenVideo(v)}
                       className={`aspect-[9/16] rounded-xl overflow-hidden relative cursor-pointer group bg-zinc-900 border transition-all ${
                         isFocused
-                          ? 'border-[#25F4EE] ring-2 ring-[#25F4EE] shadow-[0_0_20px_rgba(37,244,238,0.4)] scale-[1.02]'
+                          ? 'border-[#24BBA9] ring-2 ring-[#24BBA9] shadow-[0_0_20px_rgba(36,187,169,0.4)] scale-[1.02]'
                           : 'border-white/10 shadow-md hover:border-white/30'
                       }`}
                     >
@@ -719,7 +719,7 @@ export function CreatorOwnProfileView() {
                         <Play className="w-8 h-8 text-white fill-white" />
                       </div>
                       <div className="absolute top-2 right-2 z-10 w-6 h-6 rounded-full bg-black/60 flex items-center justify-center">
-                        <Heart className="w-3.5 h-3.5 text-rose-500 fill-rose-500" />
+                        <Heart className="w-3.5 h-3.5 text-[#DF4D50] fill-[#DF4D50]" />
                       </div>
                       <div className="absolute bottom-0 inset-x-0 p-2 bg-gradient-to-t from-black/90 via-black/40 to-transparent flex items-center justify-between text-[11px] font-semibold text-white">
                         <span className="flex items-center gap-1">
@@ -736,7 +736,7 @@ export function CreatorOwnProfileView() {
               </div>
             ) : (
               <div className="py-16 text-center text-gray-500 space-y-3">
-                <div className="w-14 h-14 rounded-full bg-rose-500/10 border border-rose-500/20 text-rose-500 flex items-center justify-center mx-auto">
+                <div className="w-14 h-14 rounded-full bg-[#DF4D50]/10 border border-[#DF4D50]/20 text-[#DF4D50] flex items-center justify-center mx-auto">
                   <Heart className="w-7 h-7" />
                 </div>
                 <h3 className="text-base font-bold text-white">No liked videos yet</h3>
@@ -757,7 +757,7 @@ export function CreatorOwnProfileView() {
                     Audience Reputation
                   </span>
                   <div className="flex items-center gap-2 mt-1">
-                    <span className="text-2xl font-black text-amber-400">
+                    <span className="text-2xl font-black text-[#FF8D28]">
                       ⭐ {ratingsSummary?.averageRating?.toFixed(1) || '0.0'}
                     </span>
                     <span className="text-xs text-gray-400">
@@ -792,7 +792,7 @@ export function CreatorOwnProfileView() {
                             {rev.user?.displayName || 'Viewer'}
                           </span>
                         </div>
-                        <span className="text-xs font-bold text-amber-400">
+                        <span className="text-xs font-bold text-[#FF8D28]">
                           ⭐ {rev.overallRating ? rev.overallRating.toFixed(1) : rev.rating}/10
                         </span>
                       </div>
@@ -871,7 +871,7 @@ export function CreatorOwnProfileView() {
                   <button
                     type="button"
                     onClick={handleRemoveAvatar}
-                    className="px-3 py-1.5 rounded-lg bg-red-950/40 hover:bg-red-900/50 border border-red-500/20 text-xs font-semibold text-red-400 transition-colors flex items-center gap-1.5"
+                    className="px-3 py-1.5 rounded-lg bg-[#DF4D50]/15 hover:bg-[#DF4D50]/25 border border-[#DF4D50]/30 text-xs font-semibold text-[#DF4D50] transition-colors flex items-center gap-1.5"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
                     Remove
@@ -884,7 +884,7 @@ export function CreatorOwnProfileView() {
             <div className="space-y-1.5">
               <label className="text-xs font-bold text-gray-300 flex items-center justify-between">
                 <span>Unique Username</span>
-                <span className="text-[10px] text-[#25F4EE] font-normal">Cannot be duplicated</span>
+                <span className="text-[10px] text-[#24BBA9] font-normal">Cannot be duplicated</span>
               </label>
               <div className="relative">
                 <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 text-sm font-bold">
@@ -899,7 +899,7 @@ export function CreatorOwnProfileView() {
                   placeholder="username"
                   maxLength={30}
                   required
-                  className="w-full rounded-xl bg-zinc-900 border border-white/10 pl-8 pr-3.5 py-2.5 text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-[#FE2C55] transition-all font-mono"
+                  className="w-full rounded-xl bg-zinc-900 border border-white/10 pl-8 pr-3.5 py-2.5 text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-[#5E70FF] transition-all font-mono"
                 />
               </div>
             </div>
@@ -914,7 +914,7 @@ export function CreatorOwnProfileView() {
                 placeholder="Channel Name"
                 maxLength={50}
                 required
-                className="w-full rounded-xl bg-zinc-900 border border-white/10 px-3.5 py-2.5 text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-[#FE2C55] transition-all"
+                className="w-full rounded-xl bg-zinc-900 border border-white/10 px-3.5 py-2.5 text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-[#5E70FF] transition-all"
               />
             </div>
 
@@ -925,8 +925,8 @@ export function CreatorOwnProfileView() {
                 <span
                   className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
                     (activeUser?.categoryChangeCount || 0) >= 2
-                      ? 'bg-red-500/20 text-red-400 border border-red-500/30'
-                      : 'bg-purple-500/20 text-purple-300 border border-purple-500/30'
+                      ? 'bg-[#DF4D50]/20 text-[#DF4D50] border border-[#DF4D50]/30'
+                      : 'bg-[#5E70FF]/20 text-[#5E70FF] border border-[#5E70FF]/30'
                   }`}
                 >
                   {Math.max(0, 2 - (activeUser?.categoryChangeCount || 0))}/2 lifetime changes left
@@ -956,7 +956,7 @@ export function CreatorOwnProfileView() {
                         onClick={() => setEditCategory(key)}
                         className={`px-3 py-2 rounded-xl text-xs font-bold flex items-center gap-2 transition-all border text-left ${
                           isSelected
-                            ? 'bg-[#FE2C55] text-white border-[#FE2C55] shadow-md scale-[1.02]'
+                            ? 'bg-[#5E70FF] text-white border-[#5E70FF] shadow-md scale-[1.02]'
                             : 'bg-zinc-900 text-gray-300 border-white/10 hover:bg-zinc-800'
                         }`}
                       >
@@ -981,7 +981,7 @@ export function CreatorOwnProfileView() {
                 maxLength={500}
                 rows={3}
                 placeholder="Tell your audience about your channel and passions..."
-                className="w-full rounded-xl bg-zinc-900 border border-white/10 p-3 text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-[#FE2C55] transition-all resize-none"
+                className="w-full rounded-xl bg-zinc-900 border border-white/10 p-3 text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-[#5E70FF] transition-all resize-none"
               />
             </div>
 
@@ -1007,7 +1007,7 @@ export function CreatorOwnProfileView() {
                     onChange={(e) => setEditInstagram(e.target.value)}
                     placeholder="instagram_handle"
                     maxLength={100}
-                    className="w-full rounded-xl bg-zinc-900 border border-white/10 pl-7 pr-3 py-2 text-xs text-white placeholder-gray-600 focus:outline-none focus:ring-1 focus:ring-[#FE2C55]"
+                    className="w-full rounded-xl bg-zinc-900 border border-white/10 pl-7 pr-3 py-2 text-xs text-white placeholder-gray-600 focus:outline-none focus:ring-1 focus:ring-[#5E70FF]"
                   />
                 </div>
               </div>
@@ -1024,7 +1024,7 @@ export function CreatorOwnProfileView() {
                   onChange={(e) => setEditYoutube(e.target.value)}
                   placeholder="https://youtube.com/@channel or channel_name"
                   maxLength={150}
-                  className="w-full rounded-xl bg-zinc-900 border border-white/10 px-3 py-2 text-xs text-white placeholder-gray-600 focus:outline-none focus:ring-1 focus:ring-[#FE2C55]"
+                  className="w-full rounded-xl bg-zinc-900 border border-white/10 px-3 py-2 text-xs text-white placeholder-gray-600 focus:outline-none focus:ring-1 focus:ring-[#5E70FF]"
                 />
               </div>
 
@@ -1044,7 +1044,7 @@ export function CreatorOwnProfileView() {
                     onChange={(e) => setEditTwitter(e.target.value)}
                     placeholder="twitter_handle"
                     maxLength={100}
-                    className="w-full rounded-xl bg-zinc-900 border border-white/10 pl-7 pr-3 py-2 text-xs text-white placeholder-gray-600 focus:outline-none focus:ring-1 focus:ring-[#FE2C55]"
+                    className="w-full rounded-xl bg-zinc-900 border border-white/10 pl-7 pr-3 py-2 text-xs text-white placeholder-gray-600 focus:outline-none focus:ring-1 focus:ring-[#5E70FF]"
                   />
                 </div>
               </div>
@@ -1061,14 +1061,14 @@ export function CreatorOwnProfileView() {
                   onChange={(e) => setEditWebsite(e.target.value)}
                   placeholder="https://yourwebsite.com"
                   maxLength={200}
-                  className="w-full rounded-xl bg-zinc-900 border border-white/10 px-3 py-2 text-xs text-white placeholder-gray-600 focus:outline-none focus:ring-1 focus:ring-[#FE2C55]"
+                  className="w-full rounded-xl bg-zinc-900 border border-white/10 px-3 py-2 text-xs text-white placeholder-gray-600 focus:outline-none focus:ring-1 focus:ring-[#5E70FF]"
                 />
               </div>
 
               {/* Business Contact Email */}
               <div className="space-y-1">
                 <label className="text-[11px] font-semibold text-gray-400 flex items-center gap-1.5">
-                  <Mail className="w-3.5 h-3.5 text-amber-400" />
+                  <Mail className="w-3.5 h-3.5 text-[#FF8D28]" />
                   Business Inquiries Email
                 </label>
                 <input
@@ -1077,7 +1077,7 @@ export function CreatorOwnProfileView() {
                   onChange={(e) => setEditContactEmail(e.target.value)}
                   placeholder="business@example.com"
                   maxLength={100}
-                  className="w-full rounded-xl bg-zinc-900 border border-white/10 px-3 py-2 text-xs text-white placeholder-gray-600 focus:outline-none focus:ring-1 focus:ring-[#FE2C55]"
+                  className="w-full rounded-xl bg-zinc-900 border border-white/10 px-3 py-2 text-xs text-white placeholder-gray-600 focus:outline-none focus:ring-1 focus:ring-[#5E70FF]"
                 />
               </div>
             </div>
@@ -1094,7 +1094,7 @@ export function CreatorOwnProfileView() {
               <button
                 type="submit"
                 disabled={saving}
-                className="flex-1 py-2.5 rounded-xl bg-[#FE2C55] hover:bg-[#FE2C55]/90 text-white font-bold text-xs shadow-lg transition-all flex items-center justify-center gap-1.5 disabled:opacity-50"
+                className="flex-1 py-2.5 rounded-xl bg-[#5E70FF] hover:bg-[#4D5FE8] text-white font-bold text-xs shadow-lg shadow-[#5E70FF]/25 transition-all flex items-center justify-center gap-1.5 disabled:opacity-50"
               >
                 {saving ? (
                   <>

@@ -102,7 +102,7 @@ export function AdminApplicationsView() {
         <div>
           <div className="flex items-center gap-2">
             <h1 className="text-2xl font-black text-white tracking-tight">Creator Applications Queue</h1>
-            <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-500/15 text-amber-400 border border-amber-500/30">
+            <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-[#FF8D28]/15 text-[#FF8D28] border border-[#FF8D28]/30">
               Authorization Gate
             </span>
           </div>
@@ -122,7 +122,7 @@ export function AdminApplicationsView() {
               }}
               className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-colors ${
                 statusFilter === tab
-                  ? 'bg-amber-500 text-black font-bold shadow-sm'
+                  ? 'bg-[#5E70FF] text-white font-bold shadow-sm'
                   : 'text-zinc-400 hover:text-white hover:bg-zinc-800'
               }`}
             >
@@ -134,11 +134,11 @@ export function AdminApplicationsView() {
 
       {/* 2. Operational Notice Card */}
       <div className="p-4 rounded-xl bg-zinc-900/60 border border-zinc-800 flex items-start gap-3 text-xs text-zinc-300">
-        <Info className="w-4 h-4 text-cyan-400 shrink-0 mt-0.5" />
+        <Info className="w-4 h-4 text-[#5E70FF] shrink-0 mt-0.5" />
         <div>
           <span className="font-semibold text-white">Platform Creator Policy: </span>
           Consumers can browse and engage with content. When an admin approves an application, the user is immediately
-          promoted to <span className="text-amber-400 font-bold">CREATOR</span> and a dedicated Creator Profile is instantiated.
+          promoted to <span className="text-[#24BBA9] font-bold">CREATOR</span> and a dedicated Creator Profile is instantiated.
         </div>
       </div>
 
@@ -160,7 +160,7 @@ export function AdminApplicationsView() {
         <CardContent className="p-0">
           {isLoading ? (
             <div className="p-12 flex flex-col items-center justify-center gap-3 text-zinc-400">
-              <Loader2 className="w-8 h-8 text-amber-500 animate-spin" />
+              <Loader2 className="w-8 h-8 text-[#5E70FF] animate-spin" />
               <p className="text-xs">Loading creator applications...</p>
             </div>
           ) : filteredApps.length > 0 ? (
@@ -184,7 +184,7 @@ export function AdminApplicationsView() {
                     >
                       <TableCell className="py-3">
                         <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/30 flex items-center justify-center font-bold text-xs shrink-0">
+                          <div className="w-8 h-8 rounded-full bg-[#5E70FF]/20 text-[#5E70FF] border border-[#5E70FF]/30 flex items-center justify-center font-bold text-xs shrink-0">
                             {app.user.displayName?.[0]?.toUpperCase() || 'C'}
                           </div>
                           <div className="min-w-0">
@@ -272,7 +272,7 @@ export function AdminApplicationsView() {
                   variant="outline"
                   onClick={() => setRejectDialogApp(selectedApp)}
                   disabled={reviewMutation.isPending}
-                  className="bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border-rose-500/30 text-xs"
+                  className="bg-[#DF4D50]/10 hover:bg-[#DF4D50]/20 text-[#DF4D50] border-[#DF4D50]/30 text-xs"
                 >
                   <XCircle className="w-3.5 h-3.5 mr-1.5" />
                   Reject Application
@@ -281,7 +281,7 @@ export function AdminApplicationsView() {
                 <Button
                   onClick={() => reviewMutation.mutate({ id: selectedApp.id, status: 'APPROVED' })}
                   disabled={reviewMutation.isPending}
-                  className="bg-emerald-500 hover:bg-emerald-400 text-black font-bold text-xs"
+                  className="bg-[#48B321] hover:bg-[#48B321]/90 text-white font-bold text-xs"
                 >
                   {reviewMutation.isPending && <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />}
                   <CheckCircle2 className="w-3.5 h-3.5 mr-1.5" />
@@ -302,12 +302,12 @@ export function AdminApplicationsView() {
           {/* Applicant Identity Card */}
           <div className="p-4 rounded-xl bg-zinc-900 border border-zinc-800 space-y-3">
             <h3 className="text-xs font-bold uppercase tracking-wider text-zinc-400 flex items-center gap-2">
-              <UserCheck className="w-4 h-4 text-cyan-400" />
+              <UserCheck className="w-4 h-4 text-[#5E70FF]" />
               Applicant Profile
             </h3>
 
             <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-full bg-gradient-to-tr from-cyan-500 to-blue-600 text-white font-black text-base flex items-center justify-center shadow-lg">
+              <div className="w-12 h-12 rounded-full bg-gradient-to-tr from-[#5E70FF] to-[#24BBA9] text-white font-black text-base flex items-center justify-center shadow-lg">
                 {selectedApp.user.displayName?.[0]?.toUpperCase() || 'C'}
               </div>
               <div>
@@ -331,21 +331,21 @@ export function AdminApplicationsView() {
             </div>
 
             <div className="p-3.5 rounded-xl bg-zinc-900 border border-zinc-800 space-y-1">
-              <div className="flex items-center gap-1.5 text-xs text-emerald-400 font-semibold">
-                <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
+              <div className="flex items-center gap-1.5 text-xs text-[#48B321] font-semibold">
+                <ShieldCheck className="w-3.5 h-3.5 text-[#48B321]" />
                 <span>Account History</span>
               </div>
-              <p className="text-sm font-bold text-emerald-400">No Prior Violations</p>
+              <p className="text-sm font-bold text-[#48B321]">No Prior Violations</p>
             </div>
           </div>
 
           {/* Target Content Category */}
           <div className="p-4 rounded-xl bg-zinc-900 border border-zinc-800 space-y-2">
             <span className="text-xs font-bold uppercase tracking-wider text-zinc-400 flex items-center gap-1.5">
-              <Layers className="w-3.5 h-3.5 text-amber-400" />
+              <Layers className="w-3.5 h-3.5 text-[#24BBA9]" />
               Requested Content Category
             </span>
-            <div className="inline-block px-3 py-1 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-400 font-bold text-sm">
+            <div className="inline-block px-3 py-1 rounded-lg bg-[#24BBA9]/10 border border-[#24BBA9]/30 text-[#24BBA9] font-bold text-sm">
               {selectedApp.category}
             </div>
           </div>
@@ -370,7 +370,7 @@ export function AdminApplicationsView() {
                 href={selectedApp.socialLink.startsWith('http') ? selectedApp.socialLink : `https://${selectedApp.socialLink}`}
                 target="_blank"
                 rel="noreferrer"
-                className="inline-flex items-center gap-2 text-xs text-cyan-400 hover:text-cyan-300 underline font-mono"
+                className="inline-flex items-center gap-2 text-xs text-[#5E70FF] hover:text-[#4D5FE8] underline font-mono"
               >
                 <span>{selectedApp.socialLink}</span>
                 <ExternalLink className="w-3 h-3" />
@@ -380,9 +380,9 @@ export function AdminApplicationsView() {
 
           {/* Approval Impact Warning */}
           {selectedApp.status === 'PENDING' && (
-            <div className="p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-xs text-amber-300 space-y-1">
+            <div className="p-3.5 rounded-xl bg-[#FF8D28]/10 border border-[#FF8D28]/30 text-xs text-[#FF8D28] space-y-1">
               <p className="font-bold flex items-center gap-1.5">
-                <Sparkles className="w-4 h-4 text-amber-400" />
+                <Sparkles className="w-4 h-4 text-[#FF8D28]" />
                 Role Transition Impact
               </p>
               <p className="text-zinc-400">

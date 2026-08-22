@@ -119,7 +119,7 @@ export function AdminUsersView() {
         <div>
           <div className="flex items-center gap-2">
             <h1 className="text-2xl font-black text-white tracking-tight">User Directory & Management</h1>
-            <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-cyan-500/15 text-cyan-400 border border-cyan-500/30">
+            <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-[#5E70FF]/15 text-[#5E70FF] border border-[#5E70FF]/30">
               Identity Store
             </span>
           </div>
@@ -139,7 +139,7 @@ export function AdminUsersView() {
               }}
               className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-colors ${
                 roleFilter === tab
-                  ? 'bg-cyan-500 text-black font-bold shadow-sm'
+                  ? 'bg-[#5E70FF] text-white font-bold shadow-sm'
                   : 'text-zinc-400 hover:text-white hover:bg-zinc-800'
               }`}
             >
@@ -178,7 +178,7 @@ export function AdminUsersView() {
         <CardContent className="p-0">
           {isLoading ? (
             <div className="p-12 flex flex-col items-center justify-center gap-3 text-zinc-400">
-              <Loader2 className="w-8 h-8 text-cyan-400 animate-spin" />
+              <Loader2 className="w-8 h-8 text-[#5E70FF] animate-spin" />
               <p className="text-xs">Loading user directory...</p>
             </div>
           ) : users.length > 0 ? (
@@ -248,8 +248,8 @@ export function AdminUsersView() {
                               onClick={() => setSuspendDialogUser(u)}
                               className={`h-7 px-2 text-xs ${
                                 u.status === 'ACTIVE'
-                                  ? 'text-rose-400 hover:text-rose-300 hover:bg-rose-500/10'
-                                  : 'text-emerald-400 hover:text-emerald-300 hover:bg-emerald-500/10'
+                                  ? 'text-[#DF4D50] hover:text-[#DF4D50]/80 hover:bg-[#DF4D50]/10'
+                                  : 'text-[#48B321] hover:text-[#48B321]/80 hover:bg-[#48B321]/10'
                               }`}
                               title={u.status === 'ACTIVE' ? 'Suspend User' : 'Reactivate User'}
                             >
@@ -303,8 +303,8 @@ export function AdminUsersView() {
                   }}
                   className={`text-xs ${
                     selectedUser.status === 'ACTIVE'
-                      ? 'bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border-rose-500/30'
-                      : 'bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border-emerald-500/30'
+                      ? 'bg-[#DF4D50]/10 hover:bg-[#DF4D50]/20 text-[#DF4D50] border-[#DF4D50]/30'
+                      : 'bg-[#48B321]/10 hover:bg-[#48B321]/20 text-[#48B321] border-[#48B321]/30'
                   }`}
                 >
                   {selectedUser.status === 'ACTIVE' ? 'Suspend Account' : 'Reactivate Account'}
@@ -324,12 +324,12 @@ export function AdminUsersView() {
           {/* Identity Section */}
           <div className="p-4 rounded-xl bg-zinc-900 border border-zinc-800 space-y-3">
             <h3 className="text-xs font-bold uppercase tracking-wider text-zinc-400 flex items-center gap-2">
-              <Users className="w-4 h-4 text-cyan-400" />
+              <Users className="w-4 h-4 text-[#5E70FF]" />
               Profile Details
             </h3>
 
             <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-full bg-gradient-to-tr from-cyan-500 to-blue-600 text-white font-black text-base flex items-center justify-center shadow-lg">
+              <div className="w-12 h-12 rounded-full bg-gradient-to-tr from-[#5E70FF] to-[#24BBA9] text-white font-black text-base flex items-center justify-center shadow-lg">
                 {selectedUser.displayName?.[0]?.toUpperCase() || 'U'}
               </div>
               <div>

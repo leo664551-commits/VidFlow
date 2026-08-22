@@ -98,11 +98,11 @@ export function CreatorDashboardView() {
   const totalViews = data.totalViews ?? (data as any)?.stats?.totalViews ?? 0
   const totalLikes = data.totalLikes ?? (data as any)?.stats?.totalLikes ?? 0
   const totalComments = data.totalComments ?? (data as any)?.stats?.totalComments ?? 0
-  const followerCount = data.followerCount ?? (data as any)?.stats?.followerCount ?? user?.followerCount ?? 5825
-  const followingCount = data.followingCount ?? (data as any)?.stats?.followingCount ?? user?.followingCount ?? 142
-  const profileViews = data.profileViews ?? (data as any)?.stats?.profileViews ?? Math.max(Math.floor(totalViews * 0.15), 174)
-  const uniqueViewers = data.uniqueViewers ?? (data as any)?.stats?.uniqueViewers ?? Math.max(Math.floor(totalViews * 0.82), totalViews > 0 ? 1 : 0)
-  const sharesCount = data.sharesCount ?? (data as any)?.stats?.sharesCount ?? Math.max(Math.floor(totalLikes * 0.24), 25)
+  const followerCount = data.followerCount ?? (data as any)?.stats?.followerCount ?? user?.followerCount ?? 0
+  const followingCount = data.followingCount ?? (data as any)?.stats?.followingCount ?? user?.followingCount ?? 0
+  const profileViews = data.profileViews ?? (data as any)?.stats?.profileViews ?? 0
+  const uniqueViewers = data.uniqueViewers ?? (data as any)?.stats?.uniqueViewers ?? 0
+  const sharesCount = data.sharesCount ?? (data as any)?.stats?.sharesCount ?? 0
 
   const creatorName = data.creatorProfile?.creatorName || user?.creatorProfile?.creatorName || user?.displayName || 'Creator'
   const creatorBio = data.creatorProfile?.bio || user?.bio || 'VidFlow Creator & Storyteller'
@@ -112,42 +112,42 @@ export function CreatorDashboardView() {
     {
       title: 'Video views',
       value: formatMetricNumber(totalViews),
-      change: `↑ ${Math.max(Math.floor(totalViews * 0.08), 5)} (4.2%) vs. last week`,
+      subtitle: `${data.totalVideos || 0} published videos`,
       icon: Eye,
-      color: 'text-[#25F4EE]',
+      color: 'text-[#24BBA9]',
     },
     {
       title: 'Profile views',
       value: formatMetricNumber(profileViews),
-      change: `↑ ${Math.max(Math.floor(profileViews * 0.12), 2)} (12.6%) vs. last week`,
+      subtitle: `${followerCount.toLocaleString()} followers`,
       icon: Users,
-      color: 'text-purple-400',
+      color: 'text-[#5E70FF]',
     },
     {
       title: 'Likes',
       value: formatMetricNumber(totalLikes),
-      change: `↑ ${Math.max(Math.floor(totalLikes * 0.05), 3)} (2.3%) vs. last week`,
+      subtitle: `${totalViews > 0 ? ((totalLikes / totalViews) * 100).toFixed(1) : '0.0'}% engagement`,
       icon: Heart,
-      color: 'text-[#FE2C55]',
+      color: 'text-[#DF4D50]',
     },
     {
       title: 'Comments',
       value: formatMetricNumber(totalComments),
-      change: `↑ ${Math.max(Math.floor(totalComments * 0.1), 1)} (11.8%) vs. last week`,
+      subtitle: `${totalViews > 0 ? ((totalComments / totalViews) * 100).toFixed(1) : '0.0'}% discussion rate`,
       icon: MessageCircle,
-      color: 'text-amber-400',
+      color: 'text-[#FF8D28]',
     },
     {
       title: 'Shares',
       value: formatMetricNumber(sharesCount),
-      change: `↑ ${Math.max(Math.floor(sharesCount * 0.15), 1)} (66.7%) vs. last week`,
+      subtitle: 'Audience shares',
       icon: Share2,
-      color: 'text-emerald-400',
+      color: 'text-[#48B321]',
     },
     {
       title: 'Unique viewers',
       value: formatMetricNumber(uniqueViewers),
-      change: `↑ ${Math.max(Math.floor(uniqueViewers * 0.06), 4)} (0.8%) vs. last week`,
+      subtitle: 'Authoritative viewers',
       icon: UserCheck,
       color: 'text-blue-400',
     },
@@ -201,42 +201,57 @@ export function CreatorDashboardView() {
     setReplyingCommentId(null)
   }
 
-  // Dynamic follower chart data scaled from real user followerCount
-  const baseFollowers = followerCount ?? 0
-  const days = ['Jan 2', 'Jan 3', 'Jan 4', 'Jan 5', 'Jan 6', 'Jan 7', 'Jan 8']
-  const followerDataPoints = days.map((date, idx) => {
-    const offset = Math.max(6 - idx, 0)
-    return {
-      date,
-      followers: Math.max(baseFollowers - offset, 0),
-    }
-  })
+  // Dynamic follower chart data from real database timeline
+  const followerTimeline: Array<{ date: string; followers: number }> = (data as any)?.followerTimeline || []
+  const followerDataPoints = followerTimeline.length > 0
+    ? followerTimeline
+    : [
+        { date: 'Day 1', followers: 0 },
+        { date: 'Day 2', followers: 0 },
+        { date: 'Day 3', followers: 0 },
+        { date: 'Day 4', followers: 0 },
+        { date: 'Day 5', followers: 0 },
+        { date: 'Day 6', followers: 0 },
+        { date: 'Day 7', followers: 0 },
+      ]
 
-  const yMax = baseFollowers > 0 ? Math.ceil(baseFollowers * 1.15) : 100
+  const maxFollowersInTimeline = Math.max(...followerDataPoints.map((d) => d.followers), followerCount, 0)
+  const yMax = maxFollowersInTimeline > 0 ? Math.ceil(maxFollowersInTimeline * 1.15) : 10
   const yTick1 = yMax
   const yTick2 = Math.round(yMax * 0.75)
   const yTick3 = Math.round(yMax * 0.5)
   const yTick4 = Math.round(yMax * 0.25)
 
+  const svgCoordinates = followerDataPoints.map((dp, idx) => {
+    const x = Math.round((idx / Math.max(followerDataPoints.length - 1, 1)) * 700)
+    const y = yMax > 0 ? Math.round((1 - (dp.followers / yMax)) * 160 + 20) : 180
+    return { x, y }
+  })
+  const polylinePoints = svgCoordinates.map((p) => `${p.x},${p.y}`).join(' ')
+  const polygonPoints = `${polylinePoints} 700,200 0,200`
+  const demographics = (data as any)?.demographics || { hasData: false, totalFollowers: 0, gender: { male: 0, female: 0, other: 0 } }
+
   return (
-    <div className="h-full w-full overflow-y-auto bg-black text-white pb-32 select-none scrollbar-thin scrollbar-thumb-zinc-800 scroll-smooth">
-      {/* Top Header Bar */}
-      <header className="sticky top-0 z-30 bg-black/90 backdrop-blur-md border-b border-white/10 px-4 sm:px-8 py-3.5 flex items-center justify-between">
+    <div className="min-h-screen bg-black text-white pb-20 select-none">
+      {/* ======================================================== */}
+      {/* TOP STUDIO HEADER */}
+      {/* ======================================================== */}
+      <header className="sticky top-0 z-30 bg-black/90 backdrop-blur-md border-b border-white/10 px-4 sm:px-6 py-3 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <button
-            onClick={() => goBack('feed')}
-            className="p-2 -ml-2 rounded-xl text-gray-400 hover:text-white hover:bg-white/5 transition-colors"
-            aria-label="Back to feed"
+            onClick={() => navigate('feed')}
+            className="w-9 h-9 flex items-center justify-center text-gray-400 hover:text-white hover:bg-white/10 rounded-full transition-colors"
+            title="Back to Feed"
           >
             <ArrowLeft className="h-5 w-5" />
           </button>
           <div className="flex items-center gap-2">
             <span className="text-lg font-black tracking-tight text-white flex items-center gap-1">
-              Vid<span className="text-[#FE2C55]">Flow</span>
+              Vid<span className="text-[#5E70FF]">Flow</span>
             </span>
             <span className="text-base font-bold text-gray-300">Creator Center</span>
-            <span className="px-2 py-0.5 rounded-md bg-[#FE2C55]/20 text-[#FE2C55] text-[10px] font-black uppercase tracking-wider border border-[#FE2C55]/30">
-              Beta
+            <span className="px-2 py-0.5 rounded-md bg-[#5E70FF]/20 text-[#5E70FF] text-[10px] font-black uppercase tracking-wider border border-[#5E70FF]/30">
+              Studio
             </span>
           </div>
         </div>
@@ -247,7 +262,7 @@ export function CreatorDashboardView() {
             className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-semibold text-gray-300 hover:text-white transition-all"
             title="View your profile"
           >
-            <div className="w-6 h-6 rounded-full overflow-hidden bg-gradient-to-tr from-amber-400 via-[#FE2C55] to-purple-600 p-[1px]">
+            <div className="w-6 h-6 rounded-full overflow-hidden bg-gradient-to-tr from-[#5E70FF] to-[#24BBA9] p-[1px]">
               {user?.avatarUrl ? (
                 <img src={user.avatarUrl} alt="Avatar" className="w-full h-full rounded-full object-cover" />
               ) : (
@@ -261,7 +276,7 @@ export function CreatorDashboardView() {
 
           <button
             onClick={() => navigate('creator-upload')}
-            className="hidden sm:flex items-center gap-2 px-5 py-2 rounded-xl bg-[#FE2C55] hover:bg-[#FE2C55]/90 text-white font-bold text-sm shadow-lg shadow-[#FE2C55]/20 transition-all hover:scale-[1.02]"
+            className="hidden sm:flex items-center gap-2 px-5 py-2 rounded-xl bg-[#5E70FF] hover:bg-[#4D5FE8] text-white font-bold text-sm shadow-lg shadow-[#5E70FF]/20 transition-all hover:scale-[1.02]"
           >
             <Upload className="w-4 h-4" />
             Upload
@@ -277,7 +292,7 @@ export function CreatorDashboardView() {
           <div className="lg:col-span-3 space-y-4">
             <button
               onClick={() => navigate('creator-upload')}
-              className="w-full py-3.5 rounded-2xl bg-[#FE2C55] hover:bg-[#FE2C55]/90 text-white font-bold text-base shadow-xl shadow-[#FE2C55]/25 flex items-center justify-center gap-2 transition-all hover:scale-[1.01]"
+              className="w-full py-3.5 rounded-2xl bg-[#5E70FF] hover:bg-[#4D5FE8] text-white font-bold text-base shadow-xl shadow-[#5E70FF]/25 flex items-center justify-center gap-2 transition-all hover:scale-[1.01]"
             >
               <Upload className="w-5 h-5" />
               Upload
@@ -288,8 +303,8 @@ export function CreatorDashboardView() {
                 onClick={() => setActiveTab('home')}
                 className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm transition-all ${
                   activeTab === 'home' || activeTab === 'analytics-metrics'
-                    ? 'bg-white/10 text-[#FE2C55]'
-                    : 'text-gray-400 hover:text-white hover:bg-white/5'
+                    ? 'bg-[#5E70FF]/15 text-[#5E70FF] border border-[#5E70FF]/30'
+                    : 'text-gray-400 hover:text-white hover:bg-white/5 border border-transparent'
                 }`}
               >
                 <Home className="w-5 h-5" />
@@ -308,8 +323,8 @@ export function CreatorDashboardView() {
                 onClick={() => setActiveTab('comments')}
                 className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm transition-all ${
                   activeTab === 'comments'
-                    ? 'bg-white/10 text-[#FE2C55]'
-                    : 'text-gray-400 hover:text-white hover:bg-white/5'
+                    ? 'bg-[#5E70FF]/15 text-[#5E70FF] border border-[#5E70FF]/30'
+                    : 'text-gray-400 hover:text-white hover:bg-white/5 border border-transparent'
                 }`}
               >
                 <MessageSquare className="w-5 h-5" />
@@ -328,7 +343,7 @@ export function CreatorDashboardView() {
                   <button
                     onClick={() => setActiveTab('home')}
                     className={`w-full text-left py-1.5 px-3 rounded-lg text-xs font-semibold transition-colors ${
-                      activeTab === 'home' ? 'text-[#FE2C55] bg-white/5' : 'text-gray-400 hover:text-white'
+                      activeTab === 'home' ? 'text-[#5E70FF] bg-[#5E70FF]/10' : 'text-gray-400 hover:text-white'
                     }`}
                   >
                     Key metrics
@@ -336,7 +351,7 @@ export function CreatorDashboardView() {
                   <button
                     onClick={() => setActiveTab('analytics-content')}
                     className={`w-full text-left py-1.5 px-3 rounded-lg text-xs font-semibold transition-colors ${
-                      activeTab === 'analytics-content' ? 'text-[#FE2C55] bg-white/5' : 'text-gray-400 hover:text-white'
+                      activeTab === 'analytics-content' ? 'text-[#5E70FF] bg-[#5E70FF]/10' : 'text-gray-400 hover:text-white'
                     }`}
                   >
                     Content
@@ -344,7 +359,7 @@ export function CreatorDashboardView() {
                   <button
                     onClick={() => setActiveTab('analytics-followers')}
                     className={`w-full text-left py-1.5 px-3 rounded-lg text-xs font-semibold transition-colors ${
-                      activeTab === 'analytics-followers' ? 'text-[#FE2C55] bg-white/5' : 'text-gray-400 hover:text-white'
+                      activeTab === 'analytics-followers' ? 'text-[#5E70FF] bg-[#5E70FF]/10' : 'text-gray-400 hover:text-white'
                     }`}
                   >
                     Followers
@@ -352,7 +367,7 @@ export function CreatorDashboardView() {
                   <button
                     onClick={() => setActiveTab('analytics-ratings')}
                     className={`w-full text-left py-1.5 px-3 rounded-lg text-xs font-semibold transition-colors flex items-center justify-between ${
-                      activeTab === 'analytics-ratings' ? 'text-[#FE2C55] bg-white/5' : 'text-gray-400 hover:text-white'
+                      activeTab === 'analytics-ratings' ? 'text-[#5E70FF] bg-[#5E70FF]/10' : 'text-gray-400 hover:text-white'
                     }`}
                   >
                     <span className="flex items-center gap-1.5">
@@ -417,8 +432,8 @@ export function CreatorDashboardView() {
                             <Icon className={`w-4 h-4 ${m.color} opacity-80 group-hover:scale-110 transition-transform`} />
                           </div>
                           <p className="text-2xl font-black text-white tracking-tight">{m.value}</p>
-                          <p className="text-[11px] font-semibold text-emerald-400 flex items-center gap-1">
-                            {m.change}
+                          <p className="text-[11px] font-semibold text-gray-400 flex items-center gap-1">
+                            {m.subtitle}
                           </p>
                         </div>
                       )
@@ -448,7 +463,7 @@ export function CreatorDashboardView() {
                           className="flex items-center justify-between p-3.5 rounded-2xl bg-zinc-900/60 hover:bg-zinc-900 border border-white/5 hover:border-white/15 transition-all cursor-pointer group"
                         >
                           <div className="flex items-start gap-3 min-w-0 pr-3">
-                            <div className="w-9 h-9 rounded-full overflow-hidden bg-gradient-to-tr from-purple-600 to-[#FE2C55] flex items-center justify-center font-bold text-xs text-white shrink-0 mt-0.5 shadow-md">
+                            <div className="w-9 h-9 rounded-full overflow-hidden bg-gradient-to-tr from-[#5E70FF] to-[#24BBA9] flex items-center justify-center font-bold text-xs text-white shrink-0 mt-0.5 shadow-md">
                               {comment.user?.avatarUrl ? (
                                 <img src={comment.user.avatarUrl} alt={comment.user.displayName} className="w-full h-full object-cover rounded-full" />
                               ) : (
@@ -456,7 +471,7 @@ export function CreatorDashboardView() {
                               )}
                             </div>
                             <div className="min-w-0">
-                              <p className="text-xs font-bold text-white group-hover:text-[#25F4EE] transition-colors truncate">
+                              <p className="text-xs font-bold text-white group-hover:text-[#24BBA9] transition-colors truncate">
                                 @{comment.user?.username || comment.user?.displayName || 'user'}
                               </p>
                               <p className="text-xs text-gray-300 line-clamp-1 mt-0.5">{comment.content}</p>
@@ -488,7 +503,7 @@ export function CreatorDashboardView() {
                   <div className="flex items-center gap-3.5">
                     <button
                       onClick={() => navigate('profile')}
-                      className="relative p-0.5 rounded-full bg-gradient-to-tr from-amber-400 via-[#FE2C55] to-purple-600 shrink-0 shadow-lg shadow-[#FE2C55]/20 overflow-hidden hover:scale-105 transition-transform cursor-pointer"
+                      className="relative p-0.5 rounded-full bg-gradient-to-tr from-[#5E70FF] to-[#24BBA9] shrink-0 shadow-lg shadow-[#5E70FF]/20 overflow-hidden hover:scale-105 transition-transform cursor-pointer"
                       title="View your profile"
                     >
                       {user?.avatarUrl ? (
@@ -566,7 +581,7 @@ export function CreatorDashboardView() {
                           </div>
 
                           <div className="flex-1 min-w-0">
-                            <p className="text-xs font-bold text-white group-hover:text-[#25F4EE] transition-colors truncate">
+                            <p className="text-xs font-bold text-white group-hover:text-[#24BBA9] transition-colors truncate">
                               {post.title}
                             </p>
                             <div className="flex items-center gap-3 mt-1 text-[10px] text-gray-400 font-semibold">
@@ -576,7 +591,7 @@ export function CreatorDashboardView() {
                               <span className="flex items-center gap-0.5">
                                 💬 {(post.commentCount ?? 0).toLocaleString()}
                               </span>
-                              <span className="flex items-center gap-0.5 text-[#FE2C55]">
+                              <span className="flex items-center gap-0.5 text-[#DF4D50]">
                                 ❤️ {(post.likeCount ?? 0).toLocaleString()}
                               </span>
                             </div>
@@ -598,7 +613,7 @@ export function CreatorDashboardView() {
           )}
 
           {/* ======================================================== */}
-          {/* TAB 2: COMMENTS (Matching Image 1: Manage and interact with comments) */}
+          {/* TAB 2: COMMENTS */}
           {/* ======================================================== */}
           {activeTab === 'comments' && (
             <div className="lg:col-span-9 space-y-6">
@@ -608,14 +623,14 @@ export function CreatorDashboardView() {
                   <p className="text-xs text-gray-400 mt-1">View, reply, and moderate comments on all your videos</p>
                 </div>
 
-                {/* Search Input matching Image 1 */}
+                {/* Search Input */}
                 <div className="relative">
                   <input
                     type="text"
                     value={commentSearch}
                     onChange={(e) => setCommentSearch(e.target.value)}
                     placeholder="Search for comment or username"
-                    className="w-full h-11 pl-10 pr-4 rounded-xl bg-zinc-900 border border-white/15 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-[#FE2C55] transition-colors"
+                    className="w-full h-11 pl-10 pr-4 rounded-xl bg-zinc-900 border border-white/15 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-[#5E70FF] transition-colors"
                   />
                   <Search className="w-4 h-4 text-gray-500 absolute left-3.5 top-3.5" />
                 </div>
@@ -657,7 +672,7 @@ export function CreatorDashboardView() {
                         >
                           {/* Left Column: Avatar + Handle + Comment Text + Action Buttons */}
                           <div className="flex items-start gap-3.5 min-w-0 flex-1">
-                            <div className="w-10 h-10 rounded-full overflow-hidden bg-gradient-to-tr from-amber-400 via-[#FE2C55] to-purple-600 flex items-center justify-center font-bold text-sm text-white shrink-0 shadow-md">
+                            <div className="w-10 h-10 rounded-full overflow-hidden bg-gradient-to-tr from-[#5E70FF] to-[#24BBA9] flex items-center justify-center font-bold text-sm text-white shrink-0 shadow-md">
                               {comment.user?.avatarUrl ? (
                                 <img src={comment.user.avatarUrl} alt="Avatar" className="w-full h-full object-cover rounded-full" />
                               ) : (
@@ -673,12 +688,12 @@ export function CreatorDashboardView() {
                                 {comment.content}
                               </p>
 
-                              {/* Interaction sub-row matching Image 1: 1h ago | 💬 Reply | ♡ 0 | 🗑 Delete */}
+                              {/* Interaction sub-row: 1h ago | 💬 Reply | ♡ 0 | 🗑 Delete */}
                               <div className="flex items-center gap-4 text-xs text-gray-400 pt-1 font-semibold">
                                 <span>{format(new Date(comment.createdAt), 'MMM d, h:mm a')}</span>
                                 <button
                                   onClick={() => setReplyingCommentId(isReplying ? null : comment.id)}
-                                  className="text-[#FE2C55] hover:underline font-bold flex items-center gap-1 transition-colors"
+                                  className="text-[#5E70FF] hover:underline font-bold flex items-center gap-1 transition-colors"
                                 >
                                   <MessageSquare className="w-3.5 h-3.5" />
                                   Reply
@@ -686,15 +701,15 @@ export function CreatorDashboardView() {
                                 <button
                                   onClick={() => toggleCommentLike(comment.id)}
                                   className={`flex items-center gap-1 transition-colors ${
-                                    isLiked ? 'text-[#FE2C55]' : 'hover:text-white'
+                                    isLiked ? 'text-[#DF4D50]' : 'hover:text-white'
                                   }`}
                                 >
-                                  <Heart className={`w-3.5 h-3.5 ${isLiked ? 'fill-[#FE2C55]' : ''}`} />
+                                  <Heart className={`w-3.5 h-3.5 ${isLiked ? 'fill-[#DF4D50]' : ''}`} />
                                   {isLiked ? 1 : 0}
                                 </button>
                                 <button
                                   onClick={() => deleteCommentMutation.mutate(comment.id)}
-                                  className="hover:text-red-400 flex items-center gap-1 transition-colors text-gray-500"
+                                  className="hover:text-[#DF4D50] flex items-center gap-1 transition-colors text-gray-500"
                                 >
                                   <Trash2 className="w-3.5 h-3.5" />
                                   Delete
@@ -709,13 +724,13 @@ export function CreatorDashboardView() {
                                     value={replyText}
                                     onChange={(e) => setReplyText(e.target.value)}
                                     placeholder={`Reply to @${comment.user?.displayName || 'user'}...`}
-                                    className="flex-1 h-9 px-3 rounded-xl bg-zinc-950 border border-white/15 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-[#FE2C55]"
+                                    className="flex-1 h-9 px-3 rounded-xl bg-zinc-950 border border-white/15 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-[#5E70FF]"
                                     onKeyDown={(e) => e.key === 'Enter' && handleSendReply(comment.id)}
                                     autoFocus
                                   />
                                   <button
                                     onClick={() => handleSendReply(comment.id)}
-                                    className="px-3.5 py-2 rounded-xl bg-[#FE2C55] hover:bg-[#FE2C55]/90 text-white font-bold text-xs flex items-center gap-1 transition-all"
+                                    className="px-3.5 py-2 rounded-xl bg-[#5E70FF] hover:bg-[#4D5FE8] text-white font-bold text-xs flex items-center gap-1 transition-all"
                                   >
                                     <Send className="w-3 h-3" />
                                     Send
@@ -744,7 +759,7 @@ export function CreatorDashboardView() {
                               <div className="min-w-0 space-y-1">
                                 <p
                                   onClick={() => navigate('video-detail', comment.video.id)}
-                                  className="text-xs font-bold text-white hover:text-[#25F4EE] transition-colors cursor-pointer line-clamp-2 leading-tight"
+                                  className="text-xs font-bold text-white hover:text-[#24BBA9] transition-colors cursor-pointer line-clamp-2 leading-tight"
                                 >
                                   {comment.video.title}
                                 </p>
@@ -756,7 +771,7 @@ export function CreatorDashboardView() {
                                     useAppStore.getState().setSelectedVideoId(comment.video.id)
                                     useAppStore.getState().setCommentPanelOpen(true)
                                   }}
-                                  className="text-[11px] text-[#FE2C55] font-bold hover:underline block pt-0.5"
+                                  className="text-[11px] text-[#5E70FF] font-bold hover:underline block pt-0.5"
                                 >
                                   Open all comments
                                 </button>
@@ -788,7 +803,7 @@ export function CreatorDashboardView() {
                     onClick={() => handleDownloadData('vidflow-content-analytics')}
                     className="flex items-center gap-2 px-4 py-2 rounded-xl bg-zinc-900 border border-white/15 hover:border-white/30 text-xs font-bold text-gray-200 transition-all self-start"
                   >
-                    <Download className="w-3.5 h-3.5 text-[#FE2C55]" />
+                    <Download className="w-3.5 h-3.5 text-[#5E70FF]" />
                     Download data
                   </button>
                 </div>
@@ -798,7 +813,7 @@ export function CreatorDashboardView() {
                   <button
                     onClick={() => setContentTab('video-posts')}
                     className={`pb-3 transition-colors relative ${
-                      contentTab === 'video-posts' ? 'text-white border-b-2 border-white' : 'text-gray-400 hover:text-white'
+                      contentTab === 'video-posts' ? 'text-[#5E70FF] border-b-2 border-[#5E70FF]' : 'text-gray-400 hover:text-white'
                     }`}
                   >
                     Video Posts ⓘ
@@ -806,7 +821,7 @@ export function CreatorDashboardView() {
                   <button
                     onClick={() => setContentTab('trending')}
                     className={`pb-3 transition-colors relative ${
-                      contentTab === 'trending' ? 'text-white border-b-2 border-white' : 'text-gray-400 hover:text-white'
+                      contentTab === 'trending' ? 'text-[#5E70FF] border-b-2 border-[#5E70FF]' : 'text-gray-400 hover:text-white'
                     }`}
                   >
                     Trending Videos ⓘ
@@ -839,7 +854,7 @@ export function CreatorDashboardView() {
                         <div className="space-y-1.5 min-w-0">
                           <h4
                             onClick={() => navigate('video-detail', video.id)}
-                            className="text-sm font-bold text-white hover:text-[#25F4EE] cursor-pointer transition-colors line-clamp-2"
+                            className="text-sm font-bold text-white hover:text-[#24BBA9] cursor-pointer transition-colors line-clamp-2"
                           >
                             {video.title}
                           </h4>
@@ -849,7 +864,7 @@ export function CreatorDashboardView() {
 
                           <button
                             onClick={() => navigate('video-detail', video.id)}
-                            className="text-xs font-bold text-[#FE2C55] hover:underline inline-block pt-1"
+                            className="text-xs font-bold text-[#5E70FF] hover:underline inline-block pt-1"
                           >
                             View Analytics
                           </button>
@@ -859,16 +874,10 @@ export function CreatorDashboardView() {
                               ▶ {(video.viewCount ?? 0).toLocaleString()}
                             </span>
                             <span className="flex items-center gap-1">
-                              ❤️ {Math.floor((video.viewCount ?? 0) * 0.12)}
+                              ❤️ {(video.likeCount ?? 0).toLocaleString()}
                             </span>
                             <span className="flex items-center gap-1">
-                              💬 {Math.floor((video.viewCount ?? 0) * 0.04)}
-                            </span>
-                            <span className="flex items-center gap-1">
-                              ↗ 0
-                            </span>
-                            <span className="flex items-center gap-1">
-                              🔖 1
+                              💬 {(video.commentCount ?? 0).toLocaleString()}
                             </span>
                           </div>
                         </div>
@@ -885,7 +894,7 @@ export function CreatorDashboardView() {
           )}
 
           {/* ======================================================== */}
-          {/* TAB 4: ANALYTICS FOLLOWERS (Matching Image 2: Total Followers) */}
+          {/* TAB 4: ANALYTICS FOLLOWERS */}
           {/* ======================================================== */}
           {activeTab === 'analytics-followers' && (
             <div className="lg:col-span-9 space-y-6">
@@ -898,7 +907,7 @@ export function CreatorDashboardView() {
                     onClick={() => handleDownloadData('vidflow-followers-analytics')}
                     className="flex items-center gap-2 px-4 py-2 rounded-xl bg-zinc-900 border border-white/15 hover:border-white/30 text-xs font-bold text-gray-200 transition-all self-start"
                   >
-                    <Download className="w-3.5 h-3.5 text-[#FE2C55]" />
+                    <Download className="w-3.5 h-3.5 text-[#5E70FF]" />
                     Download data
                   </button>
                 </div>
@@ -956,8 +965,8 @@ export function CreatorDashboardView() {
                     <span className="text-sm font-bold text-gray-400">in total</span>
                     <Info className="w-4 h-4 text-gray-500" />
                   </div>
-                  <p className="text-xs font-semibold text-emerald-400 flex items-center gap-1">
-                    ↑ +6 (0%) vs. Dec 26 - Jan 1
+                  <p className="text-xs font-semibold text-gray-400 flex items-center gap-1">
+                    Live follower records from database
                   </p>
                 </div>
 
@@ -992,34 +1001,34 @@ export function CreatorDashboardView() {
                     <svg className="w-full h-full overflow-visible" preserveAspectRatio="none" viewBox="0 0 700 200">
                       <defs>
                         <linearGradient id="followerAreaGrad" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="0%" stopColor="#38bdf8" stopOpacity="0.45" />
-                          <stop offset="60%" stopColor="#0284c7" stopOpacity="0.18" />
-                          <stop offset="100%" stopColor="#0284c7" stopOpacity="0.0" />
+                          <stop offset="0%" stopColor="#5E70FF" stopOpacity="0.45" />
+                          <stop offset="60%" stopColor="#5E70FF" stopOpacity="0.18" />
+                          <stop offset="100%" stopColor="#5E70FF" stopOpacity="0.0" />
                         </linearGradient>
                       </defs>
 
                       {/* Area Fill */}
                       <polygon
-                        points="0,25 116,25 233,24 350,24 466,23 583,23 700,22 700,200 0,200"
+                        points={polygonPoints}
                         fill="url(#followerAreaGrad)"
                       />
 
                       {/* Top Stroke Line */}
                       <polyline
                         fill="none"
-                        stroke="#38bdf8"
+                        stroke="#5E70FF"
                         strokeWidth="2.5"
-                        points="0,25 116,25 233,24 350,24 466,23 583,23 700,22"
+                        points={polylinePoints}
                       />
 
                       {/* Data point dots */}
-                      {[0, 116, 233, 350, 466, 583, 700].map((x, idx) => (
+                      {svgCoordinates.map((pt, idx) => (
                         <circle
-                          key={x}
-                          cx={x}
-                          cy={25 - (idx >= 2 ? 1 : 0) - (idx >= 4 ? 1 : 0) - (idx === 6 ? 1 : 0)}
+                          key={idx}
+                          cx={pt.x}
+                          cy={pt.y}
                           r="4"
-                          className="fill-[#38bdf8] stroke-zinc-950 stroke-2 hover:r-6 cursor-pointer transition-all"
+                          className="fill-[#5E70FF] stroke-zinc-950 stroke-2 hover:r-6 cursor-pointer transition-all"
                         />
                       ))}
                     </svg>
@@ -1034,152 +1043,79 @@ export function CreatorDashboardView() {
                 </div>
               </div>
 
-              {/* 3 Bottom Demographic Cards matching Image 2: Gender, Age, Country/region */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {/* 1. Gender Card with Donut Chart */}
-                <div className="rounded-3xl bg-zinc-950 border border-white/10 p-6 space-y-4 shadow-xl">
-                  <div className="flex items-center gap-1.5">
-                    <h3 className="text-base font-extrabold text-white">Gender</h3>
-                    <Info className="w-3.5 h-3.5 text-gray-500" />
-                  </div>
-
-                  <div className="relative flex flex-col items-center justify-center py-4">
-                    {/* SVG Donut Chart */}
-                    <div className="relative w-36 h-36">
-                      <svg className="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
-                        {/* Background / Female 79% */}
-                        <circle
-                          cx="50"
-                          cy="50"
-                          r="38"
-                          fill="transparent"
-                          stroke="#38bdf8"
-                          strokeWidth="14"
-                          strokeDasharray="238.76"
-                          strokeDashoffset="50.14"
-                        />
-                        {/* Male 21% */}
-                        <circle
-                          cx="50"
-                          cy="50"
-                          r="38"
-                          fill="transparent"
-                          stroke="#0284c7"
-                          strokeWidth="14"
-                          strokeDasharray="50.14 238.76"
-                          strokeDashoffset="0"
-                        />
-                      </svg>
-                      {/* Inner Text */}
-                      <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
-                        <span className="text-xl font-black text-white">21%</span>
-                        <span className="text-[10px] text-gray-400 font-bold">Male</span>
-                      </div>
+              {/* 3. Follower Demographic Insights */}
+              {demographics.hasData ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* Follower Gender Distribution */}
+                  <div className="rounded-3xl bg-zinc-950 border border-white/10 p-6 space-y-4 shadow-xl">
+                    <div className="flex items-center gap-1.5">
+                      <h3 className="text-base font-extrabold text-white">Audience Gender</h3>
+                      <Info className="w-3.5 h-3.5 text-gray-500" />
                     </div>
-
-                    <div className="flex items-center gap-6 mt-4 text-xs font-bold">
-                      <div className="flex items-center gap-2">
-                        <span className="w-3 h-3 rounded-full bg-[#0284c7]"></span>
-                        <span className="text-gray-300">21% Male</span>
+                    <div className="space-y-3 pt-2 text-xs">
+                      <div className="space-y-1">
+                        <div className="flex justify-between font-bold">
+                          <span className="text-gray-300">Female</span>
+                          <span className="text-white">{demographics.gender.female}%</span>
+                        </div>
+                        <div className="w-full h-2 rounded-full bg-zinc-900 overflow-hidden">
+                          <div className="h-full rounded-full bg-[#5E70FF]" style={{ width: `${demographics.gender.female}%` }} />
+                        </div>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <span className="w-3 h-3 rounded-full bg-[#38bdf8]"></span>
-                        <span className="text-gray-300">79% Female</span>
+                      <div className="space-y-1">
+                        <div className="flex justify-between font-bold">
+                          <span className="text-gray-300">Male</span>
+                          <span className="text-white">{demographics.gender.male}%</span>
+                        </div>
+                        <div className="w-full h-2 rounded-full bg-zinc-900 overflow-hidden">
+                          <div className="h-full rounded-full bg-[#24BBA9]" style={{ width: `${demographics.gender.male}%` }} />
+                        </div>
                       </div>
+                      {demographics.gender.other > 0 && (
+                        <div className="space-y-1">
+                          <div className="flex justify-between font-bold">
+                            <span className="text-gray-300">Other / Unspecified</span>
+                            <span className="text-white">{demographics.gender.other}%</span>
+                          </div>
+                          <div className="w-full h-2 rounded-full bg-zinc-900 overflow-hidden">
+                            <div className="h-full rounded-full bg-zinc-600" style={{ width: `${demographics.gender.other}%` }} />
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </div>
-                </div>
 
-                {/* 2. Age Card with Vertical Bar Chart */}
-                <div className="rounded-3xl bg-zinc-950 border border-white/10 p-6 space-y-4 shadow-xl">
-                  <div className="flex items-center gap-1.5">
-                    <h3 className="text-base font-extrabold text-white">Age</h3>
-                    <Info className="w-3.5 h-3.5 text-gray-500" />
-                  </div>
-
-                  <div className="space-y-4 pt-2">
-                    {/* Bar Chart Container */}
-                    <div className="h-36 flex items-end justify-between gap-3 px-2 border-b border-white/10 pb-2">
-                      <div className="flex-1 flex flex-col items-center gap-1.5">
-                        <span className="text-[10px] font-bold text-gray-300">38%</span>
-                        <div className="w-full bg-[#38bdf8] rounded-t-lg transition-all" style={{ height: '76px' }} />
-                        <span className="text-[10px] font-semibold text-gray-400">18-24</span>
-                      </div>
-                      <div className="flex-1 flex flex-col items-center gap-1.5">
-                        <span className="text-[10px] font-bold text-gray-300">42%</span>
-                        <div className="w-full bg-[#0284c7] rounded-t-lg transition-all" style={{ height: '84px' }} />
-                        <span className="text-[10px] font-semibold text-gray-400">25-34</span>
-                      </div>
-                      <div className="flex-1 flex flex-col items-center gap-1.5">
-                        <span className="text-[10px] font-bold text-gray-300">14%</span>
-                        <div className="w-full bg-[#38bdf8]/60 rounded-t-lg transition-all" style={{ height: '28px' }} />
-                        <span className="text-[10px] font-semibold text-gray-400">35-44</span>
-                      </div>
-                      <div className="flex-1 flex flex-col items-center gap-1.5">
-                        <span className="text-[10px] font-bold text-gray-300">6%</span>
-                        <div className="w-full bg-[#38bdf8]/40 rounded-t-lg transition-all" style={{ height: '12px' }} />
-                        <span className="text-[10px] font-semibold text-gray-400">45+</span>
-                      </div>
+                  {/* Follower Base Summary */}
+                  <div className="rounded-3xl bg-zinc-950 border border-white/10 p-6 space-y-4 shadow-xl flex flex-col justify-center">
+                    <div className="flex items-center gap-1.5">
+                      <h3 className="text-base font-extrabold text-white">Audience Verification</h3>
+                      <Info className="w-3.5 h-3.5 text-gray-500" />
+                    </div>
+                    <div className="space-y-2 text-xs text-gray-400">
+                      <p className="text-sm font-bold text-white">
+                        {demographics.totalFollowers.toLocaleString()} Verified Followers
+                      </p>
+                      <p>
+                        All demographic metrics are derived from authenticated user profile records.
+                      </p>
                     </div>
                   </div>
                 </div>
-
-                {/* 3. Country/Region Card with Progress Bars */}
-                <div className="rounded-3xl bg-zinc-950 border border-white/10 p-6 space-y-4 shadow-xl">
-                  <div className="flex items-center gap-1.5">
-                    <h3 className="text-base font-extrabold text-white">Country/region</h3>
-                    <Info className="w-3.5 h-3.5 text-gray-500" />
-                  </div>
-
-                  <div className="space-y-3.5 pt-1 text-xs">
-                    <div className="space-y-1">
-                      <div className="flex justify-between font-bold">
-                        <span className="text-gray-300">United States</span>
-                        <span className="text-white">67.6%</span>
-                      </div>
-                      <div className="w-full h-2 rounded-full bg-zinc-900 overflow-hidden">
-                        <div className="h-full rounded-full bg-[#38bdf8]" style={{ width: '67.6%' }} />
-                      </div>
-                    </div>
-
-                    <div className="space-y-1">
-                      <div className="flex justify-between font-bold">
-                        <span className="text-gray-300">United Kingdom</span>
-                        <span className="text-white">8.5%</span>
-                      </div>
-                      <div className="w-full h-2 rounded-full bg-zinc-900 overflow-hidden">
-                        <div className="h-full rounded-full bg-[#38bdf8]" style={{ width: '8.5%' }} />
-                      </div>
-                    </div>
-
-                    <div className="space-y-1">
-                      <div className="flex justify-between font-bold">
-                        <span className="text-gray-300">Canada</span>
-                        <span className="text-white">4.2%</span>
-                      </div>
-                      <div className="w-full h-2 rounded-full bg-zinc-900 overflow-hidden">
-                        <div className="h-full rounded-full bg-[#38bdf8]" style={{ width: '4.2%' }} />
-                      </div>
-                    </div>
-
-                    <div className="space-y-1">
-                      <div className="flex justify-between font-bold">
-                        <span className="text-gray-300">Germany</span>
-                        <span className="text-white">3.8%</span>
-                      </div>
-                      <div className="w-full h-2 rounded-full bg-zinc-900 overflow-hidden">
-                        <div className="h-full rounded-full bg-[#38bdf8]" style={{ width: '3.8%' }} />
-                      </div>
-                    </div>
-                  </div>
+              ) : (
+                <div className="rounded-3xl bg-zinc-950 border border-white/10 p-8 text-center space-y-2 shadow-xl">
+                  <Users className="w-8 h-8 mx-auto text-gray-600" />
+                  <h3 className="text-sm font-bold text-white">No Audience Demographics Yet</h3>
+                  <p className="text-xs text-gray-500 max-w-sm mx-auto">
+                    Demographic telemetry populates automatically as consumers follow your creator profile and interact with your channel.
+                  </p>
                 </div>
-              </div>
+              )}
 
               {/* 4. Live Followers Table Section */}
               <div className="rounded-3xl bg-zinc-950 border border-white/10 p-6 sm:p-8 space-y-4 shadow-xl">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <Users className="w-5 h-5 text-[#FE2C55]" />
+                    <Users className="w-5 h-5 text-[#5E70FF]" />
                     <h3 className="text-lg font-black text-white">Recent Followers</h3>
                   </div>
                   <button
@@ -1187,7 +1123,7 @@ export function CreatorDashboardView() {
                       setFollowModalTab('followers')
                       setFollowModalOpen(true)
                     }}
-                    className="flex items-center gap-1 text-xs font-bold text-[#FE2C55] hover:underline transition-colors"
+                    className="flex items-center gap-1 text-xs font-bold text-[#5E70FF] hover:underline transition-colors"
                   >
                     View all {liveFollowersData?.data?.length || followerCount} followers
                     <ChevronRight className="w-3.5 h-3.5" />
@@ -1204,7 +1140,7 @@ export function CreatorDashboardView() {
                           className="flex items-center justify-between p-3.5 rounded-2xl bg-zinc-900/60 hover:bg-zinc-900 border border-white/5 hover:border-white/15 transition-all group"
                         >
                           <div className="flex items-center gap-3 min-w-0 pr-2">
-                            <div className="w-10 h-10 rounded-full p-[1px] bg-gradient-to-br from-[#FE2C55] to-orange-500 shrink-0 overflow-hidden shadow-md">
+                            <div className="w-10 h-10 rounded-full p-[1px] bg-gradient-to-br from-[#5E70FF] to-[#24BBA9] shrink-0 overflow-hidden shadow-md">
                               {follower.avatarUrl ? (
                                 <img
                                   src={follower.avatarUrl}
@@ -1218,7 +1154,7 @@ export function CreatorDashboardView() {
                               )}
                             </div>
                             <div className="min-w-0">
-                              <p className="text-xs font-bold text-white truncate group-hover:text-[#FE2C55] transition-colors">
+                              <p className="text-xs font-bold text-white truncate group-hover:text-[#5E70FF] transition-colors">
                                 {follower.displayName}
                               </p>
                               <p className="text-[11px] text-gray-500 font-mono truncate">
@@ -1229,7 +1165,7 @@ export function CreatorDashboardView() {
 
                           <div className="shrink-0">
                             {follower.isFollowing ? (
-                              <span className="text-[10px] font-bold text-[#25F4EE] bg-[#25F4EE]/10 px-2.5 py-1 rounded-lg border border-[#25F4EE]/20 flex items-center gap-1">
+                              <span className="text-[10px] font-bold text-[#24BBA9] bg-[#24BBA9]/10 px-2.5 py-1 rounded-lg border border-[#24BBA9]/20 flex items-center gap-1">
                                 <UserCheck className="w-3 h-3" />
                                 Friends
                               </span>
@@ -1245,7 +1181,7 @@ export function CreatorDashboardView() {
                                     toast.error('Failed to follow back')
                                   }
                                 }}
-                                className="text-[10px] font-bold text-white bg-[#FE2C55] hover:bg-[#FE2C55]/90 px-3 py-1.5 rounded-lg transition-all shadow-sm"
+                                className="text-[10px] font-bold text-white bg-[#5E70FF] hover:bg-[#4D5FE8] px-3 py-1.5 rounded-lg transition-all shadow-sm"
                               >
                                 Follow back
                               </button>
@@ -1285,7 +1221,7 @@ export function CreatorDashboardView() {
                     onClick={() => handleDownloadData('vidflow-ratings-analytics')}
                     className="flex items-center gap-2 px-4 py-2 rounded-xl bg-zinc-900 border border-white/15 hover:border-white/30 text-xs font-bold text-gray-200 transition-all self-start sm:self-auto hover:text-white"
                   >
-                    <Download className="w-3.5 h-3.5 text-[#FE2C55]" />
+                    <Download className="w-3.5 h-3.5 text-[#5E70FF]" />
                     Download report
                   </button>
                 </div>
@@ -1312,9 +1248,11 @@ export function CreatorDashboardView() {
                     <p className="text-xs font-bold text-gray-400">
                       Based on {ratingsData?.totalRatings || 0} reviews
                     </p>
-                    <div className="mt-3 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-[11px] font-bold text-emerald-400 flex items-center gap-1">
+                    <div className="mt-3 px-3 py-1 rounded-full bg-[#48B321]/10 border border-[#48B321]/20 text-[11px] font-bold text-[#48B321] flex items-center gap-1">
                       <Sparkles className="w-3 h-3" />
-                      98% Positive Rating
+                      {ratingsData?.totalRatings
+                        ? `${Math.round((((ratingsData.ratingBreakdown?.[4] || 0) + (ratingsData.ratingBreakdown?.[5] || 0)) / ratingsData.totalRatings) * 100)}% Positive Rating`
+                        : 'No ratings yet'}
                     </div>
                   </div>
 
@@ -1335,7 +1273,7 @@ export function CreatorDashboardView() {
                               initial={{ width: 0 }}
                               animate={{ width: `${pct}%` }}
                               transition={{ duration: 0.8 }}
-                              className="h-full rounded-full bg-gradient-to-r from-amber-400 to-[#FE2C55]"
+                              className="h-full rounded-full bg-gradient-to-r from-amber-400 to-[#5E70FF]"
                             />
                           </div>
                           <span className="w-16 text-right font-mono text-[11px] font-bold text-gray-400">
@@ -1364,7 +1302,7 @@ export function CreatorDashboardView() {
                         value={reviewSearch}
                         onChange={(e) => setReviewSearch(e.target.value)}
                         placeholder="Search reviews..."
-                        className="pl-9 pr-3 py-1.5 rounded-xl bg-zinc-900 border border-white/10 text-xs text-white placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-[#FE2C55] w-44 sm:w-52"
+                        className="pl-9 pr-3 py-1.5 rounded-xl bg-zinc-900 border border-white/10 text-xs text-white placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-[#5E70FF] w-44 sm:w-52"
                       />
                     </div>
 
@@ -1410,7 +1348,7 @@ export function CreatorDashboardView() {
                         >
                           <div className="flex items-center justify-between">
                             <div className="flex items-center gap-3">
-                              <div className="w-10 h-10 rounded-full p-[1px] bg-gradient-to-br from-[#FE2C55] to-orange-500 shrink-0 overflow-hidden shadow-md">
+                              <div className="w-10 h-10 rounded-full p-[1px] bg-gradient-to-br from-[#5E70FF] to-[#24BBA9] shrink-0 overflow-hidden shadow-md">
                                 {rev.user?.avatarUrl ? (
                                   <img
                                     src={rev.user.avatarUrl}

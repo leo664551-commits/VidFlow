@@ -21,7 +21,7 @@ export function AdminStatCard({
   label,
   value,
   icon: Icon,
-  colorClass = 'text-cyan-400',
+  colorClass = 'text-[#5E70FF]',
   trend,
   badge,
   onClick,
@@ -42,7 +42,7 @@ export function AdminStatCard({
             <span className="text-xs font-semibold uppercase tracking-wider text-zinc-400">{label}</span>
           </div>
           {badge && (
-            <span className="px-2 py-0.5 text-[10px] font-bold rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/30">
+            <span className="px-2 py-0.5 text-[10px] font-bold rounded-full bg-[#FF8D28]/10 text-[#FF8D28] border border-[#FF8D28]/30">
               {badge}
             </span>
           )}
@@ -56,7 +56,7 @@ export function AdminStatCard({
           {trend && (
             <div
               className={`flex items-center gap-1 text-xs font-semibold ${
-                trend.isPositive ? 'text-emerald-400' : 'text-rose-400'
+                trend.isPositive ? 'text-[#48B321]' : 'text-[#DF4D50]'
               }`}
             >
               {trend.isPositive ? <TrendingUp className="w-3.5 h-3.5" /> : <TrendingDown className="w-3.5 h-3.5" />}

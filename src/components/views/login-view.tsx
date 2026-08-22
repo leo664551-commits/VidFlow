@@ -85,11 +85,11 @@ export function LoginView() {
                 id="email"
                 type="email"
                 placeholder="you@example.com"
-                className="bg-white/10 border-white/10 text-white placeholder-gray-500 h-11 focus-visible:ring-white/20"
+                className="bg-white/10 border-white/10 text-white placeholder-gray-500 h-11 focus-visible:ring-[#5E70FF] focus-visible:border-[#5E70FF]"
                 {...register('email')}
               />
               {errors.email && (
-                <p className="text-red-400 text-xs">{errors.email.message}</p>
+                <p className="text-[#DF4D50] text-xs">{errors.email.message}</p>
               )}
             </div>
 
@@ -101,17 +101,17 @@ export function LoginView() {
                 id="password"
                 type="password"
                 placeholder="Enter your password"
-                className="bg-white/10 border-white/10 text-white placeholder-gray-500 h-11 focus-visible:ring-white/20"
+                className="bg-white/10 border-white/10 text-white placeholder-gray-500 h-11 focus-visible:ring-[#5E70FF] focus-visible:border-[#5E70FF]"
                 {...register('password')}
               />
               {errors.password && (
-                <p className="text-red-400 text-xs">{errors.password.message}</p>
+                <p className="text-[#DF4D50] text-xs">{errors.password.message}</p>
               )}
             </div>
 
             <Button
               type="submit"
-              className="w-full h-11 bg-white text-black hover:bg-white/90 font-semibold rounded-lg"
+              className="w-full h-11 bg-[#5E70FF] text-white hover:bg-[#4D5FE8] font-semibold rounded-lg shadow-lg shadow-[#5E70FF]/25 transition-all"
               disabled={loading}
             >
               {loading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
@@ -123,7 +123,7 @@ export function LoginView() {
             Don&apos;t have an account?{' '}
             <button
               type="button"
-              className="text-white font-medium hover:underline"
+              className="text-[#5E70FF] font-semibold hover:underline"
               onClick={() => navigate('register')}
             >
               Register

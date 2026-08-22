@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useAppStore } from '@/store/app-store'
@@ -10,6 +10,7 @@ import {
   deleteCreatorRating,
   toggleFollowCreator,
   toggleLike,
+  recordProfileView,
 } from '@/lib/api'
 import { UserAvatar } from '@/components/common/user-avatar'
 import { useVideoKeyboardShortcuts } from '@/hooks/use-video-keyboard-shortcuts'
@@ -147,6 +148,12 @@ export function CreatorProfileView() {
     queryFn: () => getCreatorProfile(selectedCreatorId!),
     enabled: !!selectedCreatorId,
   })
+
+  useEffect(() => {
+    if (selectedCreatorId && (!user || user.id !== selectedCreatorId)) {
+      recordProfileView(selectedCreatorId)
+    }
+  }, [selectedCreatorId, user])
 
   // Toggle video like mutation
   const toggleLikeMutation = useMutation({
@@ -318,7 +325,7 @@ export function CreatorProfileView() {
   if (isLoading) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
-        <Loader2 className="h-10 w-10 text-[#FE2C55] animate-spin" />
+        <Loader2 className="h-10 w-10 text-[#5E70FF] animate-spin" />
       </div>
     )
   }
@@ -340,7 +347,7 @@ export function CreatorProfileView() {
           <p className="text-gray-400 font-medium mb-4">Creator not found</p>
           <button
             onClick={() => navigate('feed')}
-            className="px-6 py-2.5 rounded-full bg-[#FE2C55] text-white font-semibold hover:bg-[#FE2C55]/90 transition-colors"
+            className="px-6 py-2.5 rounded-full bg-[#5E70FF] text-white font-semibold hover:bg-[#4D5FE8] transition-colors"
           >
             Back to Feed
           </button>
@@ -400,7 +407,7 @@ export function CreatorProfileView() {
               <h1 className="text-xl sm:text-2xl font-black text-white truncate">
                 {data.displayName || data.creatorName}
               </h1>
-              <span className="text-xs px-2 py-0.5 rounded-md bg-white/15 text-white/90 font-semibold uppercase tracking-wider">
+              <span className="text-xs px-2 py-0.5 rounded-md bg-[#5E70FF]/20 text-[#5E70FF] font-semibold uppercase tracking-wider">
                 Creator
               </span>
             </div>
@@ -408,7 +415,7 @@ export function CreatorProfileView() {
             {/* Unique Username Tag */}
             <div className="flex items-center gap-1.5 mb-2.5">
               <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-white/5 border border-white/10 text-xs font-semibold text-gray-300">
-                <AtSign className="w-3 h-3 text-[#FE2C55]" />
+                <AtSign className="w-3 h-3 text-[#5E70FF]" />
                 {data.username || data.creatorName}
               </span>
             </div>
@@ -427,7 +434,7 @@ export function CreatorProfileView() {
                 }}
                 className="flex flex-col sm:flex-row sm:items-center sm:gap-1 group cursor-pointer hover:opacity-80 transition-opacity"
               >
-                <span className="font-bold text-white text-base group-hover:text-[#FE2C55] transition-colors">{formatNumber(data.followerCount)}</span>
+                <span className="font-bold text-white text-base group-hover:text-[#5E70FF] transition-colors">{formatNumber(data.followerCount)}</span>
                 <span className="text-gray-400 text-xs sm:text-sm">followers</span>
               </button>
               <button
@@ -438,7 +445,7 @@ export function CreatorProfileView() {
                 }}
                 className="flex flex-col sm:flex-row sm:items-center sm:gap-1 group cursor-pointer hover:opacity-80 transition-opacity"
               >
-                <span className="font-bold text-white text-base group-hover:text-[#FE2C55] transition-colors">{formatNumber(data.followingCount)}</span>
+                <span className="font-bold text-white text-base group-hover:text-[#5E70FF] transition-colors">{formatNumber(data.followingCount)}</span>
                 <span className="text-gray-400 text-xs sm:text-sm">following</span>
               </button>
             </div>
@@ -448,11 +455,11 @@ export function CreatorProfileView() {
         {/* Bio & Niche Category */}
         <div className="mt-4 space-y-1.5">
           <div className="flex flex-wrap items-center gap-2">
-            <p className="text-xs font-bold text-[#25F4EE] flex items-center gap-1">
+            <p className="text-xs font-bold text-[#24BBA9] flex items-center gap-1">
               <Sparkles className="w-3.5 h-3.5" /> Digital creator
             </p>
             {data.category && (
-              <span className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-gradient-to-r from-purple-500/20 to-pink-500/20 border border-purple-500/30 text-xs font-bold text-purple-300 shadow-sm">
+              <span className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-[#5E70FF]/15 border border-[#5E70FF]/30 text-xs font-bold text-[#5E70FF] shadow-sm">
                 <span>{getCategoryEmoji(data.category)}</span>
                 <span>{data.category}</span>
               </span>
@@ -524,9 +531,9 @@ export function CreatorProfileView() {
               {data.contactEmail && (
                 <a
                   href={`mailto:${data.contactEmail}`}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-950/40 hover:bg-amber-900/50 border border-amber-500/20 text-xs font-semibold text-amber-300 transition-all hover:scale-105"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#FF8D28]/10 hover:bg-[#FF8D28]/20 border border-[#FF8D28]/30 text-xs font-semibold text-[#FF8D28] transition-all hover:scale-105"
                 >
-                  <Mail className="w-3.5 h-3.5 text-amber-400" />
+                  <Mail className="w-3.5 h-3.5 text-[#FF8D28]" />
                   <span>{data.contactEmail}</span>
                 </a>
               )}
@@ -552,12 +559,12 @@ export function CreatorProfileView() {
                 className={`flex-1 py-2.5 rounded-xl font-bold text-sm transition-all flex items-center justify-center gap-2 shadow-lg ${
                   data.isFollowing
                     ? 'bg-white/15 hover:bg-white/20 text-white border border-white/20'
-                    : 'bg-[#FE2C55] hover:bg-[#FE2C55]/90 text-white'
+                    : 'bg-[#5E70FF] hover:bg-[#4D5FE8] text-white shadow-[#5E70FF]/25'
                 }`}
               >
                 {data.isFollowing ? (
                   <>
-                    <UserCheck className="w-4 h-4 text-emerald-400" />
+                    <UserCheck className="w-4 h-4 text-[#24BBA9]" />
                     Following
                   </>
                 ) : (
@@ -574,17 +581,17 @@ export function CreatorProfileView() {
                 className={`flex-1 py-2.5 rounded-xl text-white font-bold text-sm transition-all flex items-center justify-center gap-2 border shadow-lg group ${
                   isEligible
                     ? 'bg-zinc-800 hover:bg-zinc-700 border-white/10'
-                    : 'bg-zinc-900/80 text-gray-400 border-white/5 hover:border-amber-500/30'
+                    : 'bg-zinc-900/80 text-gray-400 border-white/5 hover:border-[#FF8D28]/30'
                 }`}
               >
                 {isEligible ? (
                   <>
-                    <Star className="w-4 h-4 text-yellow-400 fill-yellow-400 group-hover:scale-110 transition-transform" />
+                    <Star className="w-4 h-4 text-[#FF8D28] fill-[#FF8D28] group-hover:scale-110 transition-transform" />
                     {data.userRating ? `Rated ${data.userRating}/10` : 'Rate Creator'}
                   </>
                 ) : (
                   <>
-                    <Lock className="w-3.5 h-3.5 text-amber-400" />
+                    <Lock className="w-3.5 h-3.5 text-[#FF8D28]" />
                     <span>Rate (Locked)</span>
                   </>
                 )}
@@ -617,7 +624,7 @@ export function CreatorProfileView() {
             onClick={() => setActiveTab('videos')}
             className={`flex-1 py-3 text-sm font-bold flex items-center justify-center gap-2 border-b-2 transition-all ${
               activeTab === 'videos'
-                ? 'border-[#FE2C55] text-white'
+                ? 'border-[#5E70FF] text-white'
                 : 'border-transparent text-gray-500 hover:text-gray-300'
             }`}
           >
@@ -628,7 +635,7 @@ export function CreatorProfileView() {
             onClick={() => setActiveTab('reviews')}
             className={`flex-1 py-3 text-sm font-bold flex items-center justify-center gap-2 border-b-2 transition-all ${
               activeTab === 'reviews'
-                ? 'border-[#FE2C55] text-white'
+                ? 'border-[#5E70FF] text-white'
                 : 'border-transparent text-gray-500 hover:text-gray-300'
             }`}
           >
@@ -655,7 +662,7 @@ export function CreatorProfileView() {
                       whileHover={{ scale: 1.02 }}
                       className={`group relative cursor-pointer overflow-hidden rounded-2xl bg-zinc-900 border aspect-[9/16] transition-all flex flex-col justify-end ${
                         isFocused
-                          ? 'border-[#25F4EE] ring-2 ring-[#25F4EE] shadow-[0_0_20px_rgba(37,244,238,0.4)] scale-[1.02]'
+                          ? 'border-[#24BBA9] ring-2 ring-[#24BBA9] shadow-[0_0_20px_rgba(36,187,169,0.4)] scale-[1.02]'
                           : 'border-white/10 shadow-md hover:shadow-2xl hover:border-white/30'
                       }`}
                     >
@@ -675,12 +682,12 @@ export function CreatorProfileView() {
                       </div>
 
                       <div className="relative p-3 bg-gradient-to-t from-black via-black/70 to-transparent z-10">
-                        <p className="font-bold text-xs text-white leading-tight line-clamp-2 mb-1 group-hover:text-[#25F4EE] transition-colors">
+                        <p className="font-bold text-xs text-white leading-tight line-clamp-2 mb-1 group-hover:text-[#24BBA9] transition-colors">
                           {video.title}
                         </p>
                         <div className="flex items-center justify-between text-[10px] text-gray-400">
                           <span className="flex items-center gap-1">
-                            <Music className="w-2.5 h-2.5 text-[#FE2C55]" />
+                            <Music className="w-2.5 h-2.5 text-[#5E70FF]" />
                             {genreLabel}
                           </span>
                           <span className="flex items-center gap-1 font-semibold text-white">
@@ -710,15 +717,15 @@ export function CreatorProfileView() {
               <>
                 {/* State 1 & 2: Not Eligible / Almost Eligible (Locked) */}
                 {!isEligible && (
-                  <div className="rounded-2xl bg-zinc-900/90 border border-amber-500/20 p-5 shadow-xl">
+                  <div className="rounded-2xl bg-zinc-900/90 border border-[#FF8D28]/20 p-5 shadow-xl">
                     <div className="flex items-start gap-3.5">
-                      <div className="w-11 h-11 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center shrink-0">
-                        <Lock className="w-5 h-5 text-amber-400" />
+                      <div className="w-11 h-11 rounded-2xl bg-[#FF8D28]/10 border border-[#FF8D28]/20 flex items-center justify-center shrink-0">
+                        <Lock className="w-5 h-5 text-[#FF8D28]" />
                       </div>
                       <div className="flex-1">
                         <div className="flex items-center gap-2">
                           <h4 className="text-sm font-bold text-white">Rating Locked</h4>
-                          <span className="px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 text-[10px] font-bold">
+                          <span className="px-2 py-0.5 rounded-full bg-[#FF8D28]/20 text-[#FF8D28] text-[10px] font-bold">
                             {eligibility?.qualifyingVideos ?? 0}/{eligibility?.requiredVideos ?? 3} Qualified Videos
                           </span>
                         </div>
@@ -733,7 +740,7 @@ export function CreatorProfileView() {
                           </div>
                           <div className="h-2 rounded-full bg-zinc-800 overflow-hidden">
                             <div
-                              className="h-full rounded-full bg-gradient-to-r from-amber-500 to-[#FE2C55] transition-all duration-500"
+                              className="h-full rounded-full bg-gradient-to-r from-amber-500 to-[#5E70FF] transition-all duration-500"
                               style={{
                                 width: `${Math.min(
                                   100,
@@ -760,16 +767,16 @@ export function CreatorProfileView() {
 
                 {/* State 3: Eligible (Unlocked & Ready to Rate) */}
                 {isEligible && !data.userRating && (
-                  <div className="rounded-2xl bg-gradient-to-r from-emerald-950/40 via-zinc-900 to-zinc-900 border border-emerald-500/30 p-5 shadow-xl">
+                  <div className="rounded-2xl bg-gradient-to-r from-[#48B321]/15 via-zinc-900 to-zinc-900 border border-[#48B321]/30 p-5 shadow-xl">
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                       <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-2xl bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center shrink-0">
-                          <Unlock className="w-5 h-5 text-emerald-400" />
+                        <div className="w-10 h-10 rounded-2xl bg-[#48B321]/20 border border-[#48B321]/30 flex items-center justify-center shrink-0">
+                          <Unlock className="w-5 h-5 text-[#48B321]" />
                         </div>
                         <div>
                           <h4 className="text-sm font-bold text-white flex items-center gap-1.5">
                             <span>Rating Unlocked</span>
-                            <span className="px-2 py-0.5 rounded-md bg-emerald-500/20 text-emerald-300 text-[10px] font-bold">
+                            <span className="px-2 py-0.5 rounded-md bg-[#48B321]/20 text-[#48B321] text-[10px] font-bold">
                               Eligible
                             </span>
                           </h4>
@@ -780,7 +787,7 @@ export function CreatorProfileView() {
                       </div>
                       <button
                         onClick={openRatingModal}
-                        className="px-5 py-2.5 rounded-xl bg-[#FE2C55] hover:bg-[#FE2C55]/90 text-white font-bold text-xs shadow-lg transition-transform hover:scale-105 shrink-0"
+                        className="px-5 py-2.5 rounded-xl bg-[#5E70FF] hover:bg-[#4D5FE8] text-white font-bold text-xs shadow-lg transition-transform hover:scale-105 shrink-0"
                       >
                         Rate Creator
                       </button>
@@ -822,7 +829,7 @@ export function CreatorProfileView() {
                             }
                           }}
                           disabled={deleteRateMutation.isPending}
-                          className="p-1.5 rounded-xl bg-red-950/40 hover:bg-red-900/60 border border-red-500/20 text-red-400 hover:text-red-300 text-xs transition-colors"
+                          className="p-1.5 rounded-xl bg-[#DF4D50]/15 hover:bg-[#DF4D50]/25 border border-[#DF4D50]/30 text-[#DF4D50] hover:text-[#DF4D50]/80 text-xs transition-colors"
                           title="Delete Rating"
                         >
                           <Trash2 className="w-4 h-4" />
@@ -840,12 +847,12 @@ export function CreatorProfileView() {
                 <div className="flex items-center gap-2">
                   <h3 className="text-base font-bold text-white">Creator Score</h3>
                   {data.isLimitedData ? (
-                    <span className="px-2 py-0.5 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-300 text-[10px] font-bold">
+                    <span className="px-2 py-0.5 rounded-full bg-[#FF8D28]/10 border border-[#FF8D28]/20 text-[#FF8D28] text-[10px] font-bold">
                       Limited Data
                     </span>
                   ) : (
-                    <span className="px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-300 text-[10px] font-bold flex items-center gap-1">
-                      <ShieldCheck className="w-3 h-3 text-emerald-400" /> Verified Rating
+                    <span className="px-2 py-0.5 rounded-full bg-[#48B321]/10 border border-[#48B321]/20 text-[#48B321] text-[10px] font-bold flex items-center gap-1">
+                      <ShieldCheck className="w-3 h-3 text-[#48B321]" /> Verified Rating
                     </span>
                   )}
                 </div>
@@ -1020,7 +1027,7 @@ export function CreatorProfileView() {
                 step="1"
                 value={overallRating}
                 onChange={(e) => setOverallRating(Number(e.target.value))}
-                className="w-full h-2 bg-zinc-800 rounded-lg appearance-none cursor-pointer accent-[#FE2C55]"
+                className="w-full h-2 bg-zinc-800 rounded-lg appearance-none cursor-pointer accent-[#5E70FF]"
               />
             </div>
 
@@ -1035,7 +1042,7 @@ export function CreatorProfileView() {
                 <div className="p-3 rounded-xl bg-zinc-900/90 border border-white/5 space-y-1.5">
                   <div className="flex justify-between text-xs font-semibold text-gray-300">
                     <span>🎬 Content Quality</span>
-                    <span className="text-[#25F4EE] font-bold">{contentQuality}</span>
+                    <span className="text-[#24BBA9] font-bold">{contentQuality}</span>
                   </div>
                   <input
                     type="range"
@@ -1043,7 +1050,7 @@ export function CreatorProfileView() {
                     max="10"
                     value={contentQuality}
                     onChange={(e) => setContentQuality(Number(e.target.value))}
-                    className="w-full h-1.5 bg-zinc-800 rounded appearance-none cursor-pointer accent-[#25F4EE]"
+                    className="w-full h-1.5 bg-zinc-800 rounded appearance-none cursor-pointer accent-[#24BBA9]"
                   />
                 </div>
 
@@ -1051,7 +1058,7 @@ export function CreatorProfileView() {
                 <div className="p-3 rounded-xl bg-zinc-900/90 border border-white/5 space-y-1.5">
                   <div className="flex justify-between text-xs font-semibold text-gray-300">
                     <span>💡 Value / Knowledge</span>
-                    <span className="text-[#25F4EE] font-bold">{valueRating}</span>
+                    <span className="text-[#24BBA9] font-bold">{valueRating}</span>
                   </div>
                   <input
                     type="range"
@@ -1059,7 +1066,7 @@ export function CreatorProfileView() {
                     max="10"
                     value={valueRating}
                     onChange={(e) => setValueRating(Number(e.target.value))}
-                    className="w-full h-1.5 bg-zinc-800 rounded appearance-none cursor-pointer accent-[#25F4EE]"
+                    className="w-full h-1.5 bg-zinc-800 rounded appearance-none cursor-pointer accent-[#24BBA9]"
                   />
                 </div>
 
@@ -1067,7 +1074,7 @@ export function CreatorProfileView() {
                 <div className="p-3 rounded-xl bg-zinc-900/90 border border-white/5 space-y-1.5">
                   <div className="flex justify-between text-xs font-semibold text-gray-300">
                     <span>🎨 Creativity</span>
-                    <span className="text-[#25F4EE] font-bold">{creativityRating}</span>
+                    <span className="text-[#24BBA9] font-bold">{creativityRating}</span>
                   </div>
                   <input
                     type="range"
@@ -1075,7 +1082,7 @@ export function CreatorProfileView() {
                     max="10"
                     value={creativityRating}
                     onChange={(e) => setCreativityRating(Number(e.target.value))}
-                    className="w-full h-1.5 bg-zinc-800 rounded appearance-none cursor-pointer accent-[#25F4EE]"
+                    className="w-full h-1.5 bg-zinc-800 rounded appearance-none cursor-pointer accent-[#24BBA9]"
                   />
                 </div>
 
@@ -1083,7 +1090,7 @@ export function CreatorProfileView() {
                 <div className="p-3 rounded-xl bg-zinc-900/90 border border-white/5 space-y-1.5">
                   <div className="flex justify-between text-xs font-semibold text-gray-300">
                     <span>🎉 Entertainment</span>
-                    <span className="text-[#25F4EE] font-bold">{entertainmentRating}</span>
+                    <span className="text-[#24BBA9] font-bold">{entertainmentRating}</span>
                   </div>
                   <input
                     type="range"
@@ -1091,7 +1098,7 @@ export function CreatorProfileView() {
                     max="10"
                     value={entertainmentRating}
                     onChange={(e) => setEntertainmentRating(Number(e.target.value))}
-                    className="w-full h-1.5 bg-zinc-800 rounded appearance-none cursor-pointer accent-[#25F4EE]"
+                    className="w-full h-1.5 bg-zinc-800 rounded appearance-none cursor-pointer accent-[#24BBA9]"
                   />
                 </div>
 
@@ -1099,7 +1106,7 @@ export function CreatorProfileView() {
                 <div className="p-3 rounded-xl bg-zinc-900/90 border border-white/5 space-y-1.5 sm:col-span-2">
                   <div className="flex justify-between text-xs font-semibold text-gray-300">
                     <span>⚡ Consistency</span>
-                    <span className="text-[#25F4EE] font-bold">{consistencyRating}</span>
+                    <span className="text-[#24BBA9] font-bold">{consistencyRating}</span>
                   </div>
                   <input
                     type="range"
@@ -1107,7 +1114,7 @@ export function CreatorProfileView() {
                     max="10"
                     value={consistencyRating}
                     onChange={(e) => setConsistencyRating(Number(e.target.value))}
-                    className="w-full h-1.5 bg-zinc-800 rounded appearance-none cursor-pointer accent-[#25F4EE]"
+                    className="w-full h-1.5 bg-zinc-800 rounded appearance-none cursor-pointer accent-[#24BBA9]"
                   />
                 </div>
               </div>
@@ -1128,7 +1135,7 @@ export function CreatorProfileView() {
                       onClick={() => handleToggleTag(tag)}
                       className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
                         isSelected
-                          ? 'bg-[#FE2C55] text-white shadow-md'
+                          ? 'bg-[#5E70FF] text-white shadow-md'
                           : 'bg-zinc-900 text-gray-300 border border-white/10 hover:bg-zinc-800'
                       }`}
                     >
@@ -1149,7 +1156,7 @@ export function CreatorProfileView() {
                 onChange={(e) => setReviewText(e.target.value)}
                 placeholder="Share your perspective on their storytelling, consistency, and creativity..."
                 rows={3}
-                className="w-full rounded-xl bg-zinc-900 border border-white/10 p-3 text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-[#FE2C55] transition-all resize-none"
+                className="w-full rounded-xl bg-zinc-900 border border-white/10 p-3 text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-[#5E70FF] transition-all resize-none"
               />
             </div>
 
@@ -1168,7 +1175,7 @@ export function CreatorProfileView() {
                 })
               }
               disabled={rateMutation.isPending}
-              className="w-full py-3 rounded-xl bg-[#FE2C55] hover:bg-[#FE2C55]/90 text-white font-bold text-sm transition-all shadow-xl flex items-center justify-center gap-2"
+              className="w-full py-3 rounded-xl bg-[#5E70FF] hover:bg-[#4D5FE8] text-white font-bold text-sm transition-all shadow-xl flex items-center justify-center gap-2"
             >
               {rateMutation.isPending ? (
                 <>

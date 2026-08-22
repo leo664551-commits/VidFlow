@@ -23,9 +23,9 @@ export function AdminStatusBadge({ status, className = '', size = 'sm' }: AdminS
       return (
         <Badge
           variant="outline"
-          className={`font-semibold bg-emerald-500/10 text-emerald-400 border-emerald-500/30 ${sizeClasses} ${className}`}
+          className={`font-semibold bg-[#48B321]/10 text-[#48B321] border-[#48B321]/30 ${sizeClasses} ${className}`}
         >
-          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 mr-1.5 shrink-0" />
+          <span className="w-1.5 h-1.5 rounded-full bg-[#48B321] mr-1.5 shrink-0" />
           {normalized}
         </Badge>
       )
@@ -40,9 +40,9 @@ export function AdminStatusBadge({ status, className = '', size = 'sm' }: AdminS
       return (
         <Badge
           variant="outline"
-          className={`font-semibold bg-amber-500/10 text-amber-400 border-amber-500/30 ${sizeClasses} ${className}`}
+          className={`font-semibold bg-[#FF8D28]/10 text-[#FF8D28] border-[#FF8D28]/30 ${sizeClasses} ${className}`}
         >
-          <span className="w-1.5 h-1.5 rounded-full bg-amber-400 mr-1.5 shrink-0 animate-pulse" />
+          <span className="w-1.5 h-1.5 rounded-full bg-[#FF8D28] mr-1.5 shrink-0 animate-pulse" />
           {normalized}
         </Badge>
       )
@@ -54,9 +54,9 @@ export function AdminStatusBadge({ status, className = '', size = 'sm' }: AdminS
       return (
         <Badge
           variant="outline"
-          className={`font-bold bg-rose-500/15 text-rose-400 border-rose-500/40 ${sizeClasses} ${className}`}
+          className={`font-bold bg-[#DF4D50]/15 text-[#DF4D50] border-[#DF4D50]/40 ${sizeClasses} ${className}`}
         >
-          <span className="w-1.5 h-1.5 rounded-full bg-rose-400 mr-1.5 shrink-0 animate-ping" />
+          <span className="w-1.5 h-1.5 rounded-full bg-[#DF4D50] mr-1.5 shrink-0 animate-ping" />
           {normalized}
         </Badge>
       )
@@ -72,9 +72,9 @@ export function AdminStatusBadge({ status, className = '', size = 'sm' }: AdminS
       return (
         <Badge
           variant="outline"
-          className={`font-semibold bg-red-500/10 text-red-400 border-red-500/30 ${sizeClasses} ${className}`}
+          className={`font-semibold bg-[#DF4D50]/10 text-[#DF4D50] border-[#DF4D50]/30 ${sizeClasses} ${className}`}
         >
-          <span className="w-1.5 h-1.5 rounded-full bg-red-400 mr-1.5 shrink-0" />
+          <span className="w-1.5 h-1.5 rounded-full bg-[#DF4D50] mr-1.5 shrink-0" />
           {normalized}
         </Badge>
       )
@@ -84,7 +84,7 @@ export function AdminStatusBadge({ status, className = '', size = 'sm' }: AdminS
       return (
         <Badge
           variant="outline"
-          className={`font-semibold bg-purple-500/10 text-purple-300 border-purple-500/30 ${sizeClasses} ${className}`}
+          className={`font-semibold bg-[#5E70FF]/15 text-[#5E70FF] border-[#5E70FF]/30 ${sizeClasses} ${className}`}
         >
           ADMIN
         </Badge>
@@ -93,7 +93,7 @@ export function AdminStatusBadge({ status, className = '', size = 'sm' }: AdminS
       return (
         <Badge
           variant="outline"
-          className={`font-semibold bg-[#25F4EE]/10 text-[#25F4EE] border-[#25F4EE]/30 ${sizeClasses} ${className}`}
+          className={`font-semibold bg-[#24BBA9]/15 text-[#24BBA9] border-[#24BBA9]/30 ${sizeClasses} ${className}`}
         >
           CREATOR
         </Badge>

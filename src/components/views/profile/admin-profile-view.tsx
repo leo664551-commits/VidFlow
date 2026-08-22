@@ -305,7 +305,7 @@ export function AdminProfileView() {
             />
             <button
               onClick={handleOpenEditModal}
-              className="absolute bottom-0 right-0 w-8 h-8 rounded-full bg-[#FE2C55] text-white flex items-center justify-center border-2 border-black shadow-lg hover:scale-110 transition-transform"
+              className="absolute bottom-0 right-0 w-8 h-8 rounded-full bg-[#5E70FF] text-white flex items-center justify-center border-2 border-black shadow-lg hover:scale-110 transition-transform"
               aria-label="Change photo"
             >
               <Camera className="w-4 h-4" />
@@ -318,7 +318,7 @@ export function AdminProfileView() {
               <h1 className="text-xl sm:text-2xl font-black text-white truncate">
                 {activeUser?.displayName || 'Administrator'}
               </h1>
-              <span className="text-xs px-2.5 py-0.5 rounded-full font-bold uppercase tracking-wider bg-rose-500/20 text-rose-300 border border-rose-500/30 flex items-center gap-1">
+              <span className="text-xs px-2.5 py-0.5 rounded-full font-bold uppercase tracking-wider bg-[#5E70FF]/20 text-[#5E70FF] border border-[#5E70FF]/30 flex items-center gap-1">
                 <Shield className="w-3 h-3" />
                 ADMIN
               </span>
@@ -331,10 +331,10 @@ export function AdminProfileView() {
                 className="group inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-semibold text-gray-300 hover:text-white transition-all"
                 title="Click to copy username"
               >
-                <AtSign className="w-3 h-3 text-[#FE2C55]" />
+                <AtSign className="w-3 h-3 text-[#5E70FF]" />
                 <span>{displayUsername}</span>
                 {copiedUsername ? (
-                  <Check className="w-3 h-3 text-emerald-400" />
+                  <Check className="w-3 h-3 text-[#48B321]" />
                 ) : (
                   <Copy className="w-3 h-3 text-gray-500 group-hover:text-gray-300 opacity-0 group-hover:opacity-100 transition-opacity" />
                 )}
@@ -350,13 +350,13 @@ export function AdminProfileView() {
                 <span className="text-[10px] text-gray-400">Consumers</span>
               </div>
               <div className="p-2 rounded-xl bg-zinc-900 border border-white/5">
-                <span className="font-black text-amber-400 text-sm block">
+                <span className="font-black text-[#24BBA9] text-sm block">
                   {adminStats?.totalCreators ?? '-'}
                 </span>
                 <span className="text-[10px] text-gray-400">Creators</span>
               </div>
               <div className="p-2 rounded-xl bg-zinc-900 border border-white/5">
-                <span className="font-black text-violet-400 text-sm block">
+                <span className="font-black text-[#5E70FF] text-sm block">
                   {adminStats?.totalVideos ?? '-'}
                 </span>
                 <span className="text-[10px] text-gray-400">Videos</span>
@@ -367,7 +367,7 @@ export function AdminProfileView() {
 
         {/* Bio */}
         <div className="mt-4 space-y-2">
-          <p className="text-xs font-bold text-rose-400 flex items-center gap-1">
+          <p className="text-xs font-bold text-[#5E70FF] flex items-center gap-1">
             <Shield className="w-3.5 h-3.5" />
             Platform Administrator & Security
           </p>
@@ -379,7 +379,7 @@ export function AdminProfileView() {
           ) : (
             <button
               onClick={handleOpenEditModal}
-              className="text-xs font-semibold text-[#FE2C55] hover:underline flex items-center gap-1"
+              className="text-xs font-semibold text-[#5E70FF] hover:underline flex items-center gap-1"
             >
               <Plus className="w-3.5 h-3.5" />
               Add admin bio
@@ -399,7 +399,7 @@ export function AdminProfileView() {
 
           <button
             onClick={() => navigate('admin-dashboard')}
-            className="flex-1 min-w-[150px] py-2.5 rounded-xl bg-gradient-to-r from-cyan-600 to-blue-600 hover:opacity-90 text-white font-bold text-sm transition-all shadow-lg flex items-center justify-center gap-2"
+            className="flex-1 min-w-[150px] py-2.5 rounded-xl bg-gradient-to-r from-[#5E70FF] to-[#24BBA9] hover:opacity-90 text-white font-bold text-sm transition-all shadow-lg flex items-center justify-center gap-2"
           >
             <Shield className="w-4 h-4" />
             Admin Portal
@@ -424,12 +424,12 @@ export function AdminProfileView() {
               activeTab === 'applications' ? 'text-white' : 'text-gray-500 hover:text-gray-300'
             }`}
           >
-            <UserCheck className="w-4 h-4 text-amber-400" />
+            <UserCheck className="w-4 h-4 text-[#24BBA9]" />
             <span>Applications ({applicationsList.length})</span>
             {activeTab === 'applications' && (
               <motion.div
                 layoutId="adminProfileTabLine"
-                className="absolute bottom-0 inset-x-6 h-0.5 bg-[#FE2C55]"
+                className="absolute bottom-0 inset-x-6 h-0.5 bg-[#5E70FF]"
               />
             )}
           </button>
@@ -440,12 +440,12 @@ export function AdminProfileView() {
               activeTab === 'liked' ? 'text-white' : 'text-gray-500 hover:text-gray-300'
             }`}
           >
-            <Heart className="w-4 h-4 text-rose-500 fill-rose-500/20" />
+            <Heart className="w-4 h-4 text-[#DF4D50] fill-[#DF4D50]/20" />
             <span>Liked Videos</span>
             {activeTab === 'liked' && (
               <motion.div
                 layoutId="adminProfileTabLine"
-                className="absolute bottom-0 inset-x-6 h-0.5 bg-[#FE2C55]"
+                className="absolute bottom-0 inset-x-6 h-0.5 bg-[#5E70FF]"
               />
             )}
           </button>
@@ -456,12 +456,12 @@ export function AdminProfileView() {
               activeTab === 'ratings' ? 'text-white' : 'text-gray-500 hover:text-gray-300'
             }`}
           >
-            <Star className="w-4 h-4 text-amber-400 fill-amber-400/20" />
+            <Star className="w-4 h-4 text-[#FF8D28] fill-[#FF8D28]/20" />
             <span>Ratings</span>
             {activeTab === 'ratings' && (
               <motion.div
                 layoutId="adminProfileTabLine"
-                className="absolute bottom-0 inset-x-6 h-0.5 bg-[#FE2C55]"
+                className="absolute bottom-0 inset-x-6 h-0.5 bg-[#5E70FF]"
               />
             )}
           </button>
@@ -472,10 +472,10 @@ export function AdminProfileView() {
           {/* TAB 1: ADMINISTRATIVE HUBS & OPERATIONS */}
           {activeTab === 'applications' && (
             <div className="space-y-3">
-              <div className="p-4 rounded-2xl bg-gradient-to-r from-cyan-950/60 to-zinc-900 border border-cyan-500/30 space-y-3">
+              <div className="p-4 rounded-2xl bg-gradient-to-r from-[#5E70FF]/15 to-zinc-900 border border-[#5E70FF]/30 space-y-3">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2.5">
-                    <div className="p-2 rounded-xl bg-cyan-500/20 text-cyan-400">
+                    <div className="p-2 rounded-xl bg-[#5E70FF]/20 text-[#5E70FF]">
                       <Shield className="w-5 h-5" />
                     </div>
                     <div>
@@ -487,7 +487,7 @@ export function AdminProfileView() {
 
                 <button
                   onClick={() => navigate('admin-dashboard')}
-                  className="w-full py-2.5 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-black font-bold text-xs flex items-center justify-center gap-2 shadow-lg transition-all"
+                  className="w-full py-2.5 rounded-xl bg-[#5E70FF] hover:bg-[#4D5FE8] text-white font-bold text-xs flex items-center justify-center gap-2 shadow-lg shadow-[#5E70FF]/25 transition-all"
                 >
                   <span>Launch Full Control Center</span>
                   <ChevronRight className="w-4 h-4" />
@@ -497,12 +497,12 @@ export function AdminProfileView() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                 <button
                   onClick={() => navigate('admin-applications')}
-                  className="p-3.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-amber-500/30 text-left transition-all group flex items-center justify-between"
+                  className="p-3.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-[#24BBA9]/30 text-left transition-all group flex items-center justify-between"
                 >
                   <div className="flex items-center gap-3">
-                    <UserCheck className="w-4 h-4 text-amber-400" />
+                    <UserCheck className="w-4 h-4 text-[#24BBA9]" />
                     <div>
-                      <p className="text-xs font-bold text-white group-hover:text-amber-400 transition-colors">
+                      <p className="text-xs font-bold text-white group-hover:text-[#24BBA9] transition-colors">
                         Creator Applications
                       </p>
                       <p className="text-[10px] text-zinc-400">
@@ -518,9 +518,9 @@ export function AdminProfileView() {
                   className="p-3.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-left transition-all group flex items-center justify-between"
                 >
                   <div className="flex items-center gap-3">
-                    <Users className="w-4 h-4 text-cyan-400" />
+                    <Users className="w-4 h-4 text-[#5E70FF]" />
                     <div>
-                      <p className="text-xs font-bold text-white group-hover:text-cyan-400 transition-colors">
+                      <p className="text-xs font-bold text-white group-hover:text-[#5E70FF] transition-colors">
                         User Operations
                       </p>
                       <p className="text-[10px] text-zinc-400">Manage consumers & creators</p>
@@ -534,9 +534,9 @@ export function AdminProfileView() {
                   className="p-3.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-left transition-all group flex items-center justify-between"
                 >
                   <div className="flex items-center gap-3">
-                    <Film className="w-4 h-4 text-violet-400" />
+                    <Film className="w-4 h-4 text-[#5E70FF]" />
                     <div>
-                      <p className="text-xs font-bold text-white group-hover:text-violet-400 transition-colors">
+                      <p className="text-xs font-bold text-white group-hover:text-[#5E70FF] transition-colors">
                         Video Moderation
                       </p>
                       <p className="text-[10px] text-zinc-400">Review & publish media</p>
@@ -550,9 +550,9 @@ export function AdminProfileView() {
                   className="p-3.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-left transition-all group flex items-center justify-between"
                 >
                   <div className="flex items-center gap-3">
-                    <Clock className="w-4 h-4 text-emerald-400" />
+                    <Clock className="w-4 h-4 text-[#48B321]" />
                     <div>
-                      <p className="text-xs font-bold text-white group-hover:text-emerald-400 transition-colors">
+                      <p className="text-xs font-bold text-white group-hover:text-[#48B321] transition-colors">
                         Audit Log Trail
                       </p>
                       <p className="text-[10px] text-zinc-400">Immutable security logs</p>
@@ -568,7 +568,7 @@ export function AdminProfileView() {
           {activeTab === 'liked' && (
             likedLoading ? (
               <div className="py-20 flex justify-center">
-                <Loader2 className="w-8 h-8 animate-spin text-[#FE2C55]" />
+                <Loader2 className="w-8 h-8 animate-spin text-[#5E70FF]" />
               </div>
             ) : likedVideosList.length > 0 ? (
               <div className="grid grid-cols-3 gap-2">
@@ -587,7 +587,7 @@ export function AdminProfileView() {
                         <Play className="w-8 h-8 text-white fill-white" />
                       </div>
                       <div className="absolute top-2 right-2 z-10 w-6 h-6 rounded-full bg-black/60 flex items-center justify-center">
-                        <Heart className="w-3.5 h-3.5 text-rose-500 fill-rose-500" />
+                        <Heart className="w-3.5 h-3.5 text-[#DF4D50] fill-[#DF4D50]" />
                       </div>
                       <div className="absolute bottom-0 inset-x-0 p-2 bg-gradient-to-t from-black/90 via-black/40 to-transparent flex items-center justify-between text-[11px] font-semibold text-white">
                         <span className="flex items-center gap-1">
@@ -613,7 +613,7 @@ export function AdminProfileView() {
           {activeTab === 'ratings' && (
             ratingsLoading ? (
               <div className="py-20 flex justify-center">
-                <Loader2 className="w-8 h-8 animate-spin text-[#FE2C55]" />
+                <Loader2 className="w-8 h-8 animate-spin text-[#5E70FF]" />
               </div>
             ) : myRatingsList.length > 0 ? (
               <div className="space-y-3">
@@ -636,7 +636,7 @@ export function AdminProfileView() {
                           <p className="text-[10px] text-gray-400">@{item.creator.username}</p>
                         </div>
                       </div>
-                      <span className="text-xs font-bold text-amber-400">
+                      <span className="text-xs font-bold text-[#FF8D28]">
                         ⭐ {item.overallRating.toFixed(1)} / 10
                       </span>
                     </div>
@@ -713,7 +713,7 @@ export function AdminProfileView() {
                   <button
                     type="button"
                     onClick={handleRemoveAvatar}
-                    className="px-3 py-1.5 rounded-lg bg-red-950/40 hover:bg-red-900/50 border border-red-500/20 text-xs font-semibold text-red-400 transition-colors flex items-center gap-1.5"
+                    className="px-3 py-1.5 rounded-lg bg-[#DF4D50]/20 hover:bg-[#DF4D50]/30 border border-[#DF4D50]/30 text-xs font-semibold text-[#DF4D50] transition-colors flex items-center gap-1.5"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
                     Remove
@@ -738,7 +738,7 @@ export function AdminProfileView() {
                   placeholder="admin"
                   maxLength={30}
                   required
-                  className="w-full rounded-xl bg-zinc-900 border border-white/10 pl-8 pr-3.5 py-2.5 text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-[#FE2C55] font-mono"
+                  className="w-full rounded-xl bg-zinc-900 border border-white/10 pl-8 pr-3.5 py-2.5 text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-[#5E70FF] font-mono"
                 />
               </div>
             </div>
@@ -753,7 +753,7 @@ export function AdminProfileView() {
                 placeholder="Admin Name"
                 maxLength={50}
                 required
-                className="w-full rounded-xl bg-zinc-900 border border-white/10 px-3.5 py-2.5 text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-[#FE2C55]"
+                className="w-full rounded-xl bg-zinc-900 border border-white/10 px-3.5 py-2.5 text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-[#5E70FF]"
               />
             </div>
 
@@ -766,7 +766,7 @@ export function AdminProfileView() {
                 maxLength={500}
                 rows={3}
                 placeholder="Administrator profile bio..."
-                className="w-full rounded-xl bg-zinc-900 border border-white/10 p-3 text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-[#FE2C55] resize-none"
+                className="w-full rounded-xl bg-zinc-900 border border-white/10 p-3 text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-[#5E70FF] resize-none"
               />
             </div>
 
@@ -776,7 +776,7 @@ export function AdminProfileView() {
               <select
                 value={editGender}
                 onChange={(e) => setEditGender(e.target.value)}
-                className="w-full rounded-xl bg-zinc-900 border border-white/10 px-3.5 py-2.5 text-sm text-white focus:outline-none focus:ring-1 focus:ring-[#FE2C55]"
+                className="w-full rounded-xl bg-zinc-900 border border-white/10 px-3.5 py-2.5 text-sm text-white focus:outline-none focus:ring-1 focus:ring-[#5E70FF]"
               >
                 <option value="PREFER_NOT_TO_SAY">Prefer not to say</option>
                 <option value="FEMALE">Female</option>
@@ -797,7 +797,7 @@ export function AdminProfileView() {
               <button
                 type="submit"
                 disabled={saving}
-                className="flex-1 py-2.5 rounded-xl bg-[#FE2C55] hover:bg-[#FE2C55]/90 text-white font-bold text-xs shadow-lg transition-all flex items-center justify-center gap-1.5 disabled:opacity-50"
+                className="flex-1 py-2.5 rounded-xl bg-[#5E70FF] hover:bg-[#4D5FE8] text-white font-bold text-xs shadow-lg shadow-[#5E70FF]/25 transition-all flex items-center justify-center gap-1.5 disabled:opacity-50"
               >
                 {saving ? (
                   <>

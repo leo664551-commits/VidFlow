@@ -99,7 +99,7 @@ export function AdminAuditLogsView() {
         <div>
           <div className="flex items-center gap-2">
             <h1 className="text-2xl font-black text-white tracking-tight">System Audit Log Trail</h1>
-            <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-cyan-500/15 text-cyan-400 border border-cyan-500/30">
+            <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-[#5E70FF]/15 text-[#5E70FF] border border-[#5E70FF]/30">
               Immutable Ledger
             </span>
           </div>
@@ -170,7 +170,7 @@ export function AdminAuditLogsView() {
         <CardContent className="p-0">
           {isLoading ? (
             <div className="p-12 flex flex-col items-center justify-center gap-3 text-zinc-400">
-              <Loader2 className="w-8 h-8 text-cyan-400 animate-spin" />
+              <Loader2 className="w-8 h-8 text-[#5E70FF] animate-spin" />
               <p className="text-xs">Loading audit ledger...</p>
             </div>
           ) : logs.length > 0 ? (
@@ -197,7 +197,7 @@ export function AdminAuditLogsView() {
 
                       <TableCell className="py-3">
                         <div className="flex items-center gap-2">
-                          <div className="w-6 h-6 rounded-full bg-cyan-500/20 text-cyan-400 text-[10px] font-bold flex items-center justify-center">
+                          <div className="w-6 h-6 rounded-full bg-[#5E70FF]/20 text-[#5E70FF] text-[10px] font-bold flex items-center justify-center">
                             {log.actor?.displayName?.[0]?.toUpperCase() || 'A'}
                           </div>
                           <span className="text-xs font-semibold text-white">
@@ -207,7 +207,7 @@ export function AdminAuditLogsView() {
                       </TableCell>
 
                       <TableCell className="py-3">
-                        <span className="px-2.5 py-1 rounded-md text-[11px] font-mono font-bold bg-zinc-800 border border-zinc-700 text-cyan-300">
+                        <span className="px-2.5 py-1 rounded-md text-[11px] font-mono font-bold bg-zinc-800 border border-zinc-700 text-[#5E70FF]">
                           {log.action}
                         </span>
                       </TableCell>
@@ -260,7 +260,7 @@ export function AdminAuditLogsView() {
           <DialogContent className="bg-zinc-950 border-zinc-800 text-white max-w-xl shadow-2xl">
             <DialogHeader>
               <DialogTitle className="text-base font-bold text-white flex items-center gap-2">
-                <Code className="w-4 h-4 text-cyan-400" />
+                <Code className="w-4 h-4 text-[#5E70FF]" />
                 Audit Record Inspector: {selectedLog.action}
               </DialogTitle>
             </DialogHeader>
@@ -283,7 +283,7 @@ export function AdminAuditLogsView() {
                 </div>
                 <div>
                   <span className="text-zinc-500">Target Entity:</span>
-                  <p className="font-mono text-cyan-400">
+                  <p className="font-mono text-[#24BBA9]">
                     {selectedLog.entityType} ({selectedLog.entityId})
                   </p>
                 </div>

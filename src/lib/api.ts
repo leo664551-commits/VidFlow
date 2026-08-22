@@ -991,3 +991,24 @@ export async function markNotificationAsRead(
     method: 'PATCH',
   })
 }
+
+// Profile View Tracking
+export async function recordProfileView(
+  creatorOrUserId: string
+): Promise<{ recorded: boolean; id?: string }> {
+  return request<{ recorded: boolean; id?: string }>(`/api/creators/${creatorOrUserId}/profile-view`, {
+    method: 'POST',
+  }).catch(() => ({ recorded: false }))
+}
+
+// Video Share Tracking
+export async function recordVideoShare(
+  videoId: string,
+  platform = 'LINK'
+): Promise<{ recorded: boolean; totalShares: number }> {
+  return request<{ recorded: boolean; totalShares: number }>(`/api/videos/${videoId}/share`, {
+    method: 'POST',
+    body: JSON.stringify({ platform }),
+  }).catch(() => ({ recorded: false, totalShares: 0 }))
+}
+

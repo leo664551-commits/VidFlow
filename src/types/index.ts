@@ -102,6 +102,8 @@ export interface VideoWithCreator {
   duration: number | null;
   status: VideoStatus;
   viewCount: number;
+  likeCount?: number;
+  commentCount?: number;
   createdAt: string;
   updatedAt: string;
   creator: {

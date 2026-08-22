@@ -117,7 +117,7 @@ export function AdminModerationView() {
         <div>
           <div className="flex items-center gap-2">
             <h1 className="text-2xl font-black text-white tracking-tight">Trust & Safety Moderation Queue</h1>
-            <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-rose-500/15 text-rose-400 border border-rose-500/30">
+            <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-[#DF4D50]/15 text-[#DF4D50] border border-[#DF4D50]/30">
               Active Triage
             </span>
           </div>
@@ -135,8 +135,8 @@ export function AdminModerationView() {
               className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-colors ${
                 priorityFilter === p
                   ? p === 'HIGH'
-                    ? 'bg-rose-500 text-white font-bold'
-                    : 'bg-cyan-500 text-black font-bold'
+                    ? 'bg-[#DF4D50] text-white font-bold'
+                    : 'bg-[#5E70FF] text-white font-bold'
                   : 'text-zinc-400 hover:text-white hover:bg-zinc-800'
               }`}
             >
@@ -148,9 +148,9 @@ export function AdminModerationView() {
 
       {/* 2. Priority Summary Banner */}
       {highPriorityCount > 0 && (
-        <div className="p-4 rounded-xl bg-rose-500/10 border border-rose-500/30 flex items-center justify-between gap-4 text-xs text-rose-300">
+        <div className="p-4 rounded-xl bg-[#DF4D50]/10 border border-[#DF4D50]/30 flex items-center justify-between gap-4 text-xs text-zinc-300">
           <div className="flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-rose-500/20 text-rose-400 shrink-0">
+            <div className="p-2 rounded-lg bg-[#DF4D50]/20 text-[#DF4D50] shrink-0">
               <AlertTriangle className="w-5 h-5 animate-pulse" />
             </div>
             <div>
@@ -161,7 +161,7 @@ export function AdminModerationView() {
           <Button
             size="sm"
             onClick={() => setPriorityFilter('HIGH')}
-            className="bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs h-8"
+            className="bg-[#DF4D50] hover:bg-[#DF4D50]/90 text-white font-bold text-xs h-8"
           >
             Filter Urgent
           </Button>
@@ -214,11 +214,11 @@ export function AdminModerationView() {
                     <TableCell className="py-3">
                       <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-zinc-300">
                         {r.type === 'VIDEO' ? (
-                          <Video className="w-3.5 h-3.5 text-violet-400" />
+                          <Video className="w-3.5 h-3.5 text-[#5E70FF]" />
                         ) : r.type === 'COMMENT' ? (
-                          <MessageSquare className="w-3.5 h-3.5 text-cyan-400" />
+                          <MessageSquare className="w-3.5 h-3.5 text-[#24BBA9]" />
                         ) : (
-                          <User className="w-3.5 h-3.5 text-amber-400" />
+                          <User className="w-3.5 h-3.5 text-[#FF8D28]" />
                         )}
                         {r.type}
                       </span>
@@ -260,7 +260,7 @@ export function AdminModerationView() {
             </Table>
           ) : (
             <div className="py-16 text-center text-zinc-500 space-y-2">
-              <CheckCircle2 className="w-8 h-8 mx-auto text-emerald-500" />
+              <CheckCircle2 className="w-8 h-8 mx-auto text-[#48B321]" />
               <p className="text-sm font-semibold text-zinc-300">No reports in current view</p>
               <p className="text-xs text-zinc-500">Trust & Safety queue is clear for selected filters.</p>
             </div>
@@ -296,7 +296,7 @@ export function AdminModerationView() {
                       report: selectedReport,
                     })
                   }
-                  className="bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs"
+                  className="bg-[#DF4D50] hover:bg-[#DF4D50]/90 text-white font-bold text-xs"
                 >
                   <AlertTriangle className="w-3.5 h-3.5 mr-1.5" />
                   Take Down Content
@@ -304,7 +304,7 @@ export function AdminModerationView() {
 
                 <Button
                   onClick={() => handleResolveReport(selectedReport.id, 'RESOLVED')}
-                  className="bg-emerald-500 hover:bg-emerald-400 text-black font-bold text-xs"
+                  className="bg-[#48B321] hover:bg-[#48B321]/90 text-white font-bold text-xs"
                 >
                   <CheckCircle2 className="w-3.5 h-3.5 mr-1.5" />
                   Resolve Case

@@ -20,7 +20,7 @@ import {
   Sparkles,
 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { getFeedVideos, toggleLike, toggleFollowCreator, recordVideoWatch } from '@/lib/api'
+import { getFeedVideos, toggleLike, toggleFollowCreator, recordVideoWatch, recordVideoShare } from '@/lib/api'
 import { useAppStore } from '@/store/app-store'
 import { useVideoKeyboardShortcuts } from '@/hooks/use-video-keyboard-shortcuts'
 import type { FeedVideo } from '@/types'
@@ -63,13 +63,10 @@ function VideoPlaceholder({ genre, isPlaying }: { genre: string; isPlaying: bool
 function ActionBar({ video }: { video: FeedVideo }) {
   const { user, setCommentPanelOpen, setSelectedVideoId, navigate } = useAppStore()
   const queryClient = useQueryClient()
-  const [liked, setLiked] = useState(video.userLiked)
-  const [likeCount, setLikeCount] = useState(video.likeCount)
+  const [optimisticState, setOptimisticState] = useState<{ liked: boolean; count: number } | null>(null)
 
-  useEffect(() => {
-    setLiked(video.userLiked)
-    setLikeCount(video.likeCount)
-  }, [video.userLiked, video.likeCount])
+  const liked = optimisticState !== null ? optimisticState.liked : video.userLiked
+  const likeCount = optimisticState !== null ? optimisticState.count : video.likeCount
 
   const isSelf = user?.id === video.creator.id || !!video.creator.isSelf
   const isFollowing = !!video.creator.isFollowing
@@ -77,8 +74,7 @@ function ActionBar({ video }: { video: FeedVideo }) {
   const likeMutation = useMutation({
     mutationFn: () => toggleLike(video.id),
     onSuccess: (data) => {
-      setLiked(data.liked)
-      setLikeCount(data.likeCount)
+      setOptimisticState({ liked: data.liked, count: data.likeCount })
       queryClient.invalidateQueries({ queryKey: ['feed'] })
       queryClient.invalidateQueries({ queryKey: ['my-liked-videos'] })
     },
@@ -126,6 +122,7 @@ function ActionBar({ video }: { video: FeedVideo }) {
   })
 
   const handleShare = () => {
+    recordVideoShare(video.id, 'CLIPBOARD')
     if (typeof window !== 'undefined' && navigator.clipboard) {
       navigator.clipboard.writeText(window.location.href)
       toast.success('Video link copied to clipboard!')
@@ -150,7 +147,7 @@ function ActionBar({ video }: { video: FeedVideo }) {
       <div className="relative mb-1">
         <button
           onClick={handleCreatorTap}
-          className="w-12 h-12 rounded-full p-[2px] bg-gradient-to-tr from-[#FE2C55] to-[#25F4EE] hover:scale-105 transition-transform overflow-hidden shadow-lg"
+          className="w-12 h-12 rounded-full p-[2px] bg-gradient-to-tr from-[#5E70FF] to-[#24BBA9] hover:scale-105 transition-transform overflow-hidden shadow-lg"
           title={`@${video.creator.creatorName}`}
         >
           <div className="w-full h-full rounded-full bg-zinc-900 flex items-center justify-center font-bold text-white text-base overflow-hidden">
@@ -171,7 +168,7 @@ function ActionBar({ video }: { video: FeedVideo }) {
           <button
             onClick={handleFollow}
             disabled={followMutation.isPending}
-            className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 w-5 h-5 rounded-full bg-[#FE2C55] text-white flex items-center justify-center shadow-md hover:scale-110 transition-transform"
+            className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 w-5 h-5 rounded-full bg-[#5E70FF] hover:bg-[#4D5FE8] text-white flex items-center justify-center shadow-md hover:scale-110 transition-transform"
             title="Follow"
           >
             <Plus className="w-3.5 h-3.5 stroke-[3]" />
@@ -188,7 +185,7 @@ function ActionBar({ video }: { video: FeedVideo }) {
         >
           <Heart
             className={`w-6 h-6 transition-all ${
-              liked ? 'fill-[#FE2C55] text-[#FE2C55] scale-110' : 'text-white group-hover:scale-110'
+              liked ? 'fill-[#DF4D50] text-[#DF4D50] scale-110' : 'text-white group-hover:scale-110'
             }`}
           />
         </motion.div>
@@ -242,8 +239,8 @@ function VideoInfoOverlay({ video }: { video: FeedVideo }) {
           <span>@{video.creator.creatorName}</span>
         </button>
         {video.creator.isFollowing && !video.creator.isSelf && (
-          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-[#25F4EE]/15 text-[#25F4EE] border border-[#25F4EE]/30 backdrop-blur-sm shadow-sm">
-            <span className="w-1.5 h-1.5 rounded-full bg-[#25F4EE] animate-pulse" />
+          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-[#24BBA9]/15 text-[#24BBA9] border border-[#24BBA9]/30 backdrop-blur-sm shadow-sm">
+            <span className="w-1.5 h-1.5 rounded-full bg-[#24BBA9] animate-pulse" />
             Following
           </span>
         )}
@@ -264,7 +261,7 @@ function VideoInfoOverlay({ video }: { video: FeedVideo }) {
       {/* Genre, Rating, Views & Sound Marquee */}
       <div className="flex flex-wrap items-center gap-2">
         <span className="inline-flex items-center gap-1 rounded-full bg-white/20 hover:bg-white/30 backdrop-blur-md px-2.5 py-0.5 text-[11px] font-semibold text-white transition-colors">
-          <Music className="h-3 w-3 text-[#25F4EE]" />
+          <Music className="h-3 w-3 text-[#5E70FF]" />
           {video.genre.replace('_', ' ')}
         </span>
         <span className="inline-flex rounded-full bg-white/15 backdrop-blur-md px-2.5 py-0.5 text-[11px] font-medium text-gray-200">
@@ -411,10 +408,7 @@ export function FeedView() {
     setTimeout(() => setIsRefreshing(false), 500)
   }, [])
 
-  // Auto-refresh feed seed when authenticated account changes (login/logout/switch)
-  useEffect(() => {
-    handleRefreshFeed()
-  }, [user?.id, handleRefreshFeed])
+
 
   const { data, isLoading, fetchNextPage, hasNextPage, isFetchingNextPage } = useInfiniteQuery({
     queryKey: ['feed', user?.id, feedSeed],
@@ -526,8 +520,8 @@ export function FeedView() {
     return (
       <div className="flex h-dvh md:h-screen items-center justify-center bg-black">
         <div className="flex flex-col items-center gap-3">
-          <div className="h-10 w-10 animate-spin rounded-full border-2 border-[#FE2C55]/20 border-t-[#FE2C55]" />
-          <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Loading TikTok Feed</p>
+          <div className="h-10 w-10 animate-spin rounded-full border-2 border-[#5E70FF]/20 border-t-[#5E70FF]" />
+          <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Loading Feed</p>
         </div>
       </div>
     )
@@ -547,13 +541,8 @@ export function FeedView() {
 
   return (
     <div className="relative h-dvh md:h-screen w-full bg-black overflow-hidden flex justify-center">
-      {/* Top Floating Feed Header (TikTok style: For You + Refresh) */}
+      {/* Top Floating Feed Header */}
       <div className="absolute top-0 inset-x-0 z-30 flex items-center justify-between px-4 pt-3 pb-6 bg-gradient-to-b from-black/80 via-black/40 to-transparent pointer-events-none">
-        <div className="flex items-center gap-4 mx-auto pointer-events-auto">
-          <span className="text-base font-bold text-white tracking-wide border-b-2 border-white pb-0.5 shadow-sm">
-            For You
-          </span>
-        </div>
 
         {/* Quick Refresh Stream Button */}
         <button
@@ -562,7 +551,7 @@ export function FeedView() {
           className="absolute right-4 top-3.5 p-2 rounded-full bg-black/40 hover:bg-black/70 backdrop-blur-md border border-white/10 text-white/80 hover:text-white transition-all shadow-md active:scale-90 pointer-events-auto cursor-pointer"
           title="Refresh stream with new recommendations"
         >
-          <RotateCcw className={`w-4 h-4 ${isRefreshing ? 'animate-spin text-[#25F4EE]' : ''}`} />
+          <RotateCcw className={`w-4 h-4 ${isRefreshing ? 'animate-spin text-[#24BBA9]' : ''}`} />
         </button>
       </div>
 
@@ -584,7 +573,7 @@ export function FeedView() {
         ))}
         {isFetchingNextPage && (
           <div className="flex h-32 items-center justify-center">
-            <div className="h-8 w-8 animate-spin rounded-full border-2 border-white/20 border-t-[#FE2C55]" />
+            <div className="h-8 w-8 animate-spin rounded-full border-2 border-white/20 border-t-[#5E70FF]" />
           </div>
         )}
       </div>

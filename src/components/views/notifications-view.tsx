@@ -23,16 +23,20 @@ function getNotificationIcon(type: string) {
   switch (type) {
     case 'LIKE_VIDEO':
     case 'LIKE_COMMENT':
-      return <Heart className="h-3.5 w-3.5 fill-[#FE2C55] text-[#FE2C55]" />
+      return <Heart className="h-3.5 w-3.5 fill-[#DF4D50] text-[#DF4D50]" />
     case 'COMMENT_REPLY':
     case 'VIDEO_COMMENT':
-      return <MessageCircle className="h-3.5 w-3.5 text-[#25F4EE] fill-[#25F4EE]/20" />
+      return <MessageCircle className="h-3.5 w-3.5 text-[#24BBA9] fill-[#24BBA9]/20" />
     case 'FOLLOW':
-      return <UserPlus className="h-3.5 w-3.5 text-emerald-400" />
+      return <UserPlus className="h-3.5 w-3.5 text-[#48B321]" />
     case 'CREATOR_RATING':
-      return <Star className="h-3.5 w-3.5 text-amber-400 fill-amber-400" />
+      return <Star className="h-3.5 w-3.5 text-[#FF8D28] fill-[#FF8D28]" />
     case 'NEW_VIDEO':
-      return <Video className="h-3.5 w-3.5 text-purple-400" />
+      return <Video className="h-3.5 w-3.5 text-[#5E70FF]" />
+    case 'CREATOR_APPLICATION_APPROVED':
+      return <Sparkles className="h-3.5 w-3.5 text-[#48B321]" />
+    case 'CREATOR_APPLICATION_REJECTED':
+      return <Sparkles className="h-3.5 w-3.5 text-[#FF8D28]" />
     default:
       return <Sparkles className="h-3.5 w-3.5 text-gray-400" />
   }
@@ -67,13 +71,17 @@ export function NotificationsView() {
       markOneMutation.mutate(item.id)
     }
 
-    if (item.entityType === 'Video' && item.entityId) {
+    if (item.type === 'CREATOR_APPLICATION_APPROVED') {
+      navigate('creator-dashboard')
+    } else if (item.type === 'CREATOR_APPLICATION_REJECTED') {
+      navigate('profile')
+    } else if (item.entityType === 'Video' && item.entityId) {
       navigate('video-detail', item.entityId)
     } else if (item.entityType === 'CreatorProfile' && item.entityId) {
       setSelectedCreatorId(item.entityId)
       navigate('creator-profile')
     } else if (item.entityType === 'Comment' && item.entityId) {
-      // In VidFlow comments are on videos
+      // Navigate to video context if available
     } else if (item.type === 'FOLLOW' && item.actor?.id) {
       setSelectedCreatorId(item.actor.id)
       navigate('creator-profile')
@@ -97,7 +105,7 @@ export function NotificationsView() {
           </p>
           <button
             onClick={() => navigate('login')}
-            className="px-6 py-2.5 rounded-full bg-[#FE2C55] hover:bg-[#FE2C55]/90 text-white font-semibold text-sm transition-all shadow-lg shadow-[#FE2C55]/20"
+            className="px-6 py-2.5 rounded-full bg-[#5E70FF] hover:bg-[#4D5FE8] text-white font-semibold text-sm transition-all shadow-lg shadow-[#5E70FF]/20"
           >
             Log in
           </button>
@@ -116,7 +124,7 @@ export function NotificationsView() {
         <div className="flex items-center gap-2">
           <h1 className="text-white text-lg font-bold">Notifications</h1>
           {unreadCount > 0 && (
-            <span className="px-2 py-0.5 text-xs font-bold bg-[#FE2C55] text-white rounded-full">
+            <span className="px-2 py-0.5 text-xs font-bold bg-[#5E70FF] text-white rounded-full">
               {unreadCount}
             </span>
           )}
@@ -136,7 +144,7 @@ export function NotificationsView() {
 
       {isLoading ? (
         <div className="flex h-64 items-center justify-center">
-          <Loader2 className="h-8 w-8 animate-spin text-[#FE2C55]" />
+          <Loader2 className="h-8 w-8 animate-spin text-[#5E70FF]" />
         </div>
       ) : notifications.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-28 px-8 text-center">
@@ -198,7 +206,7 @@ export function NotificationsView() {
 
                 {/* Unread indicator */}
                 {!n.read && (
-                  <div className="w-2.5 h-2.5 rounded-full bg-[#FE2C55] shrink-0 mt-2 self-center" />
+                  <div className="w-2.5 h-2.5 rounded-full bg-[#5E70FF] shrink-0 mt-2 self-center" />
                 )}
               </motion.div>
             )

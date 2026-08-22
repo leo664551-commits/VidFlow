@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "VidFlow - TikTok-Style Short Video Platform",
+  title: "VidFlow - Short Video Platform",
   description: "VidFlow is a modern, cloud-native short video sharing web platform. Watch, like, comment, and share trending videos.",
   keywords: ["VidFlow", "Short Videos", "TikTok", "Reels", "Entertainment", "Video Sharing"],
   authors: [{ name: "VidFlow Team" }],

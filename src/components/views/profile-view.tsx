@@ -23,7 +23,7 @@ export function ProfileView() {
         <div className="flex flex-col sm:flex-row items-center gap-3 w-full max-w-xs">
           <button
             onClick={() => navigate('login')}
-            className="w-full py-3.5 rounded-xl bg-[#FE2C55] hover:bg-[#FE2C55]/90 text-white font-bold text-sm shadow-lg shadow-[#FE2C55]/20 flex items-center justify-center gap-2 transition-all"
+            className="w-full py-3.5 rounded-xl bg-[#5E70FF] hover:bg-[#4D5FE8] text-white font-bold text-sm shadow-lg shadow-[#5E70FF]/25 flex items-center justify-center gap-2 transition-all"
           >
             <LogIn className="w-4 h-4" />
             Log In

@@ -133,7 +133,7 @@ export function AdminCreatorsView() {
         <div>
           <div className="flex items-center gap-2">
             <h1 className="text-2xl font-black text-white tracking-tight">Approved Creators Catalog</h1>
-            <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-500/15 text-amber-400 border border-amber-500/30">
+            <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-[#24BBA9]/15 text-[#24BBA9] border border-[#24BBA9]/30">
               Content Partners
             </span>
           </div>
@@ -146,12 +146,12 @@ export function AdminCreatorsView() {
           <Button
             onClick={() => navigate('admin-applications')}
             variant="outline"
-            className="text-xs bg-amber-500/10 text-amber-300 border-amber-500/30 hover:bg-amber-500/20 h-9"
+            className="text-xs bg-[#FF8D28]/10 text-[#FF8D28] border-[#FF8D28]/30 hover:bg-[#FF8D28]/20 h-9"
           >
             <UserCheck className="w-3.5 h-3.5 mr-1.5" />
             <span>Applications Queue</span>
             {pendingCount > 0 && (
-              <span className="ml-1.5 px-1.5 py-0.2 rounded-full text-[10px] font-bold bg-amber-500 text-black">
+              <span className="ml-1.5 px-1.5 py-0.2 rounded-full text-[10px] font-bold bg-[#FF8D28] text-black">
                 {pendingCount}
               </span>
             )}
@@ -159,7 +159,7 @@ export function AdminCreatorsView() {
 
           <Button
             onClick={() => setCreateModalOpen(true)}
-            className="bg-cyan-500 hover:bg-cyan-400 text-black font-bold text-xs h-9"
+            className="bg-[#5E70FF] hover:bg-[#4D5FE8] text-white font-bold text-xs h-9 shadow-md shadow-[#5E70FF]/20"
           >
             <Plus className="w-4 h-4 mr-1.5" />
             Provision Creator
@@ -188,7 +188,7 @@ export function AdminCreatorsView() {
         <CardContent className="p-0">
           {isLoading ? (
             <div className="p-12 flex flex-col items-center justify-center gap-3 text-zinc-400">
-              <Loader2 className="w-8 h-8 text-amber-400 animate-spin" />
+              <Loader2 className="w-8 h-8 text-[#5E70FF] animate-spin" />
               <p className="text-xs">Loading approved creators...</p>
             </div>
           ) : creators.length > 0 ? (
@@ -211,7 +211,7 @@ export function AdminCreatorsView() {
                     >
                       <TableCell className="py-3">
                         <div className="flex items-center gap-3">
-                          <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-amber-500 to-rose-600 border border-amber-500/30 flex items-center justify-center font-bold text-xs text-white shrink-0 shadow">
+                          <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-[#5E70FF] to-[#24BBA9] border border-[#5E70FF]/30 flex items-center justify-center font-bold text-xs text-white shrink-0 shadow">
                             {c.creatorName?.[0]?.toUpperCase() || 'C'}
                           </div>
                           <div className="min-w-0">
@@ -221,7 +221,7 @@ export function AdminCreatorsView() {
                         </div>
                       </TableCell>
 
-                      <TableCell className="py-3 font-mono text-xs text-amber-400 font-semibold">
+                      <TableCell className="py-3 font-mono text-xs text-[#24BBA9] font-semibold">
                         @{c.creatorName}
                       </TableCell>
 
@@ -231,7 +231,7 @@ export function AdminCreatorsView() {
 
                       <TableCell className="py-3 text-right">
                         <span className="inline-flex items-center gap-1 text-xs font-bold text-zinc-200">
-                          <Video className="w-3.5 h-3.5 text-violet-400" />
+                          <Video className="w-3.5 h-3.5 text-[#5E70FF]" />
                           {c.videoCount}
                         </span>
                       </TableCell>
@@ -251,7 +251,7 @@ export function AdminCreatorsView() {
                             size="sm"
                             variant="ghost"
                             onClick={() => setDeleteDialogCreator(c)}
-                            className="h-7 px-2 text-xs text-rose-400 hover:text-rose-300 hover:bg-rose-500/10"
+                            className="h-7 px-2 text-xs text-[#DF4D50] hover:text-[#DF4D50]/80 hover:bg-[#DF4D50]/10"
                             title="Revoke Privileges & Delete Creator"
                           >
                             <Trash2 className="w-3.5 h-3.5" />
@@ -300,7 +300,7 @@ export function AdminCreatorsView() {
               <Button
                 variant="outline"
                 onClick={() => setDeleteDialogCreator(selectedCreator)}
-                className="bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border-rose-500/30 text-xs"
+                className="bg-[#DF4D50]/10 hover:bg-[#DF4D50]/20 text-[#DF4D50] border-[#DF4D50]/30 text-xs"
               >
                 <Trash2 className="w-3.5 h-3.5 mr-1.5" />
                 Revoke Creator Privileges
@@ -311,7 +311,7 @@ export function AdminCreatorsView() {
                   setSelectedCreatorId(selectedCreator.id)
                   navigate('creator-profile')
                 }}
-                className="bg-cyan-500 hover:bg-cyan-400 text-black font-bold text-xs"
+                className="bg-[#5E70FF] hover:bg-[#4D5FE8] text-white font-bold text-xs shadow-md"
               >
                 <span>View Public Profile</span>
                 <ExternalLink className="w-3.5 h-3.5 ml-1.5" />
@@ -321,7 +321,7 @@ export function AdminCreatorsView() {
         >
           {/* Identity Header */}
           <div className="p-4 rounded-xl bg-zinc-900 border border-zinc-800 flex items-center gap-3">
-            <div className="w-12 h-12 rounded-full bg-gradient-to-tr from-amber-500 to-rose-600 text-white font-black text-base flex items-center justify-center shadow-lg">
+            <div className="w-12 h-12 rounded-full bg-gradient-to-tr from-[#5E70FF] to-[#24BBA9] text-white font-black text-base flex items-center justify-center shadow-lg">
               {selectedCreator.creatorName?.[0]?.toUpperCase() || 'C'}
             </div>
             <div>
@@ -345,7 +345,7 @@ export function AdminCreatorsView() {
           {/* Publishing Footprint */}
           <div className="p-4 rounded-xl bg-zinc-900 border border-zinc-800 space-y-3">
             <span className="text-xs font-bold uppercase tracking-wider text-zinc-400 flex items-center gap-1.5">
-              <Video className="w-3.5 h-3.5 text-violet-400" />
+              <Video className="w-3.5 h-3.5 text-[#5E70FF]" />
               Catalog Statistics
             </span>
             <div className="grid grid-cols-2 gap-3 text-center">
@@ -355,7 +355,7 @@ export function AdminCreatorsView() {
               </div>
               <div className="p-3 rounded-lg bg-zinc-950 border border-zinc-800">
                 <p className="text-xs text-zinc-400">Status</p>
-                <p className="text-lg font-bold text-emerald-400">{selectedCreator.user.status}</p>
+                <p className="text-lg font-bold text-[#48B321]">{selectedCreator.user.status}</p>
               </div>
             </div>
           </div>
@@ -367,7 +367,7 @@ export function AdminCreatorsView() {
         <DialogContent className="bg-zinc-950 border-zinc-800 text-white max-w-lg shadow-2xl">
           <DialogHeader>
             <DialogTitle className="text-lg font-bold text-white flex items-center gap-2">
-              <UserPlus className="w-5 h-5 text-cyan-400" />
+              <UserPlus className="w-5 h-5 text-[#5E70FF]" />
               Provision Creator Account
             </DialogTitle>
           </DialogHeader>
@@ -451,7 +451,7 @@ export function AdminCreatorsView() {
               <Button
                 type="submit"
                 disabled={createMutation.isPending}
-                className="bg-cyan-500 hover:bg-cyan-400 text-black font-bold text-xs"
+                className="bg-[#5E70FF] hover:bg-[#4D5FE8] text-white font-bold text-xs"
               >
                 {createMutation.isPending && <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />}
                 Provision Creator

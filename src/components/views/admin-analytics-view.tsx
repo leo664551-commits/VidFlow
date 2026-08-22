@@ -40,15 +40,26 @@ export function AdminAnalyticsView() {
     totalViews: 0,
   }
 
-  // Genre distribution breakdown based on active library
-  const GENRE_DISTRIBUTION = [
-    { genre: 'Comedy', percentage: 28, color: 'bg-amber-500', count: Math.round(stats.readyVideos * 0.28) },
-    { genre: 'Action', percentage: 22, color: 'bg-rose-500', count: Math.round(stats.readyVideos * 0.22) },
-    { genre: 'Drama', percentage: 18, color: 'bg-purple-500', count: Math.round(stats.readyVideos * 0.18) },
-    { genre: 'Sci-Fi', percentage: 14, color: 'bg-cyan-500', count: Math.round(stats.readyVideos * 0.14) },
-    { genre: 'Animation', percentage: 11, color: 'bg-pink-500', count: Math.round(stats.readyVideos * 0.11) },
-    { genre: 'Documentary', percentage: 7, color: 'bg-emerald-500', count: Math.round(stats.readyVideos * 0.07) },
-  ]
+  const analytics = (dashboardData?.stats as any)?.analytics || {
+    users7d: 0,
+    creators7d: 0,
+    videos7d: 0,
+    avgWatchCompletion: '0.0%',
+    commentToViewRate: '0.0%',
+    likeToViewRate: '0.0%',
+    creatorPublishFrequency: '0.0 videos / creator',
+    genreDistribution: [],
+  }
+
+  const genreDistribution: Array<{ genre: string; percentage: number; count: number; color: string }> =
+    analytics.genreDistribution?.length > 0
+      ? analytics.genreDistribution
+      : [
+          { genre: 'Comedy', percentage: 0, color: 'bg-amber-500', count: 0 },
+          { genre: 'Action', percentage: 0, color: 'bg-rose-500', count: 0 },
+          { genre: 'Drama', percentage: 0, color: 'bg-purple-500', count: 0 },
+          { genre: 'Sci-Fi', percentage: 0, color: 'bg-[#24BBA9]', count: 0 },
+        ]
 
   return (
     <AdminLayout>
@@ -57,7 +68,7 @@ export function AdminAnalyticsView() {
         <div>
           <div className="flex items-center gap-2">
             <h1 className="text-2xl font-black text-white tracking-tight">Platform Growth & Analytics</h1>
-            <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
+            <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-[#5E70FF]/15 text-[#5E70FF] border border-[#5E70FF]/30">
               Intelligence
             </span>
           </div>
@@ -74,7 +85,7 @@ export function AdminAnalyticsView() {
               onClick={() => setTimeframe(t)}
               className={`px-3 py-1 text-xs font-semibold rounded-md transition-colors ${
                 timeframe === t
-                  ? 'bg-cyan-500 text-black font-bold shadow-sm'
+                  ? 'bg-[#5E70FF] text-white font-bold shadow-sm'
                   : 'text-zinc-400 hover:text-white hover:bg-zinc-800'
               }`}
             >
@@ -90,29 +101,25 @@ export function AdminAnalyticsView() {
           label="Total Impressions / Views"
           value={stats.totalViews}
           icon={Eye}
-          colorClass="text-emerald-400"
-          trend={{ value: '+24.8% vs last month', isPositive: true }}
+          colorClass="text-[#24BBA9]"
         />
         <AdminStatCard
           label="Creator Conversion Rate"
           value={`${stats.totalUsers > 0 ? ((stats.totalCreators / stats.totalUsers) * 100).toFixed(1) : '0'}%`}
           icon={TrendingUp}
-          colorClass="text-amber-400"
-          trend={{ value: '+3.2%', isPositive: true }}
+          colorClass="text-[#FF8D28]"
         />
         <AdminStatCard
           label="Total Interactions (Likes & Comments)"
           value={(stats.totalVideoLikes + stats.totalComments).toLocaleString()}
           icon={Heart}
-          colorClass="text-rose-400"
-          trend={{ value: '+19.5%', isPositive: true }}
+          colorClass="text-[#DF4D50]"
         />
         <AdminStatCard
           label="Average Watch Completion"
-          value="78.4%"
+          value={analytics.avgWatchCompletion}
           icon={BarChart3}
-          colorClass="text-cyan-400"
-          trend={{ value: '+5.1%', isPositive: true }}
+          colorClass="text-[#5E70FF]"
         />
       </div>
 
@@ -123,50 +130,61 @@ export function AdminAnalyticsView() {
           <Card className="bg-zinc-900/90 border-zinc-800 shadow-xl">
             <CardHeader className="p-5 pb-3 border-b border-zinc-800 flex flex-row items-center justify-between">
               <CardTitle className="text-base font-bold text-white flex items-center gap-2">
-                <TrendingUp className="w-4 h-4 text-cyan-400" />
+                <TrendingUp className="w-4 h-4 text-[#5E70FF]" />
                 Audience & Publishing Velocity ({timeframe.toUpperCase()})
               </CardTitle>
             </CardHeader>
             <CardContent className="p-5 space-y-4">
-              {/* Simulated Bar Metrics */}
               <div className="space-y-3">
                 <div className="space-y-1.5">
                   <div className="flex justify-between text-xs">
-                    <span className="text-zinc-300 font-semibold">Consumer Onboarding Growth</span>
-                    <span className="text-cyan-400 font-bold">+245 users / week</span>
+                    <span className="text-zinc-300 font-semibold">Consumer Onboarding (Last 7 Days)</span>
+                    <span className="text-[#5E70FF] font-bold">+{analytics.users7d} new users</span>
                   </div>
                   <div className="h-2.5 w-full bg-zinc-800 rounded-full overflow-hidden">
-                    <div className="h-full bg-cyan-500 rounded-full w-[82%]" />
+                    <div
+                      className="h-full bg-[#5E70FF] rounded-full transition-all"
+                      style={{ width: `${stats.totalUsers > 0 ? Math.min(Math.round((analytics.users7d / stats.totalUsers) * 100), 100) : 0}%` }}
+                    />
                   </div>
                 </div>
 
                 <div className="space-y-1.5">
                   <div className="flex justify-between text-xs">
                     <span className="text-zinc-300 font-semibold">Creator Publishing Frequency</span>
-                    <span className="text-amber-400 font-bold">4.2 videos / creator / mo</span>
+                    <span className="text-[#FF8D28] font-bold">{analytics.creatorPublishFrequency}</span>
                   </div>
                   <div className="h-2.5 w-full bg-zinc-800 rounded-full overflow-hidden">
-                    <div className="h-full bg-amber-500 rounded-full w-[68%]" />
+                    <div
+                      className="h-full bg-[#FF8D28] rounded-full transition-all"
+                      style={{ width: `${stats.totalVideos > 0 ? Math.min(Math.round((analytics.videos7d / stats.totalVideos) * 100), 100) : 0}%` }}
+                    />
                   </div>
                 </div>
 
                 <div className="space-y-1.5">
                   <div className="flex justify-between text-xs">
-                    <span className="text-zinc-300 font-semibold">Video View Qualifying Rate</span>
-                    <span className="text-emerald-400 font-bold">91.4% authoritative</span>
+                    <span className="text-zinc-300 font-semibold">Comment Engagement Rate</span>
+                    <span className="text-[#24BBA9] font-bold">{analytics.commentToViewRate} comment-to-view</span>
                   </div>
                   <div className="h-2.5 w-full bg-zinc-800 rounded-full overflow-hidden">
-                    <div className="h-full bg-emerald-500 rounded-full w-[91%]" />
+                    <div
+                      className="h-full bg-[#24BBA9] rounded-full transition-all"
+                      style={{ width: `${parseFloat(analytics.commentToViewRate) || 0}%` }}
+                    />
                   </div>
                 </div>
 
                 <div className="space-y-1.5">
                   <div className="flex justify-between text-xs">
-                    <span className="text-zinc-300 font-semibold">Discussion Engagement Rate</span>
-                    <span className="text-violet-400 font-bold">18.6% comment-to-view</span>
+                    <span className="text-zinc-300 font-semibold">Like Engagement Rate</span>
+                    <span className="text-[#DF4D50] font-bold">{analytics.likeToViewRate} like-to-view</span>
                   </div>
                   <div className="h-2.5 w-full bg-zinc-800 rounded-full overflow-hidden">
-                    <div className="h-full bg-violet-500 rounded-full w-[54%]" />
+                    <div
+                      className="h-full bg-[#DF4D50] rounded-full transition-all"
+                      style={{ width: `${parseFloat(analytics.likeToViewRate) || 0}%` }}
+                    />
                   </div>
                 </div>
               </div>
@@ -179,25 +197,31 @@ export function AdminAnalyticsView() {
           <Card className="bg-zinc-900/90 border-zinc-800 shadow-xl">
             <CardHeader className="p-5 pb-3 border-b border-zinc-800">
               <CardTitle className="text-base font-bold text-white flex items-center gap-2">
-                <BarChart3 className="w-4 h-4 text-violet-400" />
+                <BarChart3 className="w-4 h-4 text-[#5E70FF]" />
                 Content Genre Distribution
               </CardTitle>
             </CardHeader>
             <CardContent className="p-5 space-y-3.5">
-              {GENRE_DISTRIBUTION.map((item) => (
-                <div key={item.genre} className="space-y-1">
-                  <div className="flex justify-between text-xs">
-                    <span className="text-zinc-200 font-semibold">{item.genre}</span>
-                    <span className="text-zinc-400 font-mono">{item.percentage}% ({item.count} videos)</span>
+              {genreDistribution.length > 0 && stats.readyVideos > 0 ? (
+                genreDistribution.map((item) => (
+                  <div key={item.genre} className="space-y-1">
+                    <div className="flex justify-between text-xs">
+                      <span className="text-zinc-200 font-semibold">{item.genre}</span>
+                      <span className="text-zinc-400 font-mono">{item.percentage}% ({item.count} videos)</span>
+                    </div>
+                    <div className="h-2 w-full bg-zinc-800 rounded-full overflow-hidden">
+                      <div
+                        className={`h-full ${item.color} rounded-full transition-all`}
+                        style={{ width: `${item.percentage}%` }}
+                      />
+                    </div>
                   </div>
-                  <div className="h-2 w-full bg-zinc-800 rounded-full overflow-hidden">
-                    <div
-                      className={`h-full ${item.color} rounded-full`}
-                      style={{ width: `${item.percentage}%` }}
-                    />
-                  </div>
+                ))
+              ) : (
+                <div className="py-8 text-center text-zinc-500 text-xs">
+                  No published video genres recorded in database.
                 </div>
-              ))}
+              )}
             </CardContent>
           </Card>
         </div>

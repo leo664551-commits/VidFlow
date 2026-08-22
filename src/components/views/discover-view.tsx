@@ -53,7 +53,7 @@ function DiscoverCard({
       whileTap={{ scale: 0.97 }}
       className={`w-full aspect-[9/16] overflow-hidden rounded-2xl relative group bg-zinc-900 border transition-all duration-300 flex flex-col justify-end text-left ${
         isFocused
-          ? 'border-[#25F4EE] ring-2 ring-[#25F4EE] shadow-[0_0_20px_rgba(37,244,238,0.4)] scale-[1.02]'
+          ? 'border-[#24BBA9] ring-2 ring-[#24BBA9] shadow-[0_0_20px_rgba(36,187,169,0.4)] scale-[1.02]'
           : 'border-white/10 shadow-md hover:shadow-2xl hover:border-white/30'
       }`}
     >
@@ -233,7 +233,7 @@ export function DiscoverView() {
               if (e.target.value) setActiveGenre(null)
             }}
             placeholder="Search by @username, creator, or videos..."
-            className="w-full rounded-full bg-white/10 py-2.5 pl-10 pr-4 text-sm text-white placeholder-gray-500 outline-none ring-1 ring-white/10 focus:ring-white/30 transition-all"
+            className="w-full rounded-full bg-white/10 py-2.5 pl-10 pr-4 text-sm text-white placeholder-gray-500 outline-none ring-1 ring-white/10 focus:ring-[#5E70FF] focus:border-[#5E70FF] transition-all"
           />
         </div>
       </div>
@@ -252,7 +252,7 @@ export function DiscoverView() {
               onClick={() => handleGenreClick(genre)}
               className={`flex-shrink-0 rounded-full px-4 py-1.5 text-xs font-semibold transition-all ${
                 isActive
-                  ? 'bg-white text-black'
+                  ? 'bg-[#5E70FF] text-white shadow-md shadow-[#5E70FF]/25'
                   : 'bg-white/10 text-white hover:bg-white/20'
               }`}
             >
@@ -269,7 +269,7 @@ export function DiscoverView() {
           <div className="space-y-3">
             <div className="flex items-center justify-between px-1">
               <h2 className="text-sm font-bold text-white flex items-center gap-1.5">
-                <Sparkles className="w-4 h-4 text-[#25F4EE]" />
+                <Sparkles className="w-4 h-4 text-[#24BBA9]" />
                 Matching Creators ({creators.length})
               </h2>
             </div>
@@ -287,7 +287,7 @@ export function DiscoverView() {
                   >
                     <div className="flex items-center gap-3 min-w-0">
                       {/* Avatar */}
-                      <div className="w-12 h-12 rounded-full p-[2px] bg-gradient-to-tr from-amber-400 via-[#FE2C55] to-purple-600 shrink-0">
+                      <div className="w-12 h-12 rounded-full p-[2px] bg-gradient-to-tr from-[#5E70FF] via-[#24BBA9] to-[#5E70FF] shrink-0">
                         {c.avatarUrl ? (
                           <img
                             src={c.avatarUrl}
@@ -304,15 +304,15 @@ export function DiscoverView() {
                       {/* Info */}
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-1.5">
-                          <p className="text-sm font-bold text-white truncate group-hover:text-[#FE2C55] transition-colors">
+                          <p className="text-sm font-bold text-white truncate group-hover:text-[#5E70FF] transition-colors">
                             {c.displayName || c.creatorName}
                           </p>
-                          <span className="text-[10px] px-1.5 py-0.2 rounded bg-white/15 text-white/80 font-medium">
+                          <span className="text-[10px] px-1.5 py-0.2 rounded bg-[#5E70FF]/15 text-[#5E70FF] border border-[#5E70FF]/30 font-medium">
                             Creator
                           </span>
                         </div>
                         <p className="text-xs text-gray-400 font-mono truncate flex items-center gap-0.5">
-                          <AtSign className="w-3 h-3 text-[#FE2C55]" />
+                          <AtSign className="w-3 h-3 text-[#5E70FF]" />
                           {c.username || c.creatorName}
                         </p>
                         <p className="text-[11px] text-gray-500 mt-0.5">
@@ -321,7 +321,7 @@ export function DiscoverView() {
                       </div>
                     </div>
 
-                    <div className="w-8 h-8 rounded-full bg-white/5 group-hover:bg-[#FE2C55] flex items-center justify-center text-gray-400 group-hover:text-white transition-all shrink-0">
+                    <div className="w-8 h-8 rounded-full bg-white/5 group-hover:bg-[#5E70FF] flex items-center justify-center text-gray-400 group-hover:text-white transition-all shrink-0">
                       <ArrowRight className="w-4 h-4" />
                     </div>
                   </motion.div>

@@ -53,7 +53,7 @@ export function AdminSystemView() {
         <div>
           <div className="flex items-center gap-2">
             <h1 className="text-2xl font-black text-white tracking-tight">Platform Settings & Policies</h1>
-            <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-purple-500/15 text-purple-400 border border-purple-500/30">
+            <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-[#5E70FF]/15 text-[#5E70FF] border border-[#5E70FF]/30">
               Configuration
             </span>
           </div>
@@ -64,7 +64,7 @@ export function AdminSystemView() {
 
         <Button
           onClick={handleSaveSettings}
-          className="bg-cyan-500 hover:bg-cyan-400 text-black font-bold text-xs h-9"
+          className="bg-[#5E70FF] hover:bg-[#4D5FE8] text-white font-bold text-xs h-9 shadow-md shadow-[#5E70FF]/25"
         >
           <CheckCircle2 className="w-3.5 h-3.5 mr-1.5" />
           Save System Configuration
@@ -77,7 +77,7 @@ export function AdminSystemView() {
           <Card className="bg-zinc-900/90 border-zinc-800 shadow-xl">
             <CardHeader className="p-5 pb-3 border-b border-zinc-800">
               <CardTitle className="text-base font-bold text-white flex items-center gap-2">
-                <Layers className="w-4 h-4 text-amber-400" />
+                <Layers className="w-4 h-4 text-[#24BBA9]" />
                 Content Taxonomies & Categories
               </CardTitle>
             </CardHeader>
@@ -116,7 +116,7 @@ export function AdminSystemView() {
           <Card className="bg-zinc-900/90 border-zinc-800 shadow-xl">
             <CardHeader className="p-5 pb-3 border-b border-zinc-800">
               <CardTitle className="text-base font-bold text-white flex items-center gap-2">
-                <Sliders className="w-4 h-4 text-cyan-400" />
+                <Sliders className="w-4 h-4 text-[#5E70FF]" />
                 Authoritative Metrics Parameters
               </CardTitle>
             </CardHeader>

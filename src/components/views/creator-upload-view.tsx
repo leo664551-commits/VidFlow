@@ -48,15 +48,19 @@ export function CreatorUploadView() {
   const [isUploading, setIsUploading] = useState(false)
   const [uploadSuccess, setUploadSuccess] = useState(false)
 
-  // Generate object URL for video preview and extract real thumbnail frames
-  useEffect(() => {
-    if (!file) {
-      setVideoPreviewUrl(null)
-      setCoverFrames([])
-      return
-    }
+  const handleBack = () => {
+    goBack('creator-dashboard')
+  }
 
-    const url = URL.createObjectURL(file)
+  const processSelectedFile = (selectedFile: File) => {
+    if (videoPreviewUrl) {
+      URL.revokeObjectURL(videoPreviewUrl)
+    }
+    setFile(selectedFile)
+    if (!caption) {
+      setCaption(selectedFile.name.replace(/\.[^.]+$/, ''))
+    }
+    const url = URL.createObjectURL(selectedFile)
     setVideoPreviewUrl(url)
 
     // Extract 7 real video frame snapshots using in-memory HTML5 video + canvas
@@ -73,16 +77,14 @@ export function CreatorUploadView() {
         const extracted: string[] = []
 
         for (let i = 0; i < count; i++) {
-          const targetTime = (duration / count) * i + 0.1
-          video.currentTime = Math.min(targetTime, duration)
-
+          const targetTime = Math.min((duration / (count + 1)) * (i + 1), Math.max(duration - 0.1, 0))
+          video.currentTime = targetTime
           await new Promise<void>((resolve) => {
             const onSeeked = () => {
               video.removeEventListener('seeked', onSeeked)
               resolve()
             }
             video.addEventListener('seeked', onSeeked)
-            setTimeout(resolve, 300)
           })
 
           const canvas = document.createElement('canvas')
@@ -99,18 +101,9 @@ export function CreatorUploadView() {
           setCoverFrames(extracted)
         }
       } catch (err) {
-        // Fallback gracefully if browser restricts canvas drawing
         console.warn('Frame extraction notice:', err)
       }
     }
-
-    return () => {
-      URL.revokeObjectURL(url)
-    }
-  }, [file])
-
-  const handleBack = () => {
-    goBack('creator-dashboard')
   }
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -120,10 +113,7 @@ export function CreatorUploadView() {
         toast.error('Please select a valid MP4 or WebM video file')
         return
       }
-      setFile(selectedFile)
-      if (!caption) {
-        setCaption(selectedFile.name.replace(/\.[^.]+$/, ''))
-      }
+      processSelectedFile(selectedFile)
     }
   }
 
@@ -135,10 +125,7 @@ export function CreatorUploadView() {
         toast.error('Please drop a valid video file')
         return
       }
-      setFile(droppedFile)
-      if (!caption) {
-        setCaption(droppedFile.name.replace(/\.[^.]+$/, ''))
-      }
+      processSelectedFile(droppedFile)
     }
   }
 
@@ -147,7 +134,12 @@ export function CreatorUploadView() {
   }
 
   const handleDiscard = () => {
+    if (videoPreviewUrl) {
+      URL.revokeObjectURL(videoPreviewUrl)
+    }
     setFile(null)
+    setVideoPreviewUrl(null)
+    setCoverFrames([])
     setCaption('')
     setSelectedCoverIdx(0)
     setPrivacy('public')
@@ -217,7 +209,7 @@ export function CreatorUploadView() {
           animate={{ scale: 1, opacity: 1 }}
           className="max-w-md w-full text-center space-y-5 rounded-3xl bg-zinc-900/90 border border-white/10 p-8 shadow-2xl"
         >
-          <div className="w-20 h-20 rounded-full bg-emerald-500/20 text-emerald-400 mx-auto flex items-center justify-center border border-emerald-500/30">
+          <div className="w-20 h-20 rounded-full bg-[#48B321]/20 text-[#48B321] mx-auto flex items-center justify-center border border-[#48B321]/30">
             <CheckCircle2 className="w-10 h-10" />
           </div>
           <h2 className="text-2xl font-bold text-white">Video Published!</h2>
@@ -236,7 +228,7 @@ export function CreatorUploadView() {
                 setUploadSuccess(false)
                 handleDiscard()
               }}
-              className="flex-1 py-3 rounded-xl bg-[#FE2C55] hover:bg-[#FE2C55]/90 font-bold text-sm text-white transition-all shadow-lg shadow-[#FE2C55]/20"
+              className="flex-1 py-3 rounded-xl bg-[#5E70FF] hover:bg-[#4D5FE8] font-bold text-sm text-white transition-all shadow-lg shadow-[#5E70FF]/25"
             >
               Upload Another
             </button>
@@ -281,11 +273,11 @@ export function CreatorUploadView() {
                 onClick={() => fileInputRef.current?.click()}
                 onDrop={handleDrop}
                 onDragOver={handleDragOver}
-                className="w-full max-w-[420px] aspect-[9/12] sm:aspect-[9/13] rounded-3xl border-2 border-dashed border-zinc-700 hover:border-[#FE2C55] bg-zinc-950/60 hover:bg-zinc-900/40 p-8 flex flex-col items-center justify-center text-center cursor-pointer transition-all duration-300 group shadow-xl"
+                className="w-full max-w-[420px] aspect-[9/12] sm:aspect-[9/13] rounded-3xl border-2 border-dashed border-zinc-700 hover:border-[#5E70FF] bg-zinc-950/60 hover:bg-zinc-900/40 p-8 flex flex-col items-center justify-center text-center cursor-pointer transition-all duration-300 group shadow-xl"
               >
                 {/* Cloud Upload Icon Badge */}
-                <div className="w-20 h-20 rounded-2xl bg-zinc-900 border-2 border-amber-500/80 flex items-center justify-center mb-6 group-hover:scale-110 group-hover:border-[#FE2C55] transition-all shadow-lg">
-                  <CloudUpload className="w-10 h-10 text-gray-300 group-hover:text-[#FE2C55] transition-colors" />
+                <div className="w-20 h-20 rounded-2xl bg-zinc-900 border-2 border-amber-500/80 flex items-center justify-center mb-6 group-hover:scale-110 group-hover:border-[#5E70FF] transition-all shadow-lg">
+                  <CloudUpload className="w-10 h-10 text-gray-300 group-hover:text-[#5E70FF] transition-colors" />
                 </div>
 
                 <h3 className="text-lg font-bold text-white mb-1">Select video to upload</h3>
@@ -299,20 +291,20 @@ export function CreatorUploadView() {
                   <p>Less than 2 GB</p>
                 </div>
 
-                {/* Red Select File Button */}
+                {/* Select File Button */}
                 <button
                   type="button"
                   onClick={(e) => {
                     e.stopPropagation()
                     fileInputRef.current?.click()
                   }}
-                  className="w-full max-w-[260px] py-3 rounded-xl bg-[#FE2C55] hover:bg-[#FE2C55]/90 text-white font-bold text-sm shadow-xl shadow-[#FE2C55]/20 transition-all hover:scale-[1.02]"
+                  className="w-full max-w-[260px] py-3 rounded-xl bg-[#5E70FF] hover:bg-[#4D5FE8] text-white font-bold text-sm shadow-xl shadow-[#5E70FF]/25 transition-all hover:scale-[1.02]"
                 >
                   Select file
                 </button>
               </div>
             ) : (
-              /* State 2: Live Smartphone 9:16 TikTok Frame */
+              /* State 2: Live Smartphone 9:16 Frame */
               <div className="flex flex-col items-center w-full max-w-[340px] space-y-4">
                 <div className="relative w-full aspect-[9/16] rounded-[36px] bg-black border-4 border-zinc-800 shadow-2xl overflow-hidden flex flex-col justify-between">
                   {/* Live Video / Poster */}
@@ -343,7 +335,7 @@ export function CreatorUploadView() {
                   {/* Right Action Rail inside Phone */}
                   <div className="relative z-10 self-end mr-3 flex flex-col items-center gap-3.5 mb-14">
                     {/* Creator Avatar */}
-                    <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[#FE2C55] to-orange-500 flex items-center justify-center text-white font-bold text-xs border border-white">
+                    <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[#5E70FF] to-[#24BBA9] flex items-center justify-center text-white font-bold text-xs border border-white">
                       {creatorInitial}
                     </div>
                     {/* Like */}
@@ -373,7 +365,7 @@ export function CreatorUploadView() {
                       {caption || 'Your video caption will appear here...'}
                     </p>
                     <div className="flex items-center gap-1 text-[10px] text-gray-300">
-                      <Music className="w-3 h-3 text-[#25F4EE]" />
+                      <Music className="w-3 h-3 text-[#5E70FF]" />
                       <span className="truncate">Original sound - {creatorHandle}</span>
                     </div>
                   </div>
@@ -382,13 +374,13 @@ export function CreatorUploadView() {
                 {/* File info pill & Change video button */}
                 <div className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-2xl bg-zinc-900 border border-white/10 shadow-lg">
                   <div className="flex items-center gap-2 min-w-0">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                    <CheckCircle2 className="w-4 h-4 text-[#48B321] shrink-0" />
                     <span className="text-xs text-gray-300 font-medium truncate">{file.name}</span>
                   </div>
                   <button
                     type="button"
                     onClick={() => fileInputRef.current?.click()}
-                    className="text-xs font-bold text-[#FE2C55] hover:underline shrink-0 ml-2"
+                    className="text-xs font-bold text-[#5E70FF] hover:underline shrink-0 ml-2"
                   >
                     Change video
                   </button>
@@ -413,7 +405,7 @@ export function CreatorUploadView() {
                   value={caption}
                   onChange={(e) => setCaption(e.target.value.slice(0, 150))}
                   placeholder="Add a caption that describes your video..."
-                  className="w-full h-12 rounded-xl bg-zinc-900 border border-white/15 px-4 pr-16 text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-[#FE2C55] focus:border-[#FE2C55] transition-all"
+                  className="w-full h-12 rounded-xl bg-zinc-900 border border-white/15 px-4 pr-16 text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-[#5E70FF] focus:border-[#5E70FF] transition-all"
                 />
                 {/* @ and # shortcut buttons inside input */}
                 <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-2 text-gray-400">
@@ -465,8 +457,8 @@ export function CreatorUploadView() {
                         <div
                           className={`w-full h-full bg-gradient-to-tr ${
                             idx % 2 === 0
-                              ? 'from-[#FE2C55] via-purple-700 to-indigo-900'
-                              : 'from-amber-500 via-rose-700 to-zinc-900'
+                              ? 'from-[#5E70FF] via-purple-700 to-indigo-900'
+                              : 'from-[#24BBA9] via-teal-700 to-zinc-900'
                           }`}
                         />
                       )}
@@ -514,7 +506,7 @@ export function CreatorUploadView() {
                             <p className="text-sm font-bold text-white">{opt.label}</p>
                             <p className="text-xs text-gray-400">{opt.desc}</p>
                           </div>
-                          {privacy === opt.id && <Check className="w-4 h-4 text-[#FE2C55]" />}
+                          {privacy === opt.id && <Check className="w-4 h-4 text-[#5E70FF]" />}
                         </button>
                       ))}
                     </motion.div>
@@ -532,7 +524,7 @@ export function CreatorUploadView() {
                     type="checkbox"
                     checked={allowComments}
                     onChange={(e) => setAllowComments(e.target.checked)}
-                    className="w-4 h-4 rounded accent-[#FE2C55] cursor-pointer"
+                    className="w-4 h-4 rounded accent-[#5E70FF] cursor-pointer"
                   />
                   <span>Comment</span>
                 </label>
@@ -544,14 +536,14 @@ export function CreatorUploadView() {
               <div className="space-y-2 pt-2">
                 <div className="flex items-center justify-between text-xs text-gray-400">
                   <span className="flex items-center gap-1.5 text-white font-medium">
-                    <Loader2 className="w-3.5 h-3.5 animate-spin text-[#FE2C55]" />
+                    <Loader2 className="w-3.5 h-3.5 animate-spin text-[#5E70FF]" />
                     Uploading video...
                   </span>
                   <span>{progress}%</span>
                 </div>
                 <div className="h-2 rounded-full bg-zinc-800 overflow-hidden">
                   <div
-                    className="h-full bg-[#FE2C55] transition-all duration-300 rounded-full shadow-[0_0_8px_rgba(254,44,85,0.6)]"
+                    className="h-full bg-[#5E70FF] transition-all duration-300 rounded-full shadow-[0_0_8px_rgba(94,112,255,0.6)]"
                     style={{ width: `${progress}%` }}
                   />
                 </div>
@@ -575,7 +567,7 @@ export function CreatorUploadView() {
                 className={`flex-1 py-3 rounded-xl font-bold text-sm transition-all shadow-xl flex items-center justify-center gap-2 ${
                   !file || isUploading
                     ? 'bg-zinc-800 text-gray-500 cursor-not-allowed border border-white/5'
-                    : 'bg-[#FE2C55] hover:bg-[#FE2C55]/90 text-white shadow-[#FE2C55]/20 hover:scale-[1.02]'
+                    : 'bg-[#5E70FF] hover:bg-[#4D5FE8] text-white shadow-[#5E70FF]/25 hover:scale-[1.02]'
                 }`}
               >
                 {isUploading ? (

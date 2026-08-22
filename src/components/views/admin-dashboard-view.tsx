@@ -95,7 +95,7 @@ export function AdminDashboardView() {
         <div>
           <div className="flex items-center gap-2">
             <h1 className="text-2xl font-black text-white tracking-tight">Executive Command Center</h1>
-            <span className="px-2 py-0.5 rounded-full text-[11px] font-bold bg-cyan-500/15 text-cyan-400 border border-cyan-500/30">
+            <span className="px-2 py-0.5 rounded-full text-[11px] font-bold bg-[#5E70FF]/15 text-[#5E70FF] border border-[#5E70FF]/30">
               Live Telemetry
             </span>
           </div>
@@ -112,7 +112,7 @@ export function AdminDashboardView() {
               onClick={() => setTimeframe(t)}
               className={`px-2.5 py-1 text-xs font-semibold rounded-md transition-colors ${
                 timeframe === t
-                  ? 'bg-cyan-500 text-black shadow-sm'
+                  ? 'bg-[#5E70FF] text-white shadow-sm'
                   : 'text-zinc-400 hover:text-white hover:bg-zinc-800'
               }`}
             >
@@ -124,17 +124,17 @@ export function AdminDashboardView() {
 
       {/* 2. ATTENTION REQUIRED / URGENT ACTION CARDS */}
       {(pendingAppsCount > 0 || unreviewedVideosCount > 0) && (
-        <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-amber-500/10 via-zinc-900 to-zinc-900 border border-amber-500/30 shadow-xl">
-          <div className="flex items-center gap-2 text-amber-400 text-xs font-bold uppercase tracking-wider mb-3">
+        <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-[#FF8D28]/10 via-zinc-900 to-zinc-900 border border-[#FF8D28]/30 shadow-xl">
+          <div className="flex items-center gap-2 text-[#FF8D28] text-xs font-bold uppercase tracking-wider mb-3">
             <AlertTriangle className="w-4 h-4 animate-bounce" />
             <span>Attention Required ({pendingAppsCount + unreviewedVideosCount} items awaiting action)</span>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {pendingAppsCount > 0 && (
-              <div className="flex items-center justify-between p-3.5 rounded-xl bg-zinc-950/80 border border-amber-500/30">
+              <div className="flex items-center justify-between p-3.5 rounded-xl bg-zinc-950/80 border border-[#FF8D28]/30">
                 <div className="flex items-center gap-3">
-                  <div className="p-2 rounded-lg bg-amber-500/20 text-amber-400">
+                  <div className="p-2 rounded-lg bg-[#FF8D28]/20 text-[#FF8D28]">
                     <UserCheck className="w-5 h-5" />
                   </div>
                   <div>
@@ -147,7 +147,7 @@ export function AdminDashboardView() {
                 <Button
                   onClick={() => navigate('admin-applications')}
                   size="sm"
-                  className="bg-amber-500 hover:bg-amber-400 text-black font-bold text-xs h-8"
+                  className="bg-[#FF8D28] hover:bg-[#FF8D28]/90 text-black font-bold text-xs h-8"
                 >
                   Review Queue
                   <ArrowRight className="w-3.5 h-3.5 ml-1.5" />
@@ -156,9 +156,9 @@ export function AdminDashboardView() {
             )}
 
             {unreviewedVideosCount > 0 && (
-              <div className="flex items-center justify-between p-3.5 rounded-xl bg-zinc-950/80 border border-rose-500/30">
+              <div className="flex items-center justify-between p-3.5 rounded-xl bg-zinc-950/80 border border-[#DF4D50]/30">
                 <div className="flex items-center gap-3">
-                  <div className="p-2 rounded-lg bg-rose-500/20 text-rose-400">
+                  <div className="p-2 rounded-lg bg-[#DF4D50]/20 text-[#DF4D50]">
                     <ShieldAlert className="w-5 h-5" />
                   </div>
                   <div>
@@ -171,7 +171,7 @@ export function AdminDashboardView() {
                 <Button
                   onClick={() => navigate('admin-videos')}
                   size="sm"
-                  className="bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs h-8"
+                  className="bg-[#DF4D50] hover:bg-[#DF4D50]/90 text-white font-bold text-xs h-8"
                 >
                   Inspect Content
                   <ArrowRight className="w-3.5 h-3.5 ml-1.5" />
@@ -188,16 +188,16 @@ export function AdminDashboardView() {
           label="Total Registered Users"
           value={stats.totalUsers}
           icon={Users}
-          colorClass="text-cyan-400"
-          trend={{ value: '+14.2%', isPositive: true }}
+          colorClass="text-[#5E70FF]"
+          trend={(stats as any)?.trends?.users}
           onClick={() => navigate('admin-users')}
         />
         <AdminStatCard
           label="Approved Creators"
           value={stats.totalCreators}
           icon={UserCheck}
-          colorClass="text-amber-400"
-          trend={{ value: '+8.5%', isPositive: true }}
+          colorClass="text-[#24BBA9]"
+          trend={(stats as any)?.trends?.creators}
           badge={pendingAppsCount > 0 ? `${pendingAppsCount} pending` : undefined}
           onClick={() => navigate('admin-creators')}
         />
@@ -205,16 +205,15 @@ export function AdminDashboardView() {
           label="Total Published Videos"
           value={stats.readyVideos}
           icon={Video}
-          colorClass="text-violet-400"
-          trend={{ value: '+22.4%', isPositive: true }}
+          colorClass="text-[#5E70FF]"
+          trend={(stats as any)?.trends?.videos}
           onClick={() => navigate('admin-videos')}
         />
         <AdminStatCard
           label="Authoritative Views"
           value={stats.totalViews}
           icon={Eye}
-          colorClass="text-emerald-400"
-          trend={{ value: '+31.8%', isPositive: true }}
+          colorClass="text-[#24BBA9]"
           onClick={() => navigate('admin-analytics')}
         />
       </div>
@@ -222,7 +221,7 @@ export function AdminDashboardView() {
       {/* Secondary KPI Bar */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 p-4 rounded-xl bg-zinc-900/60 border border-zinc-800/80">
         <div className="flex items-center gap-3">
-          <div className="p-2 rounded-lg bg-zinc-800 text-rose-400">
+          <div className="p-2 rounded-lg bg-zinc-800 text-[#DF4D50]">
             <Flame className="w-4 h-4" />
           </div>
           <div>
@@ -231,7 +230,7 @@ export function AdminDashboardView() {
           </div>
         </div>
         <div className="flex items-center gap-3">
-          <div className="p-2 rounded-lg bg-zinc-800 text-blue-400">
+          <div className="p-2 rounded-lg bg-zinc-800 text-[#24BBA9]">
             <MessageSquare className="w-4 h-4" />
           </div>
           <div>
@@ -240,7 +239,7 @@ export function AdminDashboardView() {
           </div>
         </div>
         <div className="flex items-center gap-3">
-          <div className="p-2 rounded-lg bg-zinc-800 text-yellow-400">
+          <div className="p-2 rounded-lg bg-zinc-800 text-[#FF8D28]">
             <Sparkles className="w-4 h-4" />
           </div>
           <div>
@@ -249,12 +248,12 @@ export function AdminDashboardView() {
           </div>
         </div>
         <div className="flex items-center gap-3">
-          <div className="p-2 rounded-lg bg-zinc-800 text-emerald-400">
+          <div className="p-2 rounded-lg bg-zinc-800 text-[#48B321]">
             <ShieldCheck className="w-4 h-4" />
           </div>
           <div>
             <p className="text-xs text-zinc-400">Platform Health</p>
-            <p className="text-sm font-bold text-emerald-400">99.98% Healthy</p>
+            <p className="text-sm font-bold text-[#48B321]">Operational</p>
           </div>
         </div>
       </div>
@@ -268,7 +267,7 @@ export function AdminDashboardView() {
             <CardHeader className="p-4 sm:p-5 pb-3 border-b border-zinc-800/80 flex flex-row items-center justify-between">
               <div>
                 <CardTitle className="text-base font-bold text-white flex items-center gap-2">
-                  <UserCheck className="w-4 h-4 text-amber-400" />
+                  <UserCheck className="w-4 h-4 text-[#FF8D28]" />
                   Creator Application Review Queue
                 </CardTitle>
                 <p className="text-xs text-zinc-400">Pending applications requiring admin authorization</p>
@@ -277,7 +276,7 @@ export function AdminDashboardView() {
                 variant="ghost"
                 size="sm"
                 onClick={() => navigate('admin-applications')}
-                className="text-xs text-cyan-400 hover:text-cyan-300"
+                className="text-xs text-[#5E70FF] hover:text-[#4D5FE8]"
               >
                 View All Queue
                 <ArrowRight className="w-3.5 h-3.5 ml-1" />
@@ -293,7 +292,7 @@ export function AdminDashboardView() {
                       className="p-4 flex items-center justify-between gap-3 hover:bg-zinc-800/40 transition-colors"
                     >
                       <div className="min-w-0 flex items-center gap-3">
-                        <div className="w-9 h-9 rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/30 flex items-center justify-center font-bold text-xs shrink-0">
+                        <div className="w-9 h-9 rounded-full bg-[#FF8D28]/20 text-[#FF8D28] border border-[#FF8D28]/30 flex items-center justify-center font-bold text-xs shrink-0">
                           {app.user.displayName?.[0]?.toUpperCase() || 'C'}
                         </div>
                         <div className="min-w-0">
@@ -314,7 +313,7 @@ export function AdminDashboardView() {
                       <Button
                         size="sm"
                         onClick={() => navigate('admin-applications')}
-                        className="bg-amber-500 hover:bg-amber-400 text-black font-semibold text-xs h-7 shrink-0"
+                        className="bg-[#FF8D28] hover:bg-[#FF8D28]/90 text-black font-semibold text-xs h-7 shrink-0"
                       >
                         Inspect Dossier
                       </Button>
@@ -323,7 +322,7 @@ export function AdminDashboardView() {
                 </div>
               ) : (
                 <div className="py-12 text-center text-zinc-500 space-y-1">
-                  <CheckCircle2 className="w-7 h-7 mx-auto text-emerald-500/80" />
+                  <CheckCircle2 className="w-7 h-7 mx-auto text-[#48B321]" />
                   <p className="text-sm font-semibold text-zinc-300">Queue is Clear</p>
                   <p className="text-xs text-zinc-500">No pending creator applications awaiting review.</p>
                 </div>
@@ -336,7 +335,7 @@ export function AdminDashboardView() {
             <CardHeader className="p-4 sm:p-5 pb-3 border-b border-zinc-800/80 flex flex-row items-center justify-between">
               <div>
                 <CardTitle className="text-base font-bold text-white flex items-center gap-2">
-                  <Video className="w-4 h-4 text-violet-400" />
+                  <Video className="w-4 h-4 text-[#5E70FF]" />
                   Recent Video Operations
                 </CardTitle>
                 <p className="text-xs text-zinc-400">Newly uploaded content across the platform</p>
@@ -345,7 +344,7 @@ export function AdminDashboardView() {
                 variant="ghost"
                 size="sm"
                 onClick={() => navigate('admin-videos')}
-                className="text-xs text-cyan-400 hover:text-cyan-300"
+                className="text-xs text-[#5E70FF] hover:text-[#4D5FE8]"
               >
                 All Videos
                 <ArrowRight className="w-3.5 h-3.5 ml-1" />
@@ -400,7 +399,7 @@ export function AdminDashboardView() {
             <CardHeader className="p-4 sm:p-5 pb-3 border-b border-zinc-800/80 flex flex-row items-center justify-between">
               <div>
                 <CardTitle className="text-base font-bold text-white flex items-center gap-2">
-                  <Activity className="w-4 h-4 text-emerald-400" />
+                  <Activity className="w-4 h-4 text-[#48B321]" />
                   Live Administrative Stream
                 </CardTitle>
                 <p className="text-xs text-zinc-400">Real-time audit log events</p>
@@ -409,7 +408,7 @@ export function AdminDashboardView() {
                 variant="ghost"
                 size="sm"
                 onClick={() => navigate('admin-audit-logs')}
-                className="text-xs text-cyan-400 hover:text-cyan-300"
+                className="text-xs text-[#5E70FF] hover:text-[#4D5FE8]"
               >
                 Full Trail
                 <ArrowRight className="w-3.5 h-3.5 ml-1" />
@@ -423,7 +422,7 @@ export function AdminDashboardView() {
                     key={log.id}
                     className="flex items-start gap-3 p-2.5 rounded-lg bg-zinc-950/60 border border-zinc-800/60 text-xs"
                   >
-                    <div className="p-1.5 rounded-md bg-zinc-800 text-cyan-400 mt-0.5 shrink-0">
+                    <div className="p-1.5 rounded-md bg-zinc-800 text-[#5E70FF] mt-0.5 shrink-0">
                       <Clock className="w-3.5 h-3.5" />
                     </div>
                     <div className="min-w-0 flex-1">
@@ -463,9 +462,9 @@ export function AdminDashboardView() {
                 className="w-full flex items-center justify-between p-3 rounded-xl bg-zinc-900/90 hover:bg-zinc-800 border border-zinc-800 text-left transition-all group"
               >
                 <div className="flex items-center gap-3">
-                  <Users className="w-4 h-4 text-cyan-400" />
+                  <Users className="w-4 h-4 text-[#5E70FF]" />
                   <div>
-                    <p className="text-xs font-bold text-white group-hover:text-cyan-400 transition-colors">
+                    <p className="text-xs font-bold text-white group-hover:text-[#5E70FF] transition-colors">
                       User Operations
                     </p>
                     <p className="text-[11px] text-zinc-400">Suspend, activate, or inspect consumers & creators</p>
@@ -495,9 +494,9 @@ export function AdminDashboardView() {
                 className="w-full flex items-center justify-between p-3 rounded-xl bg-zinc-900/90 hover:bg-zinc-800 border border-zinc-800 text-left transition-all group"
               >
                 <div className="flex items-center gap-3">
-                  <TrendingUp className="w-4 h-4 text-emerald-400" />
+                  <TrendingUp className="w-4 h-4 text-[#48B321]" />
                   <div>
-                    <p className="text-xs font-bold text-white group-hover:text-emerald-400 transition-colors">
+                    <p className="text-xs font-bold text-white group-hover:text-[#48B321] transition-colors">
                       Platform Growth Telemetry
                     </p>
                     <p className="text-[11px] text-zinc-400">Deep-dive video velocity & retention trends</p>

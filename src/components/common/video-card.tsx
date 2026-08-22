@@ -64,7 +64,7 @@ export function VideoCard({ video, context }: VideoCardProps) {
 
       {/* Bottom Info Overlay */}
       <div className="relative p-3.5 bg-gradient-to-t from-black via-black/70 to-transparent z-10">
-        <h3 className="font-bold text-sm text-white leading-tight line-clamp-2 mb-1 group-hover:text-[#25F4EE] transition-colors">
+        <h3 className="font-bold text-sm text-white leading-tight line-clamp-2 mb-1 group-hover:text-[#24BBA9] transition-colors">
           {video.title}
         </h3>
         <div className="flex items-center gap-1.5 mb-2">
@@ -72,15 +72,15 @@ export function VideoCard({ video, context }: VideoCardProps) {
             @{video.creator.creatorName}
           </p>
           {(video.creator as any).isFollowing && !(video.creator as any).isSelf && (
-            <span className="shrink-0 inline-flex items-center gap-1 px-1.5 py-0.2 text-[9px] font-semibold bg-[#25F4EE]/15 text-[#25F4EE] border border-[#25F4EE]/30 rounded-full">
-              <span className="w-1 h-1 rounded-full bg-[#25F4EE]" />
+            <span className="shrink-0 inline-flex items-center gap-1 px-1.5 py-0.2 text-[9px] font-semibold bg-[#24BBA9]/15 text-[#24BBA9] border border-[#24BBA9]/30 rounded-full">
+              <span className="w-1 h-1 rounded-full bg-[#24BBA9]" />
               Following
             </span>
           )}
         </div>
         <div className="flex items-center justify-between text-[11px] text-gray-400">
           <span className="flex items-center gap-1">
-            <Music className="w-3 h-3 text-[#FE2C55]" />
+            <Music className="w-3 h-3 text-[#5E70FF]" />
             {genreLabel}
           </span>
           <span className="flex items-center gap-1 font-semibold text-white">

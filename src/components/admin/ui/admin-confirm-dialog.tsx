@@ -65,10 +65,10 @@ export function AdminConfirmDialog({
 
   const confirmBtnStyles =
     variant === 'danger'
-      ? 'bg-rose-600 hover:bg-rose-700 text-white font-semibold'
+      ? 'bg-[#DF4D50] hover:bg-[#DF4D50]/90 text-white font-semibold shadow-md'
       : variant === 'warning'
-      ? 'bg-amber-600 hover:bg-amber-700 text-white font-semibold'
-      : 'bg-cyan-600 hover:bg-cyan-700 text-white font-semibold'
+      ? 'bg-[#FF8D28] hover:bg-[#FF8D28]/90 text-black font-bold shadow-md'
+      : 'bg-[#5E70FF] hover:bg-[#4D5FE8] text-white font-semibold shadow-md'
 
   return (
     <AlertDialog open={open} onOpenChange={(isOpen) => !isOpen && handleClose()}>
@@ -78,8 +78,8 @@ export function AdminConfirmDialog({
             <div
               className={`p-2 rounded-xl border ${
                 variant === 'danger'
-                  ? 'bg-rose-500/10 border-rose-500/20 text-rose-400'
-                  : 'bg-amber-500/10 border-amber-500/20 text-amber-400'
+                  ? 'bg-[#DF4D50]/10 border-[#DF4D50]/30 text-[#DF4D50]'
+                  : 'bg-[#FF8D28]/10 border-[#FF8D28]/30 text-[#FF8D28]'
               }`}
             >
               <AlertTriangle className="w-5 h-5" />

@@ -2,6 +2,8 @@
 
 import { Home, Search, PlusCircle, Bell, User, Shield } from 'lucide-react'
 import { useAppStore } from '@/store/app-store'
+import { useQuery } from '@tanstack/react-query'
+import { getNotifications } from '@/lib/api'
 import type { AppView } from '@/types'
 import { UserAvatar } from '@/components/common/user-avatar'
 
@@ -15,6 +17,13 @@ interface TabItem {
 export function BottomTabBar() {
   const { user, navigate, currentView } = useAppStore()
 
+  const { data: notifsData } = useQuery({
+    queryKey: ['notifications', user?.id],
+    queryFn: () => getNotifications({ page: 1, limit: 1 }),
+    enabled: !!user,
+  })
+  const unreadCount = notifsData?.unreadCount || 0
+
   const role = user?.role
 
   const tabs: TabItem[] = [
@@ -24,9 +33,20 @@ export function BottomTabBar() {
       ? [{ icon: <PlusCircle className="h-7 w-7" />, label: '', view: 'creator-upload' as AppView, roles: ['CREATOR'] }]
       : []),
     ...(role === 'ADMIN'
-      ? [{ icon: <Shield className="h-6 w-6 text-cyan-400" />, label: 'Admin', view: 'admin-dashboard' as AppView, roles: ['ADMIN'] }]
+      ? [{ icon: <Shield className="h-6 w-6 text-[#24BBA9]" />, label: 'Admin', view: 'admin-dashboard' as AppView, roles: ['ADMIN'] }]
       : []),
-    { icon: <Bell className="h-6 w-6" />, label: 'Notifications', view: 'notifications' },
+    {
+      icon: (
+        <div className="relative">
+          <Bell className="h-6 w-6" />
+          {unreadCount > 0 && (
+            <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-[#5E70FF] ring-2 ring-black" />
+          )}
+        </div>
+      ),
+      label: 'Notifications',
+      view: 'notifications',
+    },
     {
       icon: user?.avatarUrl ? (
         <UserAvatar
@@ -60,18 +80,18 @@ export function BottomTabBar() {
             key={tab.view}
             onClick={() => navigate(tab.view)}
             className={`flex flex-col items-center gap-0.5 px-3 py-2 transition-colors ${
-              active ? 'text-white' : 'text-gray-500'
+              active ? 'text-[#5E70FF]' : 'text-gray-400 hover:text-gray-200'
             }`}
           >
             {tab.view === 'creator-upload' ? (
-              <div className="flex h-11 w-11 items-center justify-center rounded-full bg-white">
-                <PlusCircle className="h-7 w-7 text-black" />
+              <div className="flex h-11 w-11 items-center justify-center rounded-full bg-[#5E70FF] shadow-lg shadow-[#5E70FF]/30">
+                <PlusCircle className="h-7 w-7 text-white" />
               </div>
             ) : (
               tab.icon
             )}
             {tab.label && (
-              <span className="text-[10px]">{tab.label}</span>
+              <span className={`text-[10px] font-semibold ${active ? 'text-[#5E70FF]' : 'text-gray-400'}`}>{tab.label}</span>
             )}
           </button>
         )

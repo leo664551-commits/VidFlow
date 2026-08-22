@@ -104,10 +104,10 @@ function ReplyItem({
       </div>
       <button
         onClick={handleLike}
-        className="p-1 text-gray-400 hover:text-red-400 transition-colors ml-1"
+        className="p-1 text-gray-400 hover:text-[#DF4D50] transition-colors ml-1"
       >
         <Heart
-          className={`h-3.5 w-3.5 ${liked ? 'fill-red-500 text-red-500' : ''}`}
+          className={`h-3.5 w-3.5 ${liked ? 'fill-[#DF4D50] text-[#DF4D50]' : ''}`}
         />
       </button>
     </div>
@@ -188,7 +188,7 @@ function CommentItem({
             </span>
             <span className="text-[11px] text-gray-500">{timeAgo(comment.createdAt)}</span>
             {isPinned && (
-              <span className="flex items-center gap-0.5 text-[10px] font-bold text-amber-400 bg-amber-400/10 px-1.5 py-0.5 rounded">
+              <span className="flex items-center gap-0.5 text-[10px] font-bold text-[#FF8D28] bg-[#FF8D28]/10 px-1.5 py-0.5 rounded">
                 <Pin className="h-2.5 w-2.5" />
                 Pinned
               </span>
@@ -211,10 +211,10 @@ function CommentItem({
               <button
                 onClick={handlePin}
                 className={`flex items-center gap-0.5 transition-colors ${
-                  isPinned ? 'text-amber-400 font-bold' : 'hover:text-gray-300'
+                  isPinned ? 'text-[#FF8D28] font-bold' : 'hover:text-gray-300'
                 }`}
               >
-                <Pin className={`h-3 w-3 ${isPinned ? 'fill-amber-400' : ''}`} />
+                <Pin className={`h-3 w-3 ${isPinned ? 'fill-[#FF8D28]' : ''}`} />
                 {isPinned ? 'Unpin' : 'Pin'}
               </button>
             )}
@@ -244,10 +244,10 @@ function CommentItem({
         {/* Heart Like button aligned on the far right */}
         <button
           onClick={handleLike}
-          className="p-1 text-gray-400 hover:text-red-400 transition-colors ml-1 mt-0.5"
+          className="p-1 text-gray-400 hover:text-[#DF4D50] transition-colors ml-1 mt-0.5"
         >
           <Heart
-            className={`h-4 w-4 ${liked ? 'fill-red-500 text-red-500' : ''}`}
+            className={`h-4 w-4 ${liked ? 'fill-[#DF4D50] text-[#DF4D50]' : ''}`}
           />
         </button>
       </div>
@@ -273,7 +273,7 @@ function CommentItem({
               ))}
               {loadingReplies && (
                 <div className="flex items-center justify-center py-2">
-                  <div className="h-4 w-4 animate-spin rounded-full border border-white/20 border-t-[#FE2C55]" />
+                  <div className="h-4 w-4 animate-spin rounded-full border border-white/20 border-t-[#5E70FF]" />
                 </div>
               )}
             </div>
@@ -418,7 +418,7 @@ export function CommentPanel() {
             >
               {isLoading ? (
                 <div className="flex h-full items-center justify-center py-12">
-                  <div className="h-8 w-8 animate-spin rounded-full border-2 border-[#FE2C55]/20 border-t-[#FE2C55]" />
+                  <div className="h-8 w-8 animate-spin rounded-full border-2 border-[#5E70FF]/20 border-t-[#5E70FF]" />
                 </div>
               ) : comments.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-20 text-gray-400 text-center px-4">
@@ -451,7 +451,7 @@ export function CommentPanel() {
               {replyTo && (
                 <div className="mb-2 flex items-center justify-between text-xs text-gray-400 bg-white/5 px-3 py-1.5 rounded-lg">
                   <span>
-                    Replying to <span className="text-[#FE2C55] font-semibold">@{replyTo}</span>
+                    Replying to <span className="text-[#5E70FF] font-semibold">@{replyTo}</span>
                   </span>
                   <button
                     onClick={() => {
@@ -507,7 +507,7 @@ export function CommentPanel() {
                   {text.trim() ? (
                     <button
                       onClick={handleSubmit}
-                      className="text-[#FE2C55] hover:text-[#FE2C55]/80 font-bold text-xs transition-colors p-1"
+                      className="text-[#5E70FF] hover:text-[#4D5FE8] font-bold text-xs transition-colors p-1"
                     >
                       Post
                     </button>

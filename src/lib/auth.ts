@@ -4,9 +4,10 @@ import { db } from '@/lib/db';
 import { hash, compare } from 'bcryptjs';
 import { getServerSession } from 'next-auth';
 
+import type { AuthOptions } from 'next-auth';
+
 // NextAuth options are imported dynamically to avoid circular deps
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-let authOptions: any;
+let authOptions: AuthOptions | undefined;
 
 async function getAuthOptions() {
   if (!authOptions) {

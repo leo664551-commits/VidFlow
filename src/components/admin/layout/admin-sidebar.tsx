@@ -158,25 +158,25 @@ export function AdminSidebar({ collapsed, onToggleCollapse }: AdminSidebarProps)
       <div className="h-16 px-4 border-b border-zinc-800/80 flex items-center justify-between">
         {!collapsed ? (
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-cyan-500 to-blue-600 flex items-center justify-center shadow-lg shadow-cyan-500/20">
+            <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-[#5E70FF] to-[#24BBA9] flex items-center justify-center shadow-lg shadow-[#5E70FF]/20">
               <Shield className="w-4 h-4 text-white" />
             </div>
             <div>
               <div className="flex items-center gap-1.5 font-black text-sm tracking-tight text-white">
-                <span>VidFlow</span>
-                <span className="px-1.5 py-0.2 rounded text-[10px] font-bold bg-cyan-500/20 text-cyan-400 border border-cyan-500/30">
+                <span>Vid<span className="text-[#5E70FF]">Flow</span></span>
+                <span className="px-1.5 py-0.2 rounded text-[10px] font-bold bg-[#5E70FF]/20 text-[#5E70FF] border border-[#5E70FF]/30">
                   CONTROL
                 </span>
               </div>
-              <div className="flex items-center gap-1.5 text-[10px] text-emerald-400 font-mono">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+              <div className="flex items-center gap-1.5 text-[10px] text-[#48B321] font-mono">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#48B321] animate-pulse" />
                 SYSTEM ONLINE
               </div>
             </div>
           </div>
         ) : (
           <div className="w-full flex justify-center">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-cyan-500 to-blue-600 flex items-center justify-center">
+            <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-[#5E70FF] to-[#24BBA9] flex items-center justify-center">
               <Shield className="w-4 h-4 text-white" />
             </div>
           </div>
@@ -209,14 +209,14 @@ export function AdminSidebar({ collapsed, onToggleCollapse }: AdminSidebarProps)
                   onClick={() => navigate(item.view)}
                   className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl font-medium text-xs transition-all text-left group relative ${
                     isActive
-                      ? 'bg-cyan-500/15 text-cyan-400 border border-cyan-500/30 shadow-sm'
+                      ? 'bg-[#5E70FF]/15 text-[#5E70FF] border border-[#5E70FF]/30 shadow-sm'
                       : 'text-zinc-400 hover:text-white hover:bg-zinc-900 border border-transparent'
                   }`}
                   title={collapsed ? item.label : undefined}
                 >
                   <Icon
                     className={`w-4 h-4 shrink-0 transition-colors ${
-                      isActive ? 'text-cyan-400' : 'text-zinc-400 group-hover:text-white'
+                      isActive ? 'text-[#5E70FF]' : 'text-zinc-400 group-hover:text-white'
                     }`}
                   />
                   {!collapsed && <span className="truncate flex-1">{item.label}</span>}
@@ -225,7 +225,7 @@ export function AdminSidebar({ collapsed, onToggleCollapse }: AdminSidebarProps)
                   {item.badgeCount !== undefined && item.badgeCount > 0 && (
                     <span
                       className={`text-[10px] font-bold px-1.5 py-0.2 rounded-full ${
-                        item.badgeColor || 'bg-cyan-500 text-black'
+                        item.badgeColor || 'bg-[#5E70FF] text-white'
                       } ${collapsed ? 'absolute top-1 right-1' : ''}`}
                     >
                       {item.badgeCount}
@@ -242,7 +242,7 @@ export function AdminSidebar({ collapsed, onToggleCollapse }: AdminSidebarProps)
       <div className="p-3 border-t border-zinc-800/80 bg-zinc-950/80 space-y-2">
         {!collapsed && user && (
           <div className="flex items-center gap-2.5 p-2 rounded-lg bg-zinc-900/60 border border-zinc-800/50">
-            <div className="w-7 h-7 rounded-full bg-cyan-500/20 text-cyan-400 border border-cyan-500/40 flex items-center justify-center font-bold text-xs">
+            <div className="w-7 h-7 rounded-full bg-[#5E70FF]/20 text-[#5E70FF] border border-[#5E70FF]/40 flex items-center justify-center font-bold text-xs">
               {user.displayName?.[0]?.toUpperCase() || 'A'}
             </div>
             <div className="min-w-0 flex-1">
@@ -254,10 +254,10 @@ export function AdminSidebar({ collapsed, onToggleCollapse }: AdminSidebarProps)
 
         <button
           onClick={handleLogout}
-          className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg bg-red-950/40 hover:bg-red-900/50 border border-red-500/20 text-red-300 hover:text-red-200 font-medium text-xs transition-all"
+          className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg bg-[#DF4D50]/10 hover:bg-[#DF4D50]/20 border border-[#DF4D50]/20 text-[#DF4D50] font-medium text-xs transition-all"
           title="Sign out of Admin Console"
         >
-          <LogOut className="w-3.5 h-3.5 text-red-400" />
+          <LogOut className="w-3.5 h-3.5 text-[#DF4D50]" />
           {!collapsed && <span>Sign Out</span>}
         </button>
       </div>

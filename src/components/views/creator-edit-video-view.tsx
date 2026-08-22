@@ -245,7 +245,7 @@ export function CreatorEditVideoView() {
             <Button
               type="submit"
               disabled={mutation.isPending}
-              className="bg-white text-gray-950 hover:bg-gray-200 font-medium"
+              className="bg-[#5E70FF] text-white hover:bg-[#4D5FE8] font-semibold shadow-lg shadow-[#5E70FF]/25 transition-all"
             >
               {mutation.isPending && (
                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />
