@@ -16,6 +16,9 @@ import {
   ChevronDown,
   CloudUpload,
   FileVideo,
+  ImageIcon,
+  X,
+  Sparkles,
 } from 'lucide-react'
 import { uploadRaw, completeUpload } from '@/lib/api'
 import { useAppStore } from '@/store/app-store'
@@ -33,12 +36,16 @@ export function CreatorUploadView() {
   const user = useAppStore((s) => s.user)
   const queryClient = useQueryClient()
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const thumbnailInputRef = useRef<HTMLInputElement>(null)
 
   const [file, setFile] = useState<File | null>(null)
   const [videoPreviewUrl, setVideoPreviewUrl] = useState<string | null>(null)
   const [caption, setCaption] = useState('')
   const [selectedCoverIdx, setSelectedCoverIdx] = useState(0)
   const [coverFrames, setCoverFrames] = useState<string[]>([])
+  const [thumbnailMode, setThumbnailMode] = useState<'frames' | 'custom'>('frames')
+  const [customThumbnailFile, setCustomThumbnailFile] = useState<File | null>(null)
+  const [customThumbnailPreview, setCustomThumbnailPreview] = useState<string | null>(null)
   const [privacy, setPrivacy] = useState<'public' | 'friends' | 'private'>('public')
   const [privacyDropdownOpen, setPrivacyDropdownOpen] = useState(false)
   const [allowComments, setAllowComments] = useState(true)
@@ -50,6 +57,39 @@ export function CreatorUploadView() {
 
   const handleBack = () => {
     goBack('creator-dashboard')
+  }
+
+  const handleCustomThumbnailSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const selectedFile = e.target.files?.[0]
+    if (selectedFile) {
+      if (!selectedFile.type.startsWith('image/')) {
+        toast.error('Please select a valid image file (JPG, PNG, WebP)')
+        return
+      }
+      if (selectedFile.size > 5 * 1024 * 1024) {
+        toast.error('Thumbnail image must be smaller than 5MB')
+        return
+      }
+      if (customThumbnailPreview) {
+        URL.revokeObjectURL(customThumbnailPreview)
+      }
+      setCustomThumbnailFile(selectedFile)
+      setCustomThumbnailPreview(URL.createObjectURL(selectedFile))
+      setThumbnailMode('custom')
+      toast.success('Custom thumbnail selected!')
+    }
+  }
+
+  const handleRemoveCustomThumbnail = () => {
+    if (customThumbnailPreview) {
+      URL.revokeObjectURL(customThumbnailPreview)
+    }
+    setCustomThumbnailFile(null)
+    setCustomThumbnailPreview(null)
+    setThumbnailMode('frames')
+    if (thumbnailInputRef.current) {
+      thumbnailInputRef.current.value = ''
+    }
   }
 
   const processSelectedFile = (selectedFile: File) => {
@@ -137,15 +177,24 @@ export function CreatorUploadView() {
     if (videoPreviewUrl) {
       URL.revokeObjectURL(videoPreviewUrl)
     }
+    if (customThumbnailPreview) {
+      URL.revokeObjectURL(customThumbnailPreview)
+    }
     setFile(null)
     setVideoPreviewUrl(null)
     setCoverFrames([])
     setCaption('')
     setSelectedCoverIdx(0)
+    setCustomThumbnailFile(null)
+    setCustomThumbnailPreview(null)
+    setThumbnailMode('frames')
     setPrivacy('public')
     setAllowComments(true)
     if (fileInputRef.current) {
       fileInputRef.current.value = ''
+    }
+    if (thumbnailInputRef.current) {
+      thumbnailInputRef.current.value = ''
     }
   }
 
@@ -160,22 +209,45 @@ export function CreatorUploadView() {
       setProgress(10)
 
       const interval = setInterval(() => {
-        setProgress((p) => Math.min(p + 15, 85))
+        setProgress((p) => Math.min(p + 15, 80))
       }, 250)
 
       try {
         const uploadRes = await uploadRaw(file)
         clearInterval(interval)
+        setProgress(85)
+
+        let thumbnailBlobName: string | null = null
+
+        // 1. If custom thumbnail uploaded, upload it
+        if (thumbnailMode === 'custom' && customThumbnailFile) {
+          const thumbUpload = await uploadRaw(customThumbnailFile)
+          thumbnailBlobName = thumbUpload.blobName
+        } else if (coverFrames[selectedCoverIdx]) {
+          // 2. Upload extracted video frame snapshot
+          try {
+            const frameDataUrl = coverFrames[selectedCoverIdx]
+            const blobRes = await fetch(frameDataUrl)
+            const blob = await blobRes.blob()
+            const frameFile = new File([blob], `thumb-${Date.now()}.jpg`, { type: 'image/jpeg' })
+            const frameUpload = await uploadRaw(frameFile)
+            thumbnailBlobName = frameUpload.blobName
+          } catch (e) {
+            console.warn('Frame thumbnail upload notice:', e)
+          }
+        }
+
         setProgress(95)
 
         const creatorName = user?.creatorProfile?.creatorName || user?.displayName || 'Creator'
-        await completeUpload(uploadRes.videoId, {
+        await completeUpload(uploadRes.videoId!, {
           title: caption.trim() || file.name.replace(/\.[^.]+$/, ''),
           publisher: creatorName,
           producer: creatorName,
           genre,
           ageRating,
           description: caption.trim(),
+          thumbnailBlobName,
         })
 
         setProgress(100)
@@ -287,8 +359,8 @@ export function CreatorUploadView() {
                 <div className="text-xs text-gray-400 space-y-1.5 mb-8">
                   <p>MP4 or WebM</p>
                   <p>720x1280 resolution or higher</p>
-                  <p>Up to 5 minutes</p>
-                  <p>Less than 2 GB</p>
+                  <p>Up to 10 minutes</p>
+                  <p>Less than 500 MB</p>
                 </div>
 
                 {/* Select File Button */}
@@ -311,6 +383,7 @@ export function CreatorUploadView() {
                   {videoPreviewUrl ? (
                     <video
                       src={videoPreviewUrl}
+                      poster={thumbnailMode === 'custom' && customThumbnailPreview ? customThumbnailPreview : coverFrames[selectedCoverIdx] || undefined}
                       autoPlay
                       loop
                       playsInline
@@ -427,45 +500,158 @@ export function CreatorUploadView() {
               </div>
             </div>
 
-            {/* Cover Frame Strip Selector */}
-            <div className="space-y-2">
-              <label className="text-sm font-bold text-white">Cover</label>
-              <div className="relative rounded-2xl bg-zinc-900 border border-white/10 p-2.5 overflow-hidden">
-                <div className="grid grid-cols-7 gap-1.5 h-20 relative">
-                  {[0, 1, 2, 3, 4, 5, 6].map((idx) => (
-                    <div
-                      key={idx}
-                      onClick={() => setSelectedCoverIdx(idx)}
-                      className={`relative rounded-lg overflow-hidden cursor-pointer transition-all duration-200 ${
-                        selectedCoverIdx === idx
-                          ? 'ring-2 ring-white scale-105 z-10 shadow-lg'
-                          : 'opacity-70 hover:opacity-100'
-                      }`}
-                    >
-                      {coverFrames[idx] ? (
-                        <img
-                          src={coverFrames[idx]}
-                          alt={`Cover frame ${idx + 1}`}
-                          className="w-full h-full object-cover pointer-events-none"
-                        />
-                      ) : videoPreviewUrl ? (
-                        <video
-                          src={videoPreviewUrl}
-                          className="w-full h-full object-cover pointer-events-none"
-                        />
-                      ) : (
-                        <div
-                          className={`w-full h-full bg-gradient-to-tr ${
-                            idx % 2 === 0
-                              ? 'from-[#5E70FF] via-purple-700 to-indigo-900'
-                              : 'from-[#24BBA9] via-teal-700 to-zinc-900'
-                          }`}
-                        />
-                      )}
-                    </div>
-                  ))}
+            {/* Cover Thumbnail Section (Extracted Frames or Custom Upload) */}
+            <div className="space-y-3">
+              {/* Hidden file input for custom thumbnail */}
+              <input
+                ref={thumbnailInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                onChange={handleCustomThumbnailSelect}
+                className="hidden"
+              />
+
+              <div className="flex items-center justify-between">
+                <label className="text-sm font-bold text-white flex items-center gap-1.5">
+                  <span>Cover Thumbnail</span>
+                </label>
+                {/* Tab selector between Extracted Frames vs Custom Image Upload */}
+                <div className="flex items-center rounded-xl bg-zinc-900 border border-white/10 p-1 gap-1">
+                  <button
+                    type="button"
+                    onClick={() => setThumbnailMode('frames')}
+                    className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all ${
+                      thumbnailMode === 'frames'
+                        ? 'bg-[#5E70FF] text-white shadow-md'
+                        : 'text-gray-400 hover:text-white'
+                    }`}
+                  >
+                    Video Frames
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setThumbnailMode('custom')
+                      if (!customThumbnailPreview) {
+                        thumbnailInputRef.current?.click()
+                      }
+                    }}
+                    className={`px-3 py-1 rounded-lg text-xs font-semibold flex items-center gap-1 transition-all ${
+                      thumbnailMode === 'custom'
+                        ? 'bg-[#5E70FF] text-white shadow-md'
+                        : 'text-gray-400 hover:text-white'
+                    }`}
+                  >
+                    <ImageIcon className="w-3 h-3" />
+                    Custom Upload
+                  </button>
                 </div>
               </div>
+
+              {thumbnailMode === 'frames' ? (
+                /* Mode A: Video Frame Strip Selector */
+                <div className="relative rounded-2xl bg-zinc-900 border border-white/10 p-2.5 overflow-hidden">
+                  <div className="grid grid-cols-7 gap-1.5 h-20 relative">
+                    {[0, 1, 2, 3, 4, 5, 6].map((idx) => (
+                      <div
+                        key={idx}
+                        onClick={() => setSelectedCoverIdx(idx)}
+                        className={`relative rounded-lg overflow-hidden cursor-pointer transition-all duration-200 ${
+                          selectedCoverIdx === idx
+                            ? 'ring-2 ring-[#5E70FF] scale-105 z-10 shadow-lg'
+                            : 'opacity-70 hover:opacity-100'
+                        }`}
+                      >
+                        {coverFrames[idx] ? (
+                          <img
+                            src={coverFrames[idx]}
+                            alt={`Cover frame ${idx + 1}`}
+                            className="w-full h-full object-cover pointer-events-none"
+                          />
+                        ) : videoPreviewUrl ? (
+                          <video
+                            src={videoPreviewUrl}
+                            className="w-full h-full object-cover pointer-events-none"
+                          />
+                        ) : (
+                          <div
+                            className={`w-full h-full bg-gradient-to-tr ${
+                              idx % 2 === 0
+                                ? 'from-[#5E70FF] via-purple-700 to-indigo-900'
+                                : 'from-[#24BBA9] via-teal-700 to-zinc-900'
+                            }`}
+                          />
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                  <p className="text-[11px] text-gray-400 mt-2 text-center">
+                    Select a snapshot frame from your video to use as the cover.
+                  </p>
+                </div>
+              ) : (
+                /* Mode B: Custom Thumbnail Image Upload & Preview */
+                <div className="relative rounded-2xl bg-zinc-900 border border-white/10 p-4">
+                  {customThumbnailPreview ? (
+                    <div className="flex items-center gap-4">
+                      {/* Thumbnail Preview Aspect Frame */}
+                      <div className="relative w-20 h-28 rounded-xl overflow-hidden bg-black border border-white/20 shadow-md shrink-0">
+                        <img
+                          src={customThumbnailPreview}
+                          alt="Custom thumbnail"
+                          className="w-full h-full object-cover"
+                        />
+                        <div className="absolute top-1 right-1 bg-black/60 backdrop-blur-sm rounded-full p-0.5">
+                          <Check className="w-3 h-3 text-[#48B321]" />
+                        </div>
+                      </div>
+
+                      {/* File Details & Action Buttons */}
+                      <div className="flex-1 min-w-0 space-y-2">
+                        <div>
+                          <p className="text-xs font-bold text-white truncate">
+                            {customThumbnailFile?.name || 'Custom thumbnail'}
+                          </p>
+                          <p className="text-[11px] text-gray-400">
+                            {customThumbnailFile
+                              ? `${(customThumbnailFile.size / (1024 * 1024)).toFixed(2)} MB`
+                              : 'Uploaded image'}
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={() => thumbnailInputRef.current?.click()}
+                            className="px-3 py-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-xs font-semibold text-white transition-all border border-white/10"
+                          >
+                            Change Image
+                          </button>
+                          <button
+                            type="button"
+                            onClick={handleRemoveCustomThumbnail}
+                            className="px-3 py-1.5 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-xs font-semibold text-red-400 transition-all border border-red-500/20 flex items-center gap-1"
+                          >
+                            <X className="w-3 h-3" />
+                            Remove
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    /* Dropzone to select custom image */
+                    <div
+                      onClick={() => thumbnailInputRef.current?.click()}
+                      className="border-2 border-dashed border-zinc-700 hover:border-[#5E70FF] rounded-xl p-6 flex flex-col items-center justify-center text-center cursor-pointer transition-all hover:bg-zinc-800/40 group"
+                    >
+                      <div className="w-12 h-12 rounded-xl bg-zinc-800 border border-white/10 flex items-center justify-center mb-2 group-hover:scale-110 group-hover:border-[#5E70FF] transition-all">
+                        <ImageIcon className="w-6 h-6 text-gray-300 group-hover:text-[#5E70FF] transition-colors" />
+                      </div>
+                      <p className="text-xs font-bold text-white mb-0.5">Click to upload custom thumbnail</p>
+                      <p className="text-[10px] text-gray-400">JPG, PNG, or WebP (up to 5MB, 9:16 portrait recommended)</p>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
 
             {/* Who can view this video dropdown */}

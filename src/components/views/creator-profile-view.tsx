@@ -159,7 +159,8 @@ export function CreatorProfileView() {
   const toggleLikeMutation = useMutation({
     mutationFn: (vidId: string) => toggleLike(vidId),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['creator-profile', selectedCreatorId] })
+      queryClient.invalidateQueries({ queryKey: ['creator-profile'] })
+      queryClient.invalidateQueries({ queryKey: ['video-detail'] })
       queryClient.invalidateQueries({ queryKey: ['feed'] })
       queryClient.invalidateQueries({ queryKey: ['my-liked-videos'] })
     },
@@ -217,8 +218,11 @@ export function CreatorProfileView() {
           followerCount: result.followerCount,
         }
       })
-      queryClient.invalidateQueries({ queryKey: ['creator-profile', selectedCreatorId] })
+      queryClient.invalidateQueries({ queryKey: ['creator-profile'] })
+      queryClient.invalidateQueries({ queryKey: ['creator-followers'] })
+      queryClient.invalidateQueries({ queryKey: ['creator-following'] })
       queryClient.invalidateQueries({ queryKey: ['feed'] })
+      queryClient.invalidateQueries({ queryKey: ['video-detail'] })
       queryClient.invalidateQueries({ queryKey: ['user-me'] })
       toast.success(result.isFollowing ? 'Following creator!' : 'Unfollowed')
     },
@@ -666,7 +670,21 @@ export function CreatorProfileView() {
                           : 'border-white/10 shadow-md hover:shadow-2xl hover:border-white/30'
                       }`}
                     >
-                      <div className={`absolute inset-0 bg-gradient-to-b ${gradient}`} />
+                      {video.thumbnailBlobName ? (
+                        <img
+                          src={
+                            video.thumbnailBlobName.startsWith('data:') ||
+                            video.thumbnailBlobName.startsWith('/') ||
+                            video.thumbnailBlobName.startsWith('http')
+                              ? video.thumbnailBlobName
+                              : `/uploads/videos/${video.thumbnailBlobName}`
+                          }
+                          alt={video.title}
+                          className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                        />
+                      ) : (
+                        <div className={`absolute inset-0 bg-gradient-to-b ${gradient}`} />
+                      )}
                       <div className={`absolute inset-0 flex items-center justify-center transition-opacity duration-300 ${
                         isFocused ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
                       }`}>

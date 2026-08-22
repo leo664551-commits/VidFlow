@@ -37,10 +37,24 @@ export function VideoCard({ video, context }: VideoCardProps) {
       onClick={() => navigate('video-detail', video.id, context)}
       className="group relative cursor-pointer overflow-hidden rounded-2xl bg-zinc-900 border border-white/10 aspect-[9/16] shadow-md hover:shadow-2xl hover:border-white/30 transition-all duration-300 flex flex-col justify-end"
     >
-      {/* Background Poster / Gradient */}
-      <div
-        className={`absolute inset-0 bg-gradient-to-b ${gradient} group-hover:scale-105 transition-transform duration-500`}
-      />
+      {/* Background Poster / Thumbnail / Gradient */}
+      {video.thumbnailBlobName ? (
+        <img
+          src={
+            video.thumbnailBlobName.startsWith('data:') ||
+            video.thumbnailBlobName.startsWith('/') ||
+            video.thumbnailBlobName.startsWith('http')
+              ? video.thumbnailBlobName
+              : `/uploads/videos/${video.thumbnailBlobName}`
+          }
+          alt={video.title}
+          className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+        />
+      ) : (
+        <div
+          className={`absolute inset-0 bg-gradient-to-b ${gradient} group-hover:scale-105 transition-transform duration-500`}
+        />
+      )}
 
       {/* Hover Center Play Button */}
       <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-10">

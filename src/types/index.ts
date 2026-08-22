@@ -136,6 +136,8 @@ export interface FeedVideo {
   genre: Genre;
   ageRating: AgeRating;
   description: string | null;
+  storageBlobName?: string | null;
+  thumbnailBlobName?: string | null;
   duration: number | null;
   status: VideoStatus;
   viewCount: number;

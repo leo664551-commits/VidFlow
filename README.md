@@ -77,17 +77,20 @@ Open [http://localhost:3000](http://localhost:3000) in your browser to start exp
 
 ---
 
-## 🔑 Demo Accounts
+## 🔑 Administrator Provisioning
 
-The seed script creates the following pre-configured demo accounts for testing:
+To create your initial super administrator account securely without hardcoding credentials in Git, run:
 
-| Role | Email | Password | Handle |
-|---|---|---|---|
-| **Admin** | `admin@platform.com` | `Admin123!` | `@administrator` |
-| **Creator** | `creator1@platform.com` | `Creator123!` | `@jameschen` |
-| **Creator** | `creator2@platform.com` | `Creator123!` | `@sarahmiller` |
-| **Consumer** | `consumer1@platform.com` | `Consumer123!` | `@alex_turner` |
-| **Consumer** | `consumer2@platform.com` | `Consumer123!` | `@emily_watson` |
+```bash
+npx tsx scripts/create-admin.ts <your-email> "<your-secure-password>" "[Your Name]" "[username]"
+```
+
+Example:
+```bash
+npx tsx scripts/create-admin.ts admin@yourdomain.com "YourStrongPassword123!" "Admin" "admin"
+```
+
+In production on Microsoft Azure, configure `ADMIN_EMAIL` and `ADMIN_PASSWORD` in your Azure App Service Application Settings.
 
 ---
 

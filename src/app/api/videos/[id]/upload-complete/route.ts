@@ -51,6 +51,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
         genre: metadata.data.genre,
         ageRating: metadata.data.ageRating,
         description: metadata.data.description ?? null,
+        thumbnailBlobName: metadata.data.thumbnailBlobName ?? body.thumbnailBlobName ?? null,
         duration: body.duration ?? null,
         status: 'READY',
       },

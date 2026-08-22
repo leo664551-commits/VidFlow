@@ -40,22 +40,50 @@ const GENRE_GRADIENTS: Record<string, string> = {
   OTHER: 'from-zinc-800 via-zinc-900 to-black',
 }
 
-function VideoPlaceholder({ genre, isPlaying }: { genre: string; isPlaying: boolean }) {
+function VideoPlaceholder({
+  genre,
+  isPlaying,
+  thumbnailBlobName,
+  title,
+}: {
+  genre: string
+  isPlaying: boolean
+  thumbnailBlobName?: string | null
+  title?: string
+}) {
   const gradient = GENRE_GRADIENTS[genre] || 'from-zinc-800 via-zinc-900 to-black'
+  const thumbUrl = thumbnailBlobName
+    ? (thumbnailBlobName.startsWith('data:') ||
+       thumbnailBlobName.startsWith('/') ||
+       thumbnailBlobName.startsWith('http')
+        ? thumbnailBlobName
+        : `/uploads/videos/${thumbnailBlobName}`)
+    : null
+
   return (
-    <div className={`absolute inset-0 bg-gradient-to-b ${gradient} flex flex-col items-center justify-center select-none`}>
-      {/* Decorative ambient pulsing ring */}
-      <motion.div
-        animate={{ scale: isPlaying ? [1, 1.08, 1] : 1, opacity: isPlaying ? [0.2, 0.4, 0.2] : 0.2 }}
-        transition={{ repeat: Infinity, duration: 3, ease: 'easeInOut' }}
-        className="w-44 h-44 rounded-full bg-white/10 blur-2xl absolute"
-      />
-      <div className="relative z-10 text-center flex flex-col items-center">
-        <div className="w-16 h-16 rounded-full bg-white/10 backdrop-blur-md flex items-center justify-center mb-3 shadow-lg border border-white/20">
-          <Play className="w-7 h-7 text-white fill-white ml-1 opacity-80" />
-        </div>
-        <span className="text-xs font-semibold uppercase tracking-widest text-white/50">{genre.replace('_', ' ')}</span>
-      </div>
+    <div className={`absolute inset-0 ${thumbUrl ? 'bg-black' : `bg-gradient-to-b ${gradient}`} flex flex-col items-center justify-center select-none overflow-hidden`}>
+      {thumbUrl ? (
+        <img
+          src={thumbUrl}
+          alt={title || 'Video cover'}
+          className="absolute inset-0 w-full h-full object-cover"
+        />
+      ) : (
+        <>
+          {/* Decorative ambient pulsing ring */}
+          <motion.div
+            animate={{ scale: isPlaying ? [1, 1.08, 1] : 1, opacity: isPlaying ? [0.2, 0.4, 0.2] : 0.2 }}
+            transition={{ repeat: Infinity, duration: 3, ease: 'easeInOut' }}
+            className="w-44 h-44 rounded-full bg-white/10 blur-2xl absolute"
+          />
+          <div className="relative z-10 text-center flex flex-col items-center">
+            <div className="w-16 h-16 rounded-full bg-white/10 backdrop-blur-md flex items-center justify-center mb-3 shadow-lg border border-white/20">
+              <Play className="w-7 h-7 text-white fill-white ml-1 opacity-80" />
+            </div>
+            <span className="text-xs font-semibold uppercase tracking-widest text-white/50">{genre.replace('_', ' ')}</span>
+          </div>
+        </>
+      )}
     </div>
   )
 }
@@ -68,7 +96,7 @@ function ActionBar({ video }: { video: FeedVideo }) {
   const liked = optimisticState !== null ? optimisticState.liked : video.userLiked
   const likeCount = optimisticState !== null ? optimisticState.count : video.likeCount
 
-  const isSelf = user?.id === video.creator.id || !!video.creator.isSelf
+  const isSelf = user?.id === video.creator.id || user?.id === (video.creator as any).userId || !!video.creator.isSelf
   const isFollowing = !!video.creator.isFollowing
 
   const likeMutation = useMutation({
@@ -76,6 +104,8 @@ function ActionBar({ video }: { video: FeedVideo }) {
     onSuccess: (data) => {
       setOptimisticState({ liked: data.liked, count: data.likeCount })
       queryClient.invalidateQueries({ queryKey: ['feed'] })
+      queryClient.invalidateQueries({ queryKey: ['creator-profile'] })
+      queryClient.invalidateQueries({ queryKey: ['video-detail'] })
       queryClient.invalidateQueries({ queryKey: ['my-liked-videos'] })
     },
   })
@@ -109,10 +139,10 @@ function ActionBar({ video }: { video: FeedVideo }) {
           : `Unfollowed @${video.creator.creatorName}`
       )
       queryClient.invalidateQueries({ queryKey: ['feed'] })
-      queryClient.invalidateQueries({ queryKey: ['creator-profile', video.creator.id] })
-      queryClient.invalidateQueries({ queryKey: ['creator-followers', video.creator.id] })
-      queryClient.invalidateQueries({ queryKey: ['creator-following', video.creator.id] })
-      queryClient.invalidateQueries({ queryKey: ['creator', video.creator.id] })
+      queryClient.invalidateQueries({ queryKey: ['creator-profile'] })
+      queryClient.invalidateQueries({ queryKey: ['creator-followers'] })
+      queryClient.invalidateQueries({ queryKey: ['creator-following'] })
+      queryClient.invalidateQueries({ queryKey: ['video-detail'] })
       queryClient.invalidateQueries({ queryKey: ['user-me'] })
       queryClient.invalidateQueries({ queryKey: ['creator-dashboard'] })
     },
@@ -336,7 +366,12 @@ function FeedVideoCard({
           onClick={onTogglePlay}
           className="relative h-full aspect-[9/16] max-w-[420px] rounded-2xl md:rounded-3xl overflow-hidden bg-zinc-950 shadow-2xl border border-white/10 cursor-pointer group flex-shrink-0"
         >
-          <VideoPlaceholder genre={video.genre} isPlaying={isActive && isPlaying} />
+          <VideoPlaceholder
+            genre={video.genre}
+            isPlaying={isActive && isPlaying}
+            thumbnailBlobName={video.thumbnailBlobName}
+            title={video.title}
+          />
 
           {/* Sound Mute/Unmute toggle */}
           <button
@@ -369,13 +404,13 @@ function FeedVideoCard({
 
           {/* Mobile Embedded Action Bar (visible on < md only) */}
           <div className="md:hidden absolute right-3 bottom-20 z-20 pointer-events-auto">
-            <ActionBar video={video} />
+            <ActionBar key={`mobile-${video.id}`} video={video} />
           </div>
         </div>
 
         {/* Desktop Side Action Rail (visible on md: and above) */}
         <div className="hidden md:flex flex-col justify-end ml-4 pb-2 z-20">
-          <ActionBar video={video} />
+          <ActionBar key={`desktop-${video.id}`} video={video} />
         </div>
       </div>
     </div>

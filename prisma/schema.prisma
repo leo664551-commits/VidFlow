@@ -56,6 +56,8 @@ model Follow {
   following User @relation("UserFollowers", fields: [followingId], references: [id], onDelete: Cascade)
 
   @@unique([followerId, followingId])
+  @@index([followingId])
+  @@index([followerId])
 }
 
 model CreatorProfile {
@@ -138,6 +140,8 @@ model VideoLike {
   user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([videoId, userId])
+  @@index([videoId])
+  @@index([userId])
 }
 
 model CreatorRating {

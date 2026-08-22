@@ -23,6 +23,7 @@ export const videoMetadataSchema = z.object({
     error: 'Invalid age rating',
   }),
   description: z.string().max(2000).optional().nullable(),
+  thumbnailBlobName: z.string().max(500).optional().nullable(),
 });
 
 export const uploadSessionSchema = z.object({

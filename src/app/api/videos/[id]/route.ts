@@ -168,6 +168,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
         genre: metadata.data.genre,
         ageRating: metadata.data.ageRating,
         description: metadata.data.description ?? null,
+        ...(metadata.data.thumbnailBlobName !== undefined ? { thumbnailBlobName: metadata.data.thumbnailBlobName } : {}),
       },
       include: { creator: { select: { id: true, creatorName: true } } },
     });

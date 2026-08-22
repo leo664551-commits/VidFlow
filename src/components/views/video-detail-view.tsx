@@ -56,8 +56,7 @@ export function VideoDetailView() {
 
   const [isPlaying, setIsPlaying] = useState(true)
   const [isMuted, setIsMuted] = useState(false)
-  const [localLiked, setLocalLiked] = useState<boolean | null>(null)
-  const [localLikeCount, setLocalLikeCount] = useState<number | null>(null)
+  const [optimisticLikes, setOptimisticLikes] = useState<Record<string, { liked: boolean; count: number }>>({})
 
   const { data: video, isLoading } = useQuery({
     queryKey: ['video-detail', selectedVideoId, user?.id],
@@ -99,12 +98,15 @@ export function VideoDetailView() {
   }, [video?.id, isPlaying, duration])
 
   const likeMutation = useMutation({
-    mutationFn: toggleLike,
-    onSuccess: (result) => {
-      setLocalLiked(result.liked)
-      setLocalLikeCount(result.likeCount)
-      queryClient.invalidateQueries({ queryKey: ['video-detail', selectedVideoId] })
+    mutationFn: (vidId: string) => toggleLike(vidId),
+    onSuccess: (result, vidId) => {
+      setOptimisticLikes((prev) => ({
+        ...prev,
+        [vidId]: { liked: result.liked, count: result.likeCount },
+      }))
+      queryClient.invalidateQueries({ queryKey: ['video-detail'] })
       queryClient.invalidateQueries({ queryKey: ['feed'] })
+      queryClient.invalidateQueries({ queryKey: ['creator-profile'] })
       queryClient.invalidateQueries({ queryKey: ['my-liked-videos'] })
     },
   })
@@ -117,11 +119,11 @@ export function VideoDetailView() {
           ? `Following @${video?.creator.creatorName}`
           : `Unfollowed @${video?.creator.creatorName}`
       )
-      queryClient.invalidateQueries({ queryKey: ['video-detail', selectedVideoId] })
+      queryClient.invalidateQueries({ queryKey: ['video-detail'] })
       queryClient.invalidateQueries({ queryKey: ['feed'] })
-      queryClient.invalidateQueries({ queryKey: ['creator-profile', video?.creator.id] })
-      queryClient.invalidateQueries({ queryKey: ['creator-followers', video?.creator.id] })
-      queryClient.invalidateQueries({ queryKey: ['creator-following', video?.creator.id] })
+      queryClient.invalidateQueries({ queryKey: ['creator-profile'] })
+      queryClient.invalidateQueries({ queryKey: ['creator-followers'] })
+      queryClient.invalidateQueries({ queryKey: ['creator-following'] })
       queryClient.invalidateQueries({ queryKey: ['user-me'] })
     },
     onError: () => {
@@ -208,12 +210,13 @@ export function VideoDetailView() {
 
   if (!video) return null
 
-  const isLiked = localLiked ?? video.userLiked ?? false
-  const likeCount = localLikeCount ?? video.likeCount ?? 0
+  const currentOptimistic = optimisticLikes[video.id]
+  const isLiked = currentOptimistic !== undefined ? currentOptimistic.liked : (video.userLiked ?? false)
+  const likeCount = currentOptimistic !== undefined ? currentOptimistic.count : (video.likeCount ?? 0)
   const commentCount = video.commentCount ?? 0
   const viewCount = video.viewCount ?? 0
   const isFollowing = !!video.creator.isFollowing
-  const isSelf = user?.id === video.creator.id || !!video.creator.isSelf
+  const isSelf = user?.id === video.creator.id || user?.id === (video.creator as any).userId || !!video.creator.isSelf
   const gradient = GENRE_GRADIENTS[video.genre] || GENRE_GRADIENTS.OTHER
   const initial = video.creator.creatorName?.[0]?.toUpperCase() || 'C'
   const genreLabel = GENRES.includes(video.genre as (typeof GENRES)[number])
@@ -275,20 +278,34 @@ export function VideoDetailView() {
           onClick={togglePlay}
           className="relative h-[calc(100vh-32px)] max-h-[860px] w-full max-w-[420px] aspect-[9/16] rounded-3xl overflow-hidden bg-black shadow-2xl border border-white/10 flex items-center justify-center group cursor-pointer"
         >
-          {/* Animated Video Simulated Gradient Player */}
-          <div className={`absolute inset-0 bg-gradient-to-b ${gradient} flex items-center justify-center`}>
-            {/* Ambient Pulse waves */}
-            <div className="absolute inset-0 flex items-center justify-center">
-              <motion.div
-                animate={
-                  isPlaying
-                    ? { scale: [1, 1.25, 1], opacity: [0.15, 0.35, 0.15] }
-                    : { scale: 1, opacity: 0.1 }
+          {/* Animated Video Simulated Gradient Player / Thumbnail */}
+          <div className={`absolute inset-0 ${video.thumbnailBlobName ? 'bg-black' : `bg-gradient-to-b ${gradient}`} flex items-center justify-center overflow-hidden`}>
+            {video.thumbnailBlobName ? (
+              <img
+                src={
+                  video.thumbnailBlobName.startsWith('data:') ||
+                  video.thumbnailBlobName.startsWith('/') ||
+                  video.thumbnailBlobName.startsWith('http')
+                    ? video.thumbnailBlobName
+                    : `/uploads/videos/${video.thumbnailBlobName}`
                 }
-                transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
-                className="w-80 h-80 rounded-full bg-white/20 blur-2xl"
+                alt={video.title}
+                className="absolute inset-0 w-full h-full object-cover"
               />
-            </div>
+            ) : (
+              /* Ambient Pulse waves */
+              <div className="absolute inset-0 flex items-center justify-center">
+                <motion.div
+                  animate={
+                    isPlaying
+                      ? { scale: [1, 1.25, 1], opacity: [0.15, 0.35, 0.15] }
+                      : { scale: 1, opacity: 0.1 }
+                  }
+                  transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
+                  className="w-80 h-80 rounded-full bg-white/20 blur-2xl"
+                />
+              </div>
+            )}
 
             {/* Play/Pause center flash indicator */}
             {!isPlaying && (

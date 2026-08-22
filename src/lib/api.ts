@@ -258,6 +258,7 @@ export async function updateVideo(
     genre?: Genre
     ageRating?: AgeRating
     description?: string
+    thumbnailBlobName?: string | null
   }
 ): Promise<VideoWithCreator> {
   return request<VideoWithCreator>(`/api/videos/${id}`, {
@@ -282,10 +283,11 @@ export async function requestUploadSession(data: {
   })
 }
 
-export async function uploadRaw(file: File): Promise<{ videoId: string }> {
+export async function uploadRaw(file: File, blobName?: string): Promise<{ videoId?: string; blobName: string }> {
   const formData = new FormData()
   formData.append('file', file)
-  const res = await fetch('/api/videos/upload-raw', {
+  const url = blobName ? `/api/videos/upload-raw?blobName=${encodeURIComponent(blobName)}` : '/api/videos/upload-raw'
+  const res = await fetch(url, {
     method: 'POST',
     body: formData,
   })
@@ -305,6 +307,7 @@ export async function completeUpload(
     genre: Genre
     ageRating: AgeRating
     description?: string
+    thumbnailBlobName?: string | null
   }
 ): Promise<VideoWithCreator> {
   return request<VideoWithCreator>(`/api/videos/${id}/upload-complete`, {

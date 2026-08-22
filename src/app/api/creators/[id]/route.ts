@@ -48,6 +48,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
             genre: true,
             ageRating: true,
             description: true,
+            storageBlobName: true,
             thumbnailBlobName: true,
             duration: true,
             viewCount: true,
@@ -178,6 +179,19 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       page * limit
     );
 
+    // Query which videos are liked by the current user
+    let userLikedVideoIds = new Set<string>();
+    if (user && paginatedVideos.length > 0) {
+      const likes = await db.videoLike.findMany({
+        where: {
+          userId: user.id,
+          videoId: { in: paginatedVideos.map((v) => v.id) },
+        },
+        select: { videoId: true },
+      });
+      userLikedVideoIds = new Set(likes.map((l) => l.videoId));
+    }
+
     return apiSuccess({
       creator: {
         id: creator.id,
@@ -226,6 +240,8 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
           genre: v.genre,
           ageRating: v.ageRating,
           description: v.description,
+          thumbnailBlobName: v.thumbnailBlobName,
+          storageBlobName: v.storageBlobName,
           duration: v.duration,
           status: 'READY' as const,
           viewCount: v.viewCount,
@@ -234,7 +250,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
           likeCount: v._count.likes,
           commentCount: v._count.comments,
           pinnedCommentId: v.pinnedCommentId,
-          userLiked: false,
+          userLiked: userLikedVideoIds.has(v.id),
           creator: {
             id: creator.id,
             creatorName: creator.creatorName,
