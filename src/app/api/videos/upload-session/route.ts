@@ -40,11 +40,18 @@ export async function POST(request: NextRequest) {
       // Verify creator profile exists
       const profile = await db.creatorProfile.findUnique({ where: { userId: creatorId } });
       if (!profile) return apiError('CREATOR_NOT_FOUND');
-    } else if (user.role === 'CREATOR') {
+    } else {
       // Ensure creator profile exists
-      if (!user.creatorProfile) {
-        return apiError('FORBIDDEN', 'You do not have a creator profile');
-      }
+      await db.creatorProfile.upsert({
+        where: { userId: user.id },
+        update: {},
+        create: {
+          userId: user.id,
+          creatorName: user.displayName || user.username || 'Creator',
+          description: user.bio || '',
+          category: user.category || 'Comedy',
+        },
+      });
     }
 
     // Generate blob name
@@ -79,6 +86,6 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     logger.error('Upload session failed', { error: (error as Error).message });
-    return apiError('INTERNAL_SERVER_ERROR');
+    return apiError('INTERNAL_SERVER_ERROR', (error as Error).message);
   }
 }

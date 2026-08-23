@@ -49,6 +49,19 @@ export async function POST(request: NextRequest) {
         blobName = `thumbnails/${user.id}/${Date.now()}-${sanitizedName}`;
       } else {
         blobName = `videos/${user.id}/${Date.now()}-${sanitizedName}`;
+
+        // Ensure CreatorProfile exists to satisfy foreign key constraint on Video.creatorId
+        await db.creatorProfile.upsert({
+          where: { userId: user.id },
+          update: {},
+          create: {
+            userId: user.id,
+            creatorName: user.displayName || user.username || 'Creator',
+            description: user.bio || '',
+            category: user.category || 'Comedy',
+          },
+        });
+
         // Auto-create video record in UPLOADING status
         const video = await db.video.create({
           data: {
@@ -74,6 +87,6 @@ export async function POST(request: NextRequest) {
     return apiSuccess({ blobName, videoId });
   } catch (error) {
     logger.error('Upload failed', { error: (error as Error).message });
-    return apiError('INTERNAL_SERVER_ERROR');
+    return apiError('INTERNAL_SERVER_ERROR', (error as Error).message);
   }
 }

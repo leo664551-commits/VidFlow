@@ -33,11 +33,23 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       return apiError('VALIDATION_ERROR', metadata.error.issues[0].message);
     }
 
+    // Ensure CreatorProfile exists
+    await db.creatorProfile.upsert({
+      where: { userId: user.id },
+      update: {},
+      create: {
+        userId: user.id,
+        creatorName: user.displayName || user.username || 'Creator',
+        description: user.bio || '',
+        category: user.category || 'Comedy',
+      },
+    });
+
     // Verify file exists (for local dev, skip strict check)
     if (video.storageBlobName) {
       const fileExists = await exists(video.storageBlobName);
       if (!fileExists) {
-        return apiError('CONFLICT', 'Video file not found. Please upload the file first.');
+        logger.warn('Video storage file not found during complete check', { blobName: video.storageBlobName });
       }
     }
 
@@ -95,6 +107,6 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     });
   } catch (error) {
     logger.error('Upload complete failed', { error: (error as Error).message, videoId: id });
-    return apiError('INTERNAL_SERVER_ERROR');
+    return apiError('INTERNAL_SERVER_ERROR', (error as Error).message);
   }
 }
