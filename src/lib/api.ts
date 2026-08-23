@@ -1,4 +1,3 @@
-import { signIn, signOut } from 'next-auth/react'
 import type {
   AuthUser,
   PaginatedResponse,
@@ -57,6 +56,7 @@ export async function register(data: {
 }
 
 export async function login(email: string, password: string) {
+  const { signIn } = await import('next-auth/react')
   const res = await signIn('credentials', {
     email,
     password,
@@ -75,6 +75,7 @@ export async function login(email: string, password: string) {
 }
 
 export async function logout(): Promise<void> {
+  const { signOut } = await import('next-auth/react')
   await signOut({ redirect: false })
   await request<void>('/api/auth/logout', { method: 'POST' }).catch(() => {})
 }
