@@ -57,6 +57,7 @@ export function VideoDetailView() {
   const [isPlaying, setIsPlaying] = useState(true)
   const [isMuted, setIsMuted] = useState(false)
   const [optimisticLikes, setOptimisticLikes] = useState<Record<string, { liked: boolean; count: number }>>({})
+  const videoRef = useRef<HTMLVideoElement>(null)
 
   const { data: video, isLoading } = useQuery({
     queryKey: ['video-detail', selectedVideoId, user?.id],
@@ -67,6 +68,31 @@ export function VideoDetailView() {
   const watchTimeRef = useRef(0)
   const lastSyncRef = useRef(0)
   const duration = video?.duration || 30
+
+  // Control video playback
+  useEffect(() => {
+    const el = videoRef.current
+    if (!el) return
+
+    if (isPlaying) {
+      const playPromise = el.play()
+      if (playPromise !== undefined) {
+        playPromise.catch(() => {
+          el.muted = true
+          el.play().catch((err) => console.warn('Detail autoplay error:', err))
+        })
+      }
+    } else {
+      el.pause()
+    }
+  }, [isPlaying, video?.id])
+
+  // Sync mute state
+  useEffect(() => {
+    if (videoRef.current) {
+      videoRef.current.muted = isMuted
+    }
+  }, [isMuted])
 
   useEffect(() => {
     if (!video || !isPlaying) return
@@ -278,47 +304,71 @@ export function VideoDetailView() {
           onClick={togglePlay}
           className="relative h-[calc(100vh-32px)] max-h-[860px] w-full max-w-[420px] aspect-[9/16] rounded-3xl overflow-hidden bg-black shadow-2xl border border-white/10 flex items-center justify-center group cursor-pointer"
         >
-          {/* Animated Video Simulated Gradient Player / Thumbnail */}
-          <div className={`absolute inset-0 ${video.thumbnailBlobName ? 'bg-black' : `bg-gradient-to-b ${gradient}`} flex items-center justify-center overflow-hidden`}>
-            {video.thumbnailBlobName ? (
-              <img
-                src={
-                  video.thumbnailBlobName.startsWith('data:') ||
-                  video.thumbnailBlobName.startsWith('/') ||
-                  video.thumbnailBlobName.startsWith('http')
+          {/* Video Player or Fallback */}
+          {video.storageBlobName ? (
+            <video
+              ref={videoRef}
+              src={
+                video.storageBlobName.startsWith('http') || video.storageBlobName.startsWith('/')
+                  ? video.storageBlobName
+                  : `/uploads/videos/${video.storageBlobName}`
+              }
+              poster={
+                video.thumbnailBlobName
+                  ? video.thumbnailBlobName.startsWith('data:') ||
+                    video.thumbnailBlobName.startsWith('/') ||
+                    video.thumbnailBlobName.startsWith('http')
                     ? video.thumbnailBlobName
                     : `/uploads/videos/${video.thumbnailBlobName}`
-                }
-                alt={video.title}
-                className="absolute inset-0 w-full h-full object-cover"
-              />
-            ) : (
-              /* Ambient Pulse waves */
-              <div className="absolute inset-0 flex items-center justify-center">
-                <motion.div
-                  animate={
-                    isPlaying
-                      ? { scale: [1, 1.25, 1], opacity: [0.15, 0.35, 0.15] }
-                      : { scale: 1, opacity: 0.1 }
+                  : undefined
+              }
+              playsInline
+              loop
+              muted={isMuted}
+              className="absolute inset-0 w-full h-full object-cover select-none"
+            />
+          ) : (
+            <div className={`absolute inset-0 ${video.thumbnailBlobName ? 'bg-black' : `bg-gradient-to-b ${gradient}`} flex items-center justify-center overflow-hidden`}>
+              {video.thumbnailBlobName ? (
+                <img
+                  src={
+                    video.thumbnailBlobName.startsWith('data:') ||
+                    video.thumbnailBlobName.startsWith('/') ||
+                    video.thumbnailBlobName.startsWith('http')
+                      ? video.thumbnailBlobName
+                      : `/uploads/videos/${video.thumbnailBlobName}`
                   }
-                  transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
-                  className="w-80 h-80 rounded-full bg-white/20 blur-2xl"
+                  alt={video.title}
+                  className="absolute inset-0 w-full h-full object-cover"
                 />
-              </div>
-            )}
+              ) : (
+                /* Ambient Pulse waves */
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <motion.div
+                    animate={
+                      isPlaying
+                        ? { scale: [1, 1.25, 1], opacity: [0.15, 0.35, 0.15] }
+                        : { scale: 1, opacity: 0.1 }
+                    }
+                    transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
+                    className="w-80 h-80 rounded-full bg-white/20 blur-2xl"
+                  />
+                </div>
+              )}
+            </div>
+          )}
 
-            {/* Play/Pause center flash indicator */}
-            {!isPlaying && (
-              <motion.div
-                initial={{ scale: 0.6, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                exit={{ scale: 0.8, opacity: 0 }}
-                className="z-20 w-20 h-20 rounded-full bg-black/60 backdrop-blur-md flex items-center justify-center shadow-2xl border border-white/20"
-              >
-                <Play className="w-10 h-10 text-white fill-white ml-1" />
-              </motion.div>
-            )}
-          </div>
+          {/* Play/Pause center flash indicator */}
+          {!isPlaying && (
+            <motion.div
+              initial={{ scale: 0.6, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.8, opacity: 0 }}
+              className="z-20 w-20 h-20 rounded-full bg-black/60 backdrop-blur-md flex items-center justify-center shadow-2xl border border-white/20"
+            >
+              <Play className="w-10 h-10 text-white fill-white ml-1" />
+            </motion.div>
+          )}
 
           {/* Top Controls: Back Button & Sound */}
           <div className="absolute top-4 left-4 right-4 z-20 flex items-center justify-between pointer-events-auto">

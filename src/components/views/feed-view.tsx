@@ -324,9 +324,50 @@ function FeedVideoCard({
   isPlaying: boolean
   onTogglePlay: () => void
 }) {
+  const videoRef = useRef<HTMLVideoElement>(null)
   const watchTimeRef = useRef(0)
   const lastSyncRef = useRef(0)
   const duration = video.duration || 30
+
+  const videoUrl = video.storageBlobName
+    ? video.storageBlobName.startsWith('http') || video.storageBlobName.startsWith('/')
+      ? video.storageBlobName
+      : `/uploads/videos/${video.storageBlobName}`
+    : null
+
+  const posterUrl = video.thumbnailBlobName
+    ? video.thumbnailBlobName.startsWith('data:') ||
+      video.thumbnailBlobName.startsWith('/') ||
+      video.thumbnailBlobName.startsWith('http')
+      ? video.thumbnailBlobName
+      : `/uploads/videos/${video.thumbnailBlobName}`
+    : undefined
+
+  // Control video playback based on active and playing state
+  useEffect(() => {
+    const el = videoRef.current
+    if (!el) return
+
+    if (isActive && isPlaying) {
+      const playPromise = el.play()
+      if (playPromise !== undefined) {
+        playPromise.catch(() => {
+          // Browser may block unmuted autoplay, mute and try again
+          el.muted = true
+          el.play().catch((err) => console.warn('Autoplay error:', err))
+        })
+      }
+    } else {
+      el.pause()
+    }
+  }, [isActive, isPlaying, video.id])
+
+  // Sync mute state
+  useEffect(() => {
+    if (videoRef.current) {
+      videoRef.current.muted = muted
+    }
+  }, [muted])
 
   // Track meaningful video consumption
   useEffect(() => {
@@ -366,12 +407,24 @@ function FeedVideoCard({
           onClick={onTogglePlay}
           className="relative h-full aspect-[9/16] max-w-[420px] rounded-2xl md:rounded-3xl overflow-hidden bg-zinc-950 shadow-2xl border border-white/10 cursor-pointer group flex-shrink-0"
         >
-          <VideoPlaceholder
-            genre={video.genre}
-            isPlaying={isActive && isPlaying}
-            thumbnailBlobName={video.thumbnailBlobName}
-            title={video.title}
-          />
+          {videoUrl ? (
+            <video
+              ref={videoRef}
+              src={videoUrl}
+              poster={posterUrl}
+              playsInline
+              loop
+              muted={muted}
+              className="absolute inset-0 w-full h-full object-cover select-none"
+            />
+          ) : (
+            <VideoPlaceholder
+              genre={video.genre}
+              isPlaying={isActive && isPlaying}
+              thumbnailBlobName={video.thumbnailBlobName}
+              title={video.title}
+            />
+          )}
 
           {/* Sound Mute/Unmute toggle */}
           <button
