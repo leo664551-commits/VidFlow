@@ -130,12 +130,36 @@ export function VideoDetailView() {
         ...prev,
         [vidId]: { liked: result.liked, count: result.likeCount },
       }))
-      queryClient.invalidateQueries({ queryKey: ['video-detail'] })
-      queryClient.invalidateQueries({ queryKey: ['feed'] })
-      queryClient.invalidateQueries({ queryKey: ['creator-profile'] })
       queryClient.invalidateQueries({ queryKey: ['my-liked-videos'] })
     },
+    onError: (_err, vidId) => {
+      setOptimisticLikes((prev) => {
+        const copy = { ...prev }
+        delete copy[vidId]
+        return copy
+      })
+      toast.error('Failed to update like')
+    },
   })
+
+  const handleToggleLike = useCallback((vidId: string) => {
+    if (!user) {
+      toast.error('Please log in to like this video')
+      return
+    }
+    const curOptimistic = optimisticLikes[vidId]
+    const curLiked = curOptimistic !== undefined ? curOptimistic.liked : (video?.userLiked ?? false)
+    const curCount = curOptimistic !== undefined ? curOptimistic.count : (video?.likeCount ?? 0)
+    const nextLiked = !curLiked
+    const nextCount = nextLiked ? curCount + 1 : Math.max(0, curCount - 1)
+
+    setOptimisticLikes((prev) => ({
+      ...prev,
+      [vidId]: { liked: nextLiked, count: nextCount },
+    }))
+
+    likeMutation.mutate(vidId)
+  }, [user, optimisticLikes, video, likeMutation])
 
   const followMutation = useMutation({
     mutationFn: (creatorId: string) => toggleFollowCreator(creatorId),
@@ -145,8 +169,6 @@ export function VideoDetailView() {
           ? `Following @${video?.creator.creatorName}`
           : `Unfollowed @${video?.creator.creatorName}`
       )
-      queryClient.invalidateQueries({ queryKey: ['video-detail'] })
-      queryClient.invalidateQueries({ queryKey: ['feed'] })
       queryClient.invalidateQueries({ queryKey: ['creator-profile'] })
       queryClient.invalidateQueries({ queryKey: ['creator-followers'] })
       queryClient.invalidateQueries({ queryKey: ['creator-following'] })
@@ -211,12 +233,7 @@ export function VideoDetailView() {
   // Global Video Keyboard Shortcuts for Video Detail (Must execute unconditionally before early returns)
   useVideoKeyboardShortcuts({
     onToggleLike: () => {
-      if (!video) return
-      if (!user) {
-        toast.error('Please log in to like this video')
-        return
-      }
-      likeMutation.mutate(video.id)
+      if (video) handleToggleLike(video.id)
     },
     onMute: () => setIsMuted(true),
     onUnmute: () => setIsMuted(false),
@@ -478,11 +495,7 @@ export function VideoDetailView() {
             <button
               onClick={(e) => {
                 e.stopPropagation()
-                if (!canInteract) {
-                  toast.error('Please log in to like')
-                  return
-                }
-                likeMutation.mutate(video.id)
+                handleToggleLike(video.id)
               }}
               className="flex flex-col items-center gap-1"
             >
@@ -548,13 +561,7 @@ export function VideoDetailView() {
 
           {/* Heart Like Button */}
           <button
-            onClick={() => {
-              if (!canInteract) {
-                toast.error('Please log in to like this video')
-                return
-              }
-              likeMutation.mutate(video.id)
-            }}
+            onClick={() => handleToggleLike(video.id)}
             className="flex flex-col items-center gap-1 group"
           >
             <div className="w-12 h-12 rounded-full bg-zinc-900/90 border border-white/10 hover:bg-zinc-800 flex items-center justify-center text-white shadow-lg transition-all group-hover:scale-110">

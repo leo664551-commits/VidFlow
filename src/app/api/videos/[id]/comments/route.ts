@@ -173,9 +173,9 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
     const actorName = user.displayName || user.username || 'Someone';
 
-    // If it's a reply, notify parent comment author
+    // If it's a reply, notify parent comment author asynchronously
     if (parentCommentUserId && parentCommentUserId !== user.id) {
-      await createNotification({
+      createNotification({
         userId: parentCommentUserId,
         actorId: user.id,
         type: 'COMMENT_REPLY',
@@ -183,10 +183,10 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
         message: `${actorName} replied to your comment: "${parentCommentSnippet}"`,
         entityType: 'Comment',
         entityId: comment.id,
-      });
+      }).catch((err) => console.warn('Reply notification error:', err));
     } else if (!parentCommentUserId && video.creatorId !== user.id) {
-      // If it's a top-level comment, notify the creator of the video
-      await createNotification({
+      // If it's a top-level comment, notify the creator of the video asynchronously
+      createNotification({
         userId: video.creatorId,
         actorId: user.id,
         type: 'VIDEO_COMMENT',
@@ -194,7 +194,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
         message: `${actorName} commented on your video "${video.title}"`,
         entityType: 'Video',
         entityId: video.id,
-      });
+      }).catch((err) => console.warn('Comment notification error:', err));
     }
 
     return apiCreated({

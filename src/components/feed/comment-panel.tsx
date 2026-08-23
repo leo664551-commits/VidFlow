@@ -306,6 +306,69 @@ export function CommentPanel() {
   const createMutation = useMutation({
     mutationFn: (params: { content: string; parentCommentId?: string }) =>
       createComment(selectedVideoId!, params),
+    onMutate: async (params) => {
+      // Cancel queries to prevent race conditions
+      await queryClient.cancelQueries({ queryKey: ['comments', selectedVideoId] })
+
+      const previousComments = queryClient.getQueryData(['comments', selectedVideoId, user?.id])
+
+      // Only insert at top of comments list if it's a top-level comment
+      if (!params.parentCommentId && user) {
+        const optimisticComment: CommentWithUser = {
+          id: `temp-${Date.now()}`,
+          videoId: selectedVideoId!,
+          parentCommentId: null,
+          content: params.content,
+          status: 'VISIBLE',
+          replyCount: 0,
+          likeCount: 0,
+          userLiked: false,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+          user: {
+            id: user.id,
+            displayName: user.displayName || 'You',
+            username: user.username || null,
+            avatarUrl: user.avatarUrl || null,
+          },
+        }
+
+        queryClient.setQueryData(['comments', selectedVideoId, user?.id], (old: any) => {
+          if (!old) return { data: [optimisticComment] }
+          return {
+            ...old,
+            data: [optimisticComment, ...(old.data || [])],
+          }
+        })
+
+        // Optimistically update comment count in Feed and Detail caches
+        queryClient.setQueriesData({ queryKey: ['feed'] }, (old: any) => {
+          if (!old?.pages) return old
+          return {
+            ...old,
+            pages: old.pages.map((page: any) => ({
+              ...page,
+              data: page.data.map((v: any) =>
+                v.id === selectedVideoId ? { ...v, commentCount: (v.commentCount || 0) + 1 } : v
+              ),
+            })),
+          }
+        })
+
+        queryClient.setQueriesData({ queryKey: ['video-detail', selectedVideoId] }, (old: any) => {
+          if (!old) return old
+          return { ...old, commentCount: (old.commentCount || 0) + 1 }
+        })
+      }
+
+      return { previousComments }
+    },
+    onError: (_err, _vars, context) => {
+      if (context?.previousComments) {
+        queryClient.setQueryData(['comments', selectedVideoId, user?.id], context.previousComments)
+      }
+      toast.error('Failed to post comment')
+    },
     onSuccess: () => {
       setText('')
       setReplyTo(null)
@@ -316,9 +379,6 @@ export function CommentPanel() {
 
   const commentLikeMutation = useMutation({
     mutationFn: (commentId: string) => toggleCommentLike(commentId),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['comments', selectedVideoId] })
-    },
   })
 
   const pinMutation = useMutation({
@@ -326,7 +386,6 @@ export function CommentPanel() {
       pinComment(selectedVideoId!, commentId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['comments', selectedVideoId] })
-      queryClient.invalidateQueries({ queryKey: ['feed'] })
     },
   })
 
@@ -340,6 +399,7 @@ export function CommentPanel() {
       return
     }
     const content = replyTo ? `@${replyTo} ${trimmed}` : trimmed
+    setText('')
     createMutation.mutate({
       content,
       parentCommentId: replyCommentId ?? undefined,

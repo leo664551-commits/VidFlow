@@ -47,12 +47,6 @@ export async function getSession(request: NextRequest): Promise<AuthUser | null>
 
     const username = user.username || user.displayName.toLowerCase().replace(/[^a-z0-9_]/g, '') || user.email.split('@')[0];
 
-    const [followerCount, followingCount, postCount] = await Promise.all([
-      db.follow.count({ where: { followingId: user.id } }),
-      db.follow.count({ where: { followerId: user.id } }),
-      db.video.count({ where: { creatorId: user.id } }),
-    ]);
-
     return {
       id: user.id,
       email: user.email,
@@ -70,9 +64,9 @@ export async function getSession(request: NextRequest): Promise<AuthUser | null>
       contactEmail: user.contactEmail || null,
       category: user.category || 'Comedy',
       categoryChangeCount: user.categoryChangeCount || 0,
-      followerCount,
-      followingCount,
-      postCount,
+      followerCount: 0,
+      followingCount: 0,
+      postCount: 0,
       creatorProfile: user.creatorProfile
         ? {
             id: user.creatorProfile.id,

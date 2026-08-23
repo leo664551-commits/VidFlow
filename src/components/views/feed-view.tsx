@@ -103,10 +103,12 @@ function ActionBar({ video }: { video: FeedVideo }) {
     mutationFn: () => toggleLike(video.id),
     onSuccess: (data) => {
       setOptimisticState({ liked: data.liked, count: data.likeCount })
-      queryClient.invalidateQueries({ queryKey: ['feed'] })
-      queryClient.invalidateQueries({ queryKey: ['creator-profile'] })
-      queryClient.invalidateQueries({ queryKey: ['video-detail'] })
       queryClient.invalidateQueries({ queryKey: ['my-liked-videos'] })
+    },
+    onError: () => {
+      // Rollback on error
+      setOptimisticState(null)
+      toast.error('Failed to update like')
     },
   })
 
@@ -115,6 +117,10 @@ function ActionBar({ video }: { video: FeedVideo }) {
       toast.error('Please log in to like videos')
       return
     }
+    // Instant 0ms Optimistic UI Toggle
+    const nextLiked = !liked
+    const nextCount = nextLiked ? likeCount + 1 : Math.max(0, likeCount - 1)
+    setOptimisticState({ liked: nextLiked, count: nextCount })
     likeMutation.mutate()
   }
 

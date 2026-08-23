@@ -12,33 +12,35 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   const { id } = await params;
 
   try {
-    const video = await db.video.findUnique({
-      where: { id },
-      select: { id: true, creatorId: true, title: true, status: true },
-    });
-    if (!video) return apiError('VIDEO_NOT_FOUND');
-    if (video.status !== 'READY') return apiError('VIDEO_NOT_FOUND');
+    const [video, existing] = await Promise.all([
+      db.video.findUnique({
+        where: { id },
+        select: { id: true, creatorId: true, title: true, status: true },
+      }),
+      db.videoLike.findUnique({
+        where: { videoId_userId: { videoId: id, userId: user.id } },
+        select: { id: true },
+      }),
+    ]);
 
-    const existing = await db.videoLike.findUnique({
-      where: { videoId_userId: { videoId: id, userId: user.id } },
-    });
+    if (!video || video.status !== 'READY') return apiError('VIDEO_NOT_FOUND');
 
+    let liked: boolean;
     if (existing) {
       // Unlike
       await db.videoLike.delete({ where: { id: existing.id } });
-      const likeCount = await db.videoLike.count({ where: { videoId: id } });
-      return apiSuccess({ liked: false, likeCount });
+      liked = false;
     } else {
       // Like
       await db.videoLike.create({
         data: { videoId: id, userId: user.id },
       });
-      const likeCount = await db.videoLike.count({ where: { videoId: id } });
+      liked = true;
 
-      // Notify video creator if different from liker
+      // Notify video creator asynchronously (non-blocking)
       if (video.creatorId !== user.id) {
         const actorName = user.displayName || user.username || 'Someone';
-        await createNotification({
+        createNotification({
           userId: video.creatorId,
           actorId: user.id,
           type: 'LIKE_VIDEO',
@@ -46,11 +48,12 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
           message: `${actorName} liked your video "${video.title}"`,
           entityType: 'Video',
           entityId: video.id,
-        });
+        }).catch((err) => console.warn('Failed to send like notification:', err));
       }
-
-      return apiSuccess({ liked: true, likeCount });
     }
+
+    const likeCount = await db.videoLike.count({ where: { videoId: id } });
+    return apiSuccess({ liked, likeCount });
   } catch (error) {
     return apiError('INTERNAL_SERVER_ERROR');
   }
