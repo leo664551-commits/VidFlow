@@ -1,4 +1,4 @@
-﻿name: Deploy VidFlow to Azure App Service
+name: Deploy VidFlow to Azure App Service
 
 on:
   push:
@@ -8,7 +8,7 @@ on:
 
 env:
   NODE_VERSION: '20.x'
-  AZURE_WEBAPP_NAME: 'vidflow-app' # Set this to your Azure App Service name
+  AZURE_WEBAPP_NAME: 'vidflow-live' # Matches your Azure App Service name
 
 jobs:
   build-and-deploy:
