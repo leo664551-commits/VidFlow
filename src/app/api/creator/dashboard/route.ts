@@ -4,6 +4,7 @@ import { db } from '@/lib/db';
 import { apiSuccess, apiError } from '@/lib/api-response';
 import { calculateCreatorRatingSummary } from '@/lib/rating-eligibility';
 import { getContainer } from '@/lib/cosmos';
+import { getDownloadUrl } from '@/services/storage';
 
 export async function GET(request: NextRequest) {
   const user = await getSession(request);
@@ -26,8 +27,100 @@ export async function GET(request: NextRequest) {
       const processingVideos = allVideos.filter((v: Record<string, unknown>) => v.status === 'PROCESSING').length;
       const failedVideos = allVideos.filter((v: Record<string, unknown>) => v.status === 'FAILED').length;
       const totalViews = allVideos.reduce((sum: number, v: Record<string, unknown>) => sum + ((v.viewCount as number) || 0), 0);
-      const totalLikes = allVideos.reduce((sum: number, v: Record<string, unknown>) => sum + ((v.likeCount as number) || 0), 0);
-      const totalComments = allVideos.reduce((sum: number, v: Record<string, unknown>) => sum + ((v.commentCount as number) || 0), 0);
+
+      const allVideoIds = allVideos.map((v: Record<string, unknown>) => v.id as string);
+
+      // Query total likes, comments, and shares across all videos
+      let totalLikes = 0;
+      let totalComments = 0;
+      let sharesCount = 0;
+      let uniqueViewers = 0;
+      let profileViews = 0;
+
+      const likeContainer = getContainer('videoLikes');
+      const commentsContainer = getContainer('comments');
+      const sharesContainer = getContainer('videoShares');
+      const watchesContainer = getContainer('videoWatches');
+      const profileViewsContainer = getContainer('profileViews');
+
+      const videoLikesMap = new Map<string, number>();
+      const videoCommentsMap = new Map<string, number>();
+
+      if (allVideoIds.length > 0) {
+        await Promise.all([
+          (async () => {
+            if (likeContainer) {
+              await Promise.all(
+                allVideoIds.map(async (vid) => {
+                  try {
+                    const { resources } = await likeContainer.items.query<number>({
+                      query: 'SELECT VALUE COUNT(1) FROM c WHERE c.videoId = @vid',
+                      parameters: [{ name: '@vid', value: vid }]
+                    }).fetchAll();
+                    const count = resources[0] || 0;
+                    videoLikesMap.set(vid, count);
+                    totalLikes += count;
+                  } catch {}
+                })
+              );
+            }
+          })(),
+          (async () => {
+            if (commentsContainer) {
+              await Promise.all(
+                allVideoIds.map(async (vid) => {
+                  try {
+                    const { resources } = await commentsContainer.items.query<number>({
+                      query: 'SELECT VALUE COUNT(1) FROM c WHERE c.videoId = @vid AND c.status = "VISIBLE"',
+                      parameters: [{ name: '@vid', value: vid }]
+                    }).fetchAll();
+                    const count = resources[0] || 0;
+                    videoCommentsMap.set(vid, count);
+                    totalComments += count;
+                  } catch {}
+                })
+              );
+            }
+          })(),
+          (async () => {
+            if (sharesContainer) {
+              await Promise.all(
+                allVideoIds.map(async (vid) => {
+                  try {
+                    const { resources } = await sharesContainer.items.query<number>({
+                      query: 'SELECT VALUE COUNT(1) FROM c WHERE c.videoId = @vid',
+                      parameters: [{ name: '@vid', value: vid }]
+                    }).fetchAll();
+                    sharesCount += resources[0] || 0;
+                  } catch {}
+                })
+              );
+            }
+          })(),
+          (async () => {
+            if (watchesContainer) {
+              try {
+                const { resources } = await watchesContainer.items.query({
+                  query: 'SELECT DISTINCT c.userId FROM c WHERE c.creatorId = @cid',
+                  parameters: [{ name: '@cid', value: creatorId }]
+                }).fetchAll();
+                uniqueViewers = resources.length;
+              } catch {}
+            }
+          })(),
+          (async () => {
+            if (profileViewsContainer) {
+              try {
+                const { resources } = await profileViewsContainer.items.query<number>({
+                  query: 'SELECT VALUE COUNT(1) FROM c WHERE c.profileUserId = @cid',
+                  parameters: [{ name: '@cid', value: creatorId }]
+                }).fetchAll();
+                profileViews = resources[0] || 0;
+              } catch {}
+            }
+          })(),
+        ]);
+      }
 
       // Get follower/following counts
       let followerCount = 0;
@@ -52,17 +145,43 @@ export async function GET(request: NextRequest) {
         genre: v.genre,
         ageRating: v.ageRating,
         status: v.status,
-        viewCount: v.viewCount || 0,
-        likeCount: v.likeCount || 0,
-        commentCount: v.commentCount || 0,
-        storageBlobName: v.storageBlobName,
-        thumbnailBlobName: v.thumbnailBlobName,
+        viewCount: (v.viewCount as number) || 0,
+        likeCount: videoLikesMap.get(v.id as string) ?? ((v.likeCount as number) || 0),
+        commentCount: videoCommentsMap.get(v.id as string) ?? ((v.commentCount as number) || 0),
+        storageBlobName: getDownloadUrl(v.storageBlobName as string),
+        thumbnailBlobName: v.thumbnailBlobName ? getDownloadUrl(v.thumbnailBlobName as string) : null,
         duration: v.duration,
         createdAt: v.createdAt,
         updatedAt: v.updatedAt,
       }));
 
-      // Build empty follower timeline (no detailed follower data in simple query)
+      // Fetch recent comments on creator videos
+      let recentComments: any[] = [];
+      if (commentsContainer && allVideoIds.length > 0) {
+        try {
+          const videoIdFilter = allVideoIds.slice(0, 20).map((id) => `'${id}'`).join(',');
+          const { resources: cList } = await commentsContainer.items.query({
+            query: `SELECT * FROM c WHERE c.videoId IN (${videoIdFilter}) AND c.status = "VISIBLE" ORDER BY c.createdAt DESC OFFSET 0 LIMIT 6`,
+          }).fetchAll();
+
+          const videoMap = new Map(allVideos.map((v: any) => [v.id, v]));
+
+          recentComments = cList.map((c: any) => {
+            const v = videoMap.get(c.videoId) || { id: c.videoId, title: 'Video', genre: 'OTHER' };
+            return {
+              id: c.id,
+              content: c.content,
+              createdAt: c.createdAt,
+              user: c.user || { id: c.userId, displayName: 'Viewer', username: null, avatarUrl: null },
+              video: { id: v.id, title: v.title, genre: v.genre },
+            };
+          });
+        } catch (err) {
+          console.warn('Failed to fetch recent comments for creator dashboard:', err);
+        }
+      }
+
+      // Build follower timeline
       const now = new Date();
       const followerTimeline: Array<{ date: string; followers: number }> = [];
       const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -91,15 +210,15 @@ export async function GET(request: NextRequest) {
         totalLikes,
         followerCount,
         followingCount,
-        profileViews: 0,
-        uniqueViewers: 0,
-        sharesCount: 0,
+        profileViews,
+        uniqueViewers,
+        sharesCount,
         followerTimeline,
         demographics: { hasData: false, totalFollowers: followerCount, gender: { male: 0, female: 0, other: 0 } },
         stats: {
           totalVideos, readyVideos: publishedVideos, publishedVideos, processingVideos, failedVideos,
           totalViews, totalComments, totalLikes, followerCount, followingCount,
-          profileViews: 0, uniqueViewers: 0, sharesCount: 0,
+          profileViews, uniqueViewers, sharesCount,
           totalRatings: ratingSummary.totalRatings, averageRating: ratingSummary.averageRating,
           bayesianScore: ratingSummary.bayesianScore, confidenceLevel: ratingSummary.confidenceLevel,
           isLimitedData: ratingSummary.isLimitedData, dimensionAverages: ratingSummary.dimensionAverages,
@@ -112,7 +231,7 @@ export async function GET(request: NextRequest) {
           displayName: user.displayName,
         },
         recentVideos,
-        recentComments: [],
+        recentComments,
         ratings: ratingSummary,
       });
     }

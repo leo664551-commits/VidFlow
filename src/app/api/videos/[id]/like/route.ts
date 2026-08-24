@@ -71,6 +71,14 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
         .fetchAll();
       const likeCount = countResult[0] || 0;
 
+      // Persist the updated likeCount onto the video document in Cosmos DB
+      try {
+        const item = videoContainer.item(video.id, video.genre);
+        await item.replace({ ...video, likeCount, updatedAt: new Date().toISOString() });
+      } catch (err) {
+        console.warn('Failed to update likeCount on video item in Cosmos DB:', err);
+      }
+
       return apiSuccess({ liked, likeCount });
     } else {
       const [video, existing] = await Promise.all([

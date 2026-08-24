@@ -644,6 +644,14 @@ export function CreatorOwnProfileView() {
                 {videosList.map((v: VideoWithCreator, idx: number) => {
                   const gradient = GENRE_GRADIENTS[v.genre] || GENRE_GRADIENTS.OTHER
                   const isFocused = activeTab === 'videos' && idx === focusedVideoIndex
+                  const thumbUrl = v.thumbnailBlobName
+                    ? (v.thumbnailBlobName.startsWith('data:') ||
+                       v.thumbnailBlobName.startsWith('/') ||
+                       v.thumbnailBlobName.startsWith('http')
+                        ? v.thumbnailBlobName
+                        : `/uploads/videos/${v.thumbnailBlobName}`)
+                    : null
+
                   return (
                     <div
                       key={v.id}
@@ -654,15 +662,23 @@ export function CreatorOwnProfileView() {
                           : 'border-white/10 shadow-md hover:border-white/30'
                       }`}
                     >
-                      <div
-                        className={`absolute inset-0 bg-gradient-to-b ${gradient} group-hover:scale-105 transition-transform duration-300`}
-                      />
-                      <div className={`absolute inset-0 flex items-center justify-center transition-opacity bg-black/30 ${
+                      {thumbUrl ? (
+                        <img
+                          src={thumbUrl}
+                          alt={v.title}
+                          className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                        />
+                      ) : (
+                        <div
+                          className={`absolute inset-0 bg-gradient-to-b ${gradient} group-hover:scale-105 transition-transform duration-300`}
+                        />
+                      )}
+                      <div className={`absolute inset-0 flex items-center justify-center transition-opacity bg-black/30 z-10 ${
                         isFocused ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
                       }`}>
                         <Play className="w-8 h-8 text-white fill-white" />
                       </div>
-                      <div className="absolute bottom-0 inset-x-0 p-2 bg-gradient-to-t from-black/90 via-black/40 to-transparent flex items-center justify-between text-[11px] font-semibold text-white">
+                      <div className="absolute bottom-0 inset-x-0 p-2 z-10 bg-gradient-to-t from-black/90 via-black/40 to-transparent flex items-center justify-between text-[11px] font-semibold text-white">
                         <span className="flex items-center gap-1">
                           <Eye className="w-3 h-3 text-gray-300" />
                           {formatNumber(v.viewCount || 0)}
@@ -700,6 +716,14 @@ export function CreatorOwnProfileView() {
                 {likedVideosList.map((v: FeedVideo, idx: number) => {
                   const gradient = GENRE_GRADIENTS[v.genre] || GENRE_GRADIENTS.OTHER
                   const isFocused = activeTab === 'liked' && idx === focusedVideoIndex
+                  const thumbUrl = v.thumbnailBlobName
+                    ? (v.thumbnailBlobName.startsWith('data:') ||
+                       v.thumbnailBlobName.startsWith('/') ||
+                       v.thumbnailBlobName.startsWith('http')
+                        ? v.thumbnailBlobName
+                        : `/uploads/videos/${v.thumbnailBlobName}`)
+                    : null
+
                   return (
                     <div
                       key={v.id}
@@ -710,10 +734,18 @@ export function CreatorOwnProfileView() {
                           : 'border-white/10 shadow-md hover:border-white/30'
                       }`}
                     >
-                      <div
-                        className={`absolute inset-0 bg-gradient-to-b ${gradient} group-hover:scale-105 transition-transform duration-300`}
-                      />
-                      <div className={`absolute inset-0 flex items-center justify-center transition-opacity bg-black/30 ${
+                      {thumbUrl ? (
+                        <img
+                          src={thumbUrl}
+                          alt={v.title}
+                          className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                        />
+                      ) : (
+                        <div
+                          className={`absolute inset-0 bg-gradient-to-b ${gradient} group-hover:scale-105 transition-transform duration-300`}
+                        />
+                      )}
+                      <div className={`absolute inset-0 flex items-center justify-center transition-opacity bg-black/30 z-10 ${
                         isFocused ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
                       }`}>
                         <Play className="w-8 h-8 text-white fill-white" />
@@ -721,7 +753,7 @@ export function CreatorOwnProfileView() {
                       <div className="absolute top-2 right-2 z-10 w-6 h-6 rounded-full bg-black/60 flex items-center justify-center">
                         <Heart className="w-3.5 h-3.5 text-[#DF4D50] fill-[#DF4D50]" />
                       </div>
-                      <div className="absolute bottom-0 inset-x-0 p-2 bg-gradient-to-t from-black/90 via-black/40 to-transparent flex items-center justify-between text-[11px] font-semibold text-white">
+                      <div className="absolute bottom-0 inset-x-0 p-2 z-10 bg-gradient-to-t from-black/90 via-black/40 to-transparent flex items-center justify-between text-[11px] font-semibold text-white">
                         <span className="flex items-center gap-1">
                           <Eye className="w-3 h-3 text-gray-300" />
                           {formatNumber(v.viewCount || 0)}

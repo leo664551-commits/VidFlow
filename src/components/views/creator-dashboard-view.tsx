@@ -570,11 +570,25 @@ export function CreatorDashboardView() {
                           className="flex items-start gap-3 p-2 rounded-2xl hover:bg-zinc-900/80 transition-all cursor-pointer group"
                         >
                           <div className="relative w-14 aspect-[9/14] rounded-xl bg-zinc-800 border border-white/10 overflow-hidden shrink-0 shadow-md">
-                            <div className="w-full h-full bg-gradient-to-b from-purple-900 via-rose-900 to-black flex items-center justify-center group-hover:scale-105 transition-transform">
-                              <Play className="w-4 h-4 text-white fill-white opacity-80" />
-                            </div>
+                            {post.thumbnailBlobName ? (
+                              <img
+                                src={
+                                  post.thumbnailBlobName.startsWith('data:') ||
+                                  post.thumbnailBlobName.startsWith('/') ||
+                                  post.thumbnailBlobName.startsWith('http')
+                                    ? post.thumbnailBlobName
+                                    : `/uploads/videos/${post.thumbnailBlobName}`
+                                }
+                                alt={post.title}
+                                className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                              />
+                            ) : (
+                              <div className="w-full h-full bg-gradient-to-b from-purple-900 via-rose-900 to-black flex items-center justify-center group-hover:scale-105 transition-transform">
+                                <Play className="w-4 h-4 text-white fill-white opacity-80" />
+                              </div>
+                            )}
                             {post.duration && (
-                              <div className="absolute bottom-1 right-1 px-1 rounded bg-black/70 text-[8px] font-bold text-white">
+                              <div className="absolute bottom-1 right-1 px-1 rounded bg-black/70 text-[8px] font-bold text-white z-10">
                                 00:{String(post.duration).padStart(2, '0')}
                               </div>
                             )}

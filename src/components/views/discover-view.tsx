@@ -45,7 +45,15 @@ function DiscoverCard({
   onClick: () => void
   isFocused?: boolean
 }) {
+  const [imgError, setImgError] = useState(false)
   const gradient = GENRE_GRADIENTS[video.genre] || GENRE_GRADIENTS.OTHER
+  const thumbUrl = video.thumbnailBlobName
+    ? (video.thumbnailBlobName.startsWith('data:') ||
+       video.thumbnailBlobName.startsWith('/') ||
+       video.thumbnailBlobName.startsWith('http')
+        ? video.thumbnailBlobName
+        : `/uploads/videos/${video.thumbnailBlobName}`)
+    : null
 
   return (
     <motion.button
@@ -57,41 +65,50 @@ function DiscoverCard({
           : 'border-white/10 shadow-md hover:shadow-2xl hover:border-white/30'
       }`}
     >
-      {/* Gradient background */}
-      <div className={`absolute inset-0 bg-gradient-to-b ${gradient} group-hover:scale-105 transition-transform duration-500`}>
-        {/* Play icon overlay */}
-        <div className={`absolute inset-0 flex items-center justify-center transition-opacity duration-300 ${
-          isFocused ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
-        }`}>
-          <div className="h-12 w-12 rounded-full bg-black/60 backdrop-blur-md flex items-center justify-center shadow-xl border border-white/20">
-            <Play className="h-6 w-6 text-white fill-white ml-0.5" />
-          </div>
+      {/* Background Thumbnail or Gradient */}
+      {thumbUrl && !imgError ? (
+        <img
+          src={thumbUrl}
+          alt={video.title}
+          onError={() => setImgError(true)}
+          className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+        />
+      ) : (
+        <div className={`absolute inset-0 bg-gradient-to-b ${gradient} group-hover:scale-105 transition-transform duration-500`} />
+      )}
+
+      {/* Play icon overlay */}
+      <div className={`absolute inset-0 flex items-center justify-center transition-opacity duration-300 z-10 ${
+        isFocused ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
+      }`}>
+        <div className="h-12 w-12 rounded-full bg-black/60 backdrop-blur-md flex items-center justify-center shadow-xl border border-white/20">
+          <Play className="h-6 w-6 text-white fill-white ml-0.5" />
         </div>
+      </div>
 
-        {/* Duration badge */}
-        {video.duration && (
-          <div className="absolute top-2 right-2 flex items-center gap-1 rounded bg-black/60 px-1.5 py-0.5 backdrop-blur-sm">
-            <Clock className="h-3 w-3 text-white" />
-            <span className="text-[11px] font-medium text-white">
-              {formatDuration(video.duration)}
-            </span>
-          </div>
-        )}
+      {/* Duration badge */}
+      {video.duration && (
+        <div className="absolute top-2 right-2 z-10 flex items-center gap-1 rounded bg-black/60 px-1.5 py-0.5 backdrop-blur-sm">
+          <Clock className="h-3 w-3 text-white" />
+          <span className="text-[11px] font-medium text-white">
+            {formatDuration(video.duration)}
+          </span>
+        </div>
+      )}
 
-        {/* Bottom gradient overlay with info */}
-        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent px-3 pb-3 pt-8">
-          <h3 className="text-sm font-semibold text-white leading-tight line-clamp-2 mb-1.5">
-            {video.title}
-          </h3>
-          <div className="flex items-center gap-2 text-xs text-gray-300">
-            <span className="flex items-center gap-1">
-              <Eye className="h-3 w-3" />
-              {formatViews(video.viewCount)}
-            </span>
-            <span className="rounded bg-white/20 px-1.5 py-0.5 text-[10px] font-medium text-white backdrop-blur-sm">
-              {video.genre.replace('_', ' ')}
-            </span>
-          </div>
+      {/* Bottom gradient overlay with info */}
+      <div className="absolute bottom-0 left-0 right-0 z-10 bg-gradient-to-t from-black/90 via-black/50 to-transparent px-3 pb-3 pt-8">
+        <h3 className="text-sm font-semibold text-white leading-tight line-clamp-2 mb-1.5">
+          {video.title}
+        </h3>
+        <div className="flex items-center gap-2 text-xs text-gray-300">
+          <span className="flex items-center gap-1">
+            <Eye className="h-3 w-3" />
+            {formatViews(video.viewCount)}
+          </span>
+          <span className="rounded bg-white/20 px-1.5 py-0.5 text-[10px] font-medium text-white backdrop-blur-sm">
+            {video.genre.replace('_', ' ')}
+          </span>
         </div>
       </div>
     </motion.button>

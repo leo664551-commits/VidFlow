@@ -39,6 +39,41 @@ export async function GET(request: NextRequest) {
       const total = allVideos.length;
       const videos = allVideos.slice(skip, skip + limit);
 
+      const likeContainer = getContainer('videoLikes');
+      const commentContainer = getContainer('comments');
+      const videoLikesMap = new Map<string, number>();
+      const videoCommentsMap = new Map<string, number>();
+
+      if (videos.length > 0) {
+        await Promise.all(
+          videos.map(async (v: Record<string, unknown>) => {
+            const vidId = v.id as string;
+            if (likeContainer) {
+              try {
+                const { resources } = await likeContainer.items.query<number>({
+                  query: 'SELECT VALUE COUNT(1) FROM c WHERE c.videoId = @vid',
+                  parameters: [{ name: '@vid', value: vidId }]
+                }).fetchAll();
+                videoLikesMap.set(vidId, resources[0] ?? ((v.likeCount as number) || 0));
+              } catch {
+                videoLikesMap.set(vidId, (v.likeCount as number) || 0);
+              }
+            }
+            if (commentContainer) {
+              try {
+                const { resources } = await commentContainer.items.query<number>({
+                  query: 'SELECT VALUE COUNT(1) FROM c WHERE c.videoId = @vid AND c.status = "VISIBLE"',
+                  parameters: [{ name: '@vid', value: vidId }]
+                }).fetchAll();
+                videoCommentsMap.set(vidId, resources[0] ?? ((v.commentCount as number) || 0));
+              } catch {
+                videoCommentsMap.set(vidId, (v.commentCount as number) || 0);
+              }
+            }
+          })
+        );
+      }
+
       return apiPaginated(
         videos.map((v: Record<string, unknown>) => ({
           id: v.id,
@@ -48,9 +83,9 @@ export async function GET(request: NextRequest) {
           genre: v.genre,
           ageRating: v.ageRating,
           status: v.status,
-          viewCount: v.viewCount || 0,
-          likeCount: v.likeCount || 0,
-          commentCount: v.commentCount || 0,
+          viewCount: (v.viewCount as number) || 0,
+          likeCount: videoLikesMap.get(v.id as string) ?? ((v.likeCount as number) || 0),
+          commentCount: videoCommentsMap.get(v.id as string) ?? ((v.commentCount as number) || 0),
           storageBlobName: getDownloadUrl(v.storageBlobName as string),
           thumbnailBlobName: v.thumbnailBlobName ? getDownloadUrl(v.thumbnailBlobName as string) : null,
           duration: v.duration,

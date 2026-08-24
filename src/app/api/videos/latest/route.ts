@@ -2,6 +2,7 @@ import { NextRequest } from 'next/server';
 import { db } from '@/lib/db';
 import { getContainer } from '@/lib/cosmos';
 import { apiSuccess, apiError } from '@/lib/api-response';
+import { getDownloadUrl } from '@/services/storage';
 
 export async function GET(request: NextRequest) {
   try {
@@ -23,8 +24,8 @@ export async function GET(request: NextRequest) {
           genre: v.genre,
           ageRating: v.ageRating,
           description: v.description,
-          storageBlobName: v.storageBlobName,
-          thumbnailBlobName: v.thumbnailBlobName,
+          storageBlobName: getDownloadUrl(v.storageBlobName),
+          thumbnailBlobName: v.thumbnailBlobName ? getDownloadUrl(v.thumbnailBlobName) : null,
           duration: v.duration,
           status: v.status,
           viewCount: v.viewCount,

@@ -266,7 +266,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
     if (videoContainer && commentContainer) {
       const { resources: videos } = await videoContainer.items
-        .query({ query: 'SELECT c.id, c.creatorId, c.title FROM c WHERE c.id = @id', parameters: [{ name: '@id', value: id }] })
+        .query({ query: 'SELECT * FROM c WHERE c.id = @id', parameters: [{ name: '@id', value: id }] })
         .fetchAll();
       const video = videos[0];
       if (!video) return apiError('VIDEO_NOT_FOUND');
@@ -309,6 +309,19 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       };
 
       await commentContainer.items.create(commentData);
+
+      // Persist updated comment count on video document in Cosmos DB
+      try {
+        const { resources: commentCountRes } = await commentContainer.items.query<number>({
+          query: 'SELECT VALUE COUNT(1) FROM c WHERE c.videoId = @vid AND c.status = "VISIBLE"',
+          parameters: [{ name: '@vid', value: id }]
+        }).fetchAll();
+        const commentCount = commentCountRes[0] || 0;
+        const item = videoContainer.item(video.id, video.genre);
+        await item.replace({ ...video, commentCount, updatedAt: new Date().toISOString() });
+      } catch (err) {
+        console.warn('Failed to update commentCount on video document in Cosmos DB:', err);
+      }
 
       const actorName = user.displayName || user.username || 'Someone';
 

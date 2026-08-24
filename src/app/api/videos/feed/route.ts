@@ -153,9 +153,14 @@ export async function GET(request: NextRequest) {
       const pagedSlice = orderedVideos.slice(skip, skip + limit);
 
       let userLikedVideoIds = new Set<string>();
-      if (user && pagedSlice.length > 0) {
+      const videoLikesMap = new Map<string, number>();
+      const videoCommentsMap = new Map<string, number>();
+
+      if (pagedSlice.length > 0) {
         const likeContainer = getContainer('videoLikes');
-        if (likeContainer) {
+        const commentContainer = getContainer('comments');
+
+        if (user && likeContainer) {
           const videoIds = pagedSlice.map((s) => `'${s.video.id}'`).join(',');
           const { resources: likes } = await likeContainer.items.query({
             query: `SELECT c.videoId FROM c WHERE c.userId = @uid AND c.videoId IN (${videoIds})`,
@@ -163,6 +168,34 @@ export async function GET(request: NextRequest) {
           }).fetchAll();
           userLikedVideoIds = new Set(likes.map((l: any) => l.videoId));
         }
+
+        await Promise.all(
+          pagedSlice.map(async (s) => {
+            const vidId = s.video.id as string;
+            if (likeContainer) {
+              try {
+                const { resources } = await likeContainer.items.query<number>({
+                  query: 'SELECT VALUE COUNT(1) FROM c WHERE c.videoId = @vid',
+                  parameters: [{ name: '@vid', value: vidId }]
+                }).fetchAll();
+                videoLikesMap.set(vidId, resources[0] ?? ((s.video.likeCount as number) || 0));
+              } catch {
+                videoLikesMap.set(vidId, (s.video.likeCount as number) || 0);
+              }
+            }
+            if (commentContainer) {
+              try {
+                const { resources } = await commentContainer.items.query<number>({
+                  query: 'SELECT VALUE COUNT(1) FROM c WHERE c.videoId = @vid AND c.status = "VISIBLE"',
+                  parameters: [{ name: '@vid', value: vidId }]
+                }).fetchAll();
+                videoCommentsMap.set(vidId, resources[0] ?? ((s.video.commentCount as number) || 0));
+              } catch {
+                videoCommentsMap.set(vidId, (s.video.commentCount as number) || 0);
+              }
+            }
+          })
+        );
       }
 
       const data = pagedSlice.map((s) => {
@@ -193,8 +226,8 @@ export async function GET(request: NextRequest) {
           storageBlobName: getDownloadUrl(v.storageBlobName as string),
           duration: v.duration,
           viewCount: v.viewCount || 0,
-          likeCount: v.likeCount || 0,
-          commentCount: v.commentCount || 0,
+          likeCount: videoLikesMap.get(v.id as string) ?? (v.likeCount as number) ?? 0,
+          commentCount: videoCommentsMap.get(v.id as string) ?? (v.commentCount as number) ?? 0,
           pinnedCommentId: v.pinnedCommentId,
           createdAt: v.createdAt,
         };

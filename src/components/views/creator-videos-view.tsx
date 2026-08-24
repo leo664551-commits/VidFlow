@@ -216,11 +216,25 @@ export function CreatorVideosView() {
                                 onClick={() => navigate('video-detail', video.id)}
                                 className="relative w-16 aspect-[9/14] rounded-xl bg-zinc-800 border border-white/10 overflow-hidden shrink-0 cursor-pointer shadow-md"
                               >
-                                <div className="w-full h-full bg-gradient-to-b from-purple-900 via-rose-900 to-black flex items-center justify-center group-hover:scale-105 transition-transform">
-                                  <Play className="w-5 h-5 text-white fill-white opacity-80" />
-                                </div>
+                                {video.thumbnailBlobName ? (
+                                  <img
+                                    src={
+                                      video.thumbnailBlobName.startsWith('data:') ||
+                                      video.thumbnailBlobName.startsWith('/') ||
+                                      video.thumbnailBlobName.startsWith('http')
+                                        ? video.thumbnailBlobName
+                                        : `/uploads/videos/${video.thumbnailBlobName}`
+                                    }
+                                    alt={video.title}
+                                    className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                                  />
+                                ) : (
+                                  <div className="w-full h-full bg-gradient-to-b from-purple-900 via-rose-900 to-black flex items-center justify-center group-hover:scale-105 transition-transform">
+                                    <Play className="w-5 h-5 text-white fill-white opacity-80" />
+                                  </div>
+                                )}
                                 {video.duration && (
-                                  <span className="absolute bottom-1 right-1 px-1 rounded bg-black/80 text-[8px] font-bold text-white">
+                                  <span className="absolute bottom-1 right-1 px-1 rounded bg-black/80 text-[8px] font-bold text-white z-10">
                                     00:{String(video.duration).padStart(2, '0')}
                                   </span>
                                 )}

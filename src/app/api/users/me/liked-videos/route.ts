@@ -3,6 +3,7 @@ import { getSession } from '@/lib/auth';
 import { db } from '@/lib/db';
 import { getContainer } from '@/lib/cosmos';
 import { apiSuccess, apiError } from '@/lib/api-response';
+import { getDownloadUrl } from '@/services/storage';
 
 export async function GET(request: NextRequest) {
   const user = await getSession(request);
@@ -77,8 +78,8 @@ export async function GET(request: NextRequest) {
           genre: v.genre,
           ageRating: v.ageRating,
           description: v.description,
-          storageBlobName: v.storageBlobName,
-          thumbnailBlobName: v.thumbnailBlobName,
+          storageBlobName: getDownloadUrl(v.storageBlobName as string),
+          thumbnailBlobName: v.thumbnailBlobName ? getDownloadUrl(v.thumbnailBlobName as string) : null,
           duration: v.duration,
           status: v.status,
           viewCount: v.viewCount,
