@@ -30,7 +30,7 @@ export async function GET(request: NextRequest) {
           viewCount: v.viewCount,
           createdAt: typeof v.createdAt === 'string' ? v.createdAt : v.createdAt?.toISOString(),
           updatedAt: typeof v.updatedAt === 'string' ? v.updatedAt : v.updatedAt?.toISOString(),
-          creator: v.creator,
+          creator: v.creator || { id: v.creatorId, creatorName: v.publisher || 'Creator' },
         }))
       );
     } else {

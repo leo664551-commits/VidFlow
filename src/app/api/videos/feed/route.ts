@@ -62,23 +62,25 @@ export async function GET(request: NextRequest) {
         const creatorIds = [...new Set(allVideos.map((v: Record<string, unknown>) => v.creatorId as string))];
         for (const cid of creatorIds) {
           const { resources: profiles } = await cpContainer.items
-            .query({ query: 'SELECT * FROM c WHERE c.userId = @uid', parameters: [{ name: '@uid', value: cid }] })
+            .query({ query: 'SELECT * FROM c WHERE c.userId = @cid OR c.id = @cid', parameters: [{ name: '@cid', value: cid }] })
             .fetchAll();
+          const profile = profiles[0] || null;
+          const targetUserId = profile?.userId || cid;
           const { resources: users } = await usersContainer.items
-            .query({ query: 'SELECT * FROM c WHERE c.id = @id', parameters: [{ name: '@id', value: cid }] })
+            .query({ query: 'SELECT * FROM c WHERE c.id = @id', parameters: [{ name: '@id', value: targetUserId }] })
             .fetchAll();
-          if (profiles[0] || users[0]) {
-            creatorMap.set(cid, {
-              id: profiles[0]?.id || cid,
-              creatorName: profiles[0]?.creatorName || users[0]?.displayName || 'Creator',
-              user: {
-                id: cid,
-                displayName: users[0]?.displayName || 'Creator',
-                username: users[0]?.username || null,
-                avatarUrl: users[0]?.avatarUrl || null,
-              },
-            });
-          }
+          const userObj = users[0] || null;
+
+          creatorMap.set(cid, {
+            id: profile?.id || cid,
+            creatorName: profile?.creatorName || userObj?.displayName || 'Creator',
+            user: {
+              id: targetUserId,
+              displayName: userObj?.displayName || profile?.creatorName || 'Creator',
+              username: userObj?.username || null,
+              avatarUrl: userObj?.avatarUrl || null,
+            },
+          });
         }
       }
 
@@ -119,30 +121,48 @@ export async function GET(request: NextRequest) {
       while (remainingPool.length > 0) {
         const currentIndex = orderedVideos.length;
         let bestIndex = 0;
-        let bestEffectiveScore = -Infinity;
+        let bestScore = -Infinity;
 
         for (let i = 0; i < remainingPool.length; i++) {
-          const item = remainingPool[i];
-          let penalty = 0;
-          if (currentIndex > 0 && orderedVideos[currentIndex - 1].creatorId === item.creatorId) penalty += 3500;
-          else if (currentIndex > 1 && orderedVideos[currentIndex - 2].creatorId === item.creatorId) penalty += 1500;
-          else if (currentIndex > 2 && orderedVideos[currentIndex - 3].creatorId === item.creatorId) penalty += 600;
-          const appearances = creatorAppearanceCount.get(item.creatorId) || 0;
-          penalty += appearances * 400;
-          const effectiveScore = item.baseScore - penalty;
-          if (effectiveScore > bestEffectiveScore || (effectiveScore === bestEffectiveScore && (item.video.id as string) < (remainingPool[bestIndex].video.id as string))) {
-            bestEffectiveScore = effectiveScore;
+          const candidate = remainingPool[i];
+          const creatorId = candidate.creatorId;
+          const appearances = creatorAppearanceCount.get(creatorId) || 0;
+          let penalty = appearances * 800;
+
+          if (currentIndex > 0 && orderedVideos[currentIndex - 1].creatorId === creatorId) {
+            penalty += 1500;
+          }
+          if (currentIndex > 1 && orderedVideos[currentIndex - 2].creatorId === creatorId) {
+            penalty += 750;
+          }
+
+          const finalScore = candidate.baseScore - penalty;
+          if (finalScore > bestScore) {
+            bestScore = finalScore;
             bestIndex = i;
           }
         }
 
-        const selected = remainingPool.splice(bestIndex, 1)[0];
+        const [selected] = remainingPool.splice(bestIndex, 1);
         orderedVideos.push(selected);
         creatorAppearanceCount.set(selected.creatorId, (creatorAppearanceCount.get(selected.creatorId) || 0) + 1);
       }
 
       const total = orderedVideos.length;
       const pagedSlice = orderedVideos.slice(skip, skip + limit);
+
+      let userLikedVideoIds = new Set<string>();
+      if (user && pagedSlice.length > 0) {
+        const likeContainer = getContainer('videoLikes');
+        if (likeContainer) {
+          const videoIds = pagedSlice.map((s) => `'${s.video.id}'`).join(',');
+          const { resources: likes } = await likeContainer.items.query({
+            query: `SELECT c.videoId FROM c WHERE c.userId = @uid AND c.videoId IN (${videoIds})`,
+            parameters: [{ name: '@uid', value: user.id }]
+          }).fetchAll();
+          userLikedVideoIds = new Set(likes.map((l: any) => l.videoId));
+        }
+      }
 
       const data = pagedSlice.map((s) => {
         const v = s.video;
@@ -179,7 +199,7 @@ export async function GET(request: NextRequest) {
         };
 
         if (user) {
-          result.userLiked = false;
+          result.userLiked = userLikedVideoIds.has(v.id as string);
         }
 
         return result;

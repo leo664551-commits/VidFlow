@@ -185,7 +185,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       const videoLikesContainer = getContainer('videoLikes');
       
       if (user && paginatedVideos.length > 0 && videoLikesContainer) {
-        const videoIds = paginatedVideos.map(v => `"${v.id}"`).join(',');
+        const videoIds = paginatedVideos.map(v => `'${v.id}'`).join(',');
         const { resources } = await videoLikesContainer.items.query({
           query: `SELECT c.videoId FROM c WHERE c.userId = @userId AND c.videoId IN (${videoIds})`,
           parameters: [{ name: '@userId', value: user.id }]

@@ -68,21 +68,37 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         }
       }
 
+      const usersContainer = getContainer('users');
+      const usersMap: Record<string, any> = {};
+      const userIds = [...new Set(replies.map((r: any) => r.userId).filter(Boolean))];
+      if (usersContainer && userIds.length > 0) {
+        for (const uid of userIds) {
+          const { resources: uList } = await usersContainer.items.query<Record<string, any>>({
+            query: 'SELECT c.id, c.displayName, c.username, c.avatarUrl FROM c WHERE c.id = @uid',
+            parameters: [{ name: '@uid', value: uid }]
+          }).fetchAll();
+          if (uList[0]) usersMap[uid] = uList[0];
+        }
+      }
+
       return apiPaginated(
-        replies.map((r: any) => ({
-          id: r.id,
-          content: r.content,
-          likeCount: r._count?.likes || 0,
-          userLiked: userCommentLikes.has(r.id),
-          createdAt: typeof r.createdAt === 'string' ? r.createdAt : r.createdAt?.toISOString(),
-          updatedAt: typeof r.updatedAt === 'string' ? r.updatedAt : r.updatedAt?.toISOString(),
-          user: {
-            id: r.user.id,
-            displayName: r.user.displayName,
-            username: r.user.username || null,
-            avatarUrl: r.user.avatarUrl || null,
-          },
-        })),
+        replies.map((r: any) => {
+          const u = usersMap[r.userId] || r.user || { id: r.userId, displayName: 'User', username: null, avatarUrl: null };
+          return {
+            id: r.id,
+            content: r.content,
+            likeCount: r._count?.likes || 0,
+            userLiked: userCommentLikes.has(r.id),
+            createdAt: typeof r.createdAt === 'string' ? r.createdAt : r.createdAt?.toISOString(),
+            updatedAt: typeof r.updatedAt === 'string' ? r.updatedAt : r.updatedAt?.toISOString(),
+            user: {
+              id: u.id,
+              displayName: u.displayName || 'User',
+              username: u.username || null,
+              avatarUrl: u.avatarUrl || null,
+            },
+          };
+        }),
         page,
         limit,
         total

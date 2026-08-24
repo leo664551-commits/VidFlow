@@ -26,7 +26,7 @@ export async function GET(request: NextRequest) {
           conditions.push('c.status = @status');
           parameters.push({ name: '@status', value: 'READY' });
         } else if (user.role === 'CREATOR') {
-          conditions.push(`(c.status = 'READY' OR c.creator.userId = @userId)`);
+          conditions.push(`(c.status = 'READY' OR c.creatorId = @userId)`);
           parameters.push({ name: '@userId', value: user.id });
         }
       } else {
@@ -73,7 +73,7 @@ export async function GET(request: NextRequest) {
           viewCount: v.viewCount,
           createdAt: typeof v.createdAt === 'string' ? v.createdAt : v.createdAt?.toISOString(),
           updatedAt: typeof v.updatedAt === 'string' ? v.updatedAt : v.updatedAt?.toISOString(),
-          creator: v.creator,
+          creator: v.creator || { id: v.creatorId, creatorName: v.publisher || 'Creator' },
         })),
         page,
         limit,

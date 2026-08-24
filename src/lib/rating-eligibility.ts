@@ -1,4 +1,5 @@
 import { db } from '@/lib/db';
+import { getContainer } from '@/lib/cosmos';
 
 export interface RatingEligibilityResult {
   eligible: boolean;
@@ -76,7 +77,206 @@ export async function checkCreatorRatingEligibility(
   userId: string | null | undefined,
   creatorProfileIdOrUserId: string
 ): Promise<RatingEligibilityResult> {
-  // Find Creator Profile
+  const cpContainer = getContainer('creatorProfiles');
+
+  if (cpContainer) {
+    // ===== Cosmos DB Implementation =====
+    const { resources: creators } = await cpContainer.items.query<Record<string, any>>({
+      query: 'SELECT * FROM c WHERE c.id = @id OR c.userId = @id',
+      parameters: [{ name: '@id', value: creatorProfileIdOrUserId }],
+    }).fetchAll();
+
+    const creator = creators[0] || null;
+
+    if (!creator) {
+      return {
+        eligible: false,
+        canRate: false,
+        isSelf: false,
+        status: 'NOT_ELIGIBLE',
+        qualifyingVideos: 0,
+        requiredVideos: 3,
+        averageCompletion: 0,
+        totalCreatorVideos: 0,
+        reason: 'Creator not found.',
+        userRating: null,
+      };
+    }
+
+    if (!userId) {
+      return {
+        eligible: false,
+        canRate: false,
+        isSelf: false,
+        status: 'NOT_LOGGED_IN',
+        qualifyingVideos: 0,
+        requiredVideos: 3,
+        averageCompletion: 0,
+        totalCreatorVideos: 0,
+        reason: 'Please log in to rate creators.',
+        userRating: null,
+      };
+    }
+
+    if (creator.userId === userId) {
+      return {
+        eligible: false,
+        canRate: false,
+        isSelf: true,
+        status: 'SELF',
+        qualifyingVideos: 0,
+        requiredVideos: 0,
+        averageCompletion: 0,
+        totalCreatorVideos: 0,
+        reason: 'You cannot rate your own creator profile.',
+        userRating: null,
+      };
+    }
+
+    // Check if consumer already submitted an active rating
+    const ratingsContainer = getContainer('creatorRatings');
+    let existingRating: Record<string, any> | null = null;
+    if (ratingsContainer) {
+      const { resources: ratings } = await ratingsContainer.items.query<Record<string, any>>({
+        query: 'SELECT * FROM c WHERE c.creatorId = @cid AND c.userId = @uid',
+        parameters: [
+          { name: '@cid', value: creator.id },
+          { name: '@uid', value: userId },
+        ],
+      }).fetchAll();
+      existingRating = ratings[0] || null;
+    }
+
+    // Fetch all active, ready videos by this creator
+    const videosContainer = getContainer('videos');
+    let creatorVideos: Array<Record<string, any>> = [];
+    if (videosContainer) {
+      const { resources: vList } = await videosContainer.items.query<Record<string, any>>({
+        query: 'SELECT c.id FROM c WHERE c.creatorId = @cid AND c.status = "READY"',
+        parameters: [{ name: '@cid', value: creator.userId }],
+      }).fetchAll();
+      creatorVideos = vList;
+    }
+
+    const totalCreatorVideos = creatorVideos.length;
+    const requiredVideos = Math.max(1, Math.min(3, totalCreatorVideos));
+
+    if (totalCreatorVideos === 0) {
+      return {
+        eligible: false,
+        canRate: false,
+        isSelf: false,
+        status: 'NOT_ELIGIBLE',
+        qualifyingVideos: 0,
+        requiredVideos,
+        averageCompletion: 0,
+        totalCreatorVideos: 0,
+        reason: 'This creator has not uploaded any videos yet.',
+        userRating: existingRating
+          ? {
+              id: existingRating.id,
+              overallRating: existingRating.overallRating,
+              rating: existingRating.rating,
+              contentQuality: existingRating.contentQuality,
+              valueRating: existingRating.valueRating,
+              creativityRating: existingRating.creativityRating,
+              entertainmentRating: existingRating.entertainmentRating,
+              consistencyRating: existingRating.consistencyRating,
+              review: existingRating.review,
+              tags: existingRating.tags ? (typeof existingRating.tags === 'string' ? existingRating.tags.split(',') : existingRating.tags) : [],
+              createdAt: existingRating.createdAt,
+              updatedAt: existingRating.updatedAt,
+            }
+          : null,
+      };
+    }
+
+    // Fetch consumer's video watch records for this creator's videos
+    const watchesContainer = getContainer('videoWatches');
+    let watchRecords: Array<Record<string, any>> = [];
+    if (watchesContainer) {
+      const { resources: wList } = await watchesContainer.items.query<Record<string, any>>({
+        query: 'SELECT * FROM c WHERE c.userId = @uid AND c.creatorId = @cid',
+        parameters: [
+          { name: '@uid', value: userId },
+          { name: '@cid', value: creator.userId },
+        ],
+      }).fetchAll();
+      const creatorVideoIds = new Set(creatorVideos.map((v) => v.id));
+      watchRecords = wList.filter((w) => creatorVideoIds.has(w.videoId));
+    }
+
+    const qualifyingWatches = watchRecords.filter((w) => (w.completionPercentage || 0) >= 0.5);
+    const qualifyingVideos = qualifyingWatches.length;
+
+    const averageCompletion =
+      qualifyingVideos > 0
+        ? qualifyingWatches.reduce((sum, w) => sum + (w.completionPercentage || 0), 0) / qualifyingVideos
+        : 0;
+
+    const meetsCountRequirement = qualifyingVideos >= requiredVideos;
+    const meetsCompletionRequirement = averageCompletion >= 0.5;
+
+    const eligible = (meetsCountRequirement && meetsCompletionRequirement) || !!existingRating;
+    const canRate = eligible;
+
+    let status: RatingEligibilityResult['status'] = 'NOT_ELIGIBLE';
+    let reason = '';
+
+    if (existingRating) {
+      status = 'ALREADY_RATED';
+      reason = 'You have rated this creator. You can update your rating anytime.';
+    } else if (eligible) {
+      status = 'ELIGIBLE';
+      reason = "You have watched enough of this creator's content to leave a rating.";
+    } else if (qualifyingVideos > 0 && qualifyingVideos < requiredVideos) {
+      status = 'ALMOST_ELIGIBLE';
+      const remaining = requiredVideos - qualifyingVideos;
+      reason = `${qualifyingVideos}/${requiredVideos} qualifying videos watched. Watch ${remaining} more video${
+        remaining > 1 ? 's' : ''
+      } (at least 50% completion) to unlock rating.`;
+    } else if (qualifyingVideos >= requiredVideos && !meetsCompletionRequirement) {
+      status = 'ALMOST_ELIGIBLE';
+      reason = `Keep watching this creator's videos to reach an average watch completion of 50% (currently ${Math.round(
+        averageCompletion * 100
+      )}%).`;
+    } else {
+      status = 'NOT_ELIGIBLE';
+      reason = `Watch at least ${requiredVideos} video${
+        requiredVideos > 1 ? 's' : ''
+      } from this creator (at least 50% each) to unlock rating.`;
+    }
+
+    return {
+      eligible,
+      canRate,
+      isSelf: false,
+      status,
+      qualifyingVideos,
+      requiredVideos,
+      averageCompletion: Math.round(averageCompletion * 100) / 100,
+      totalCreatorVideos,
+      reason,
+      userRating: existingRating
+        ? {
+            id: existingRating.id,
+            overallRating: existingRating.overallRating,
+            rating: existingRating.rating,
+            contentQuality: existingRating.contentQuality,
+            valueRating: existingRating.valueRating,
+            creativityRating: existingRating.creativityRating,
+            entertainmentRating: existingRating.entertainmentRating,
+            consistencyRating: existingRating.consistencyRating,
+            review: existingRating.review,
+            tags: existingRating.tags ? (typeof existingRating.tags === 'string' ? existingRating.tags.split(',') : existingRating.tags) : [],
+            createdAt: existingRating.createdAt,
+            updatedAt: existingRating.updatedAt,
+          }
+        : null,
+    };
+  }
+
+  // ===== Prisma Fallback =====
   const creator = await db.creatorProfile.findFirst({
     where: {
       OR: [{ id: creatorProfileIdOrUserId }, { userId: creatorProfileIdOrUserId }],
@@ -114,7 +314,6 @@ export async function checkCreatorRatingEligibility(
     };
   }
 
-  // Prevent creator from rating themselves
   if (creator.userId === userId) {
     return {
       eligible: false,
@@ -130,7 +329,6 @@ export async function checkCreatorRatingEligibility(
     };
   }
 
-  // Check if consumer already submitted an active rating
   const existingRating = await db.creatorRating.findUnique({
     where: {
       creatorId_userId: {
@@ -140,7 +338,6 @@ export async function checkCreatorRatingEligibility(
     },
   });
 
-  // Fetch all active, ready videos by this creator
   const creatorVideos = await db.video.findMany({
     where: {
       creatorId: creator.userId,
@@ -150,7 +347,6 @@ export async function checkCreatorRatingEligibility(
   });
 
   const totalCreatorVideos = creatorVideos.length;
-  // Fallback rule: if creator has 1-2 videos, require all available. If 3+, require 3.
   const requiredVideos = Math.max(1, Math.min(3, totalCreatorVideos));
 
   if (totalCreatorVideos === 0) {
@@ -183,7 +379,6 @@ export async function checkCreatorRatingEligibility(
     };
   }
 
-  // Fetch consumer's video watch records for this creator's videos
   const videoIds = creatorVideos.map((v) => v.id);
   const watchRecords = await db.videoWatch.findMany({
     where: {
@@ -193,7 +388,6 @@ export async function checkCreatorRatingEligibility(
     },
   });
 
-  // A qualifying video must have completionPercentage >= 0.50 (50%)
   const qualifyingWatches = watchRecords.filter((w) => w.completionPercentage >= 0.5);
   const qualifyingVideos = qualifyingWatches.length;
 
@@ -205,7 +399,6 @@ export async function checkCreatorRatingEligibility(
   const meetsCountRequirement = qualifyingVideos >= requiredVideos;
   const meetsCompletionRequirement = averageCompletion >= 0.5;
 
-  // Once qualified or if already rated, user retains eligibility
   const eligible = (meetsCountRequirement && meetsCompletionRequirement) || !!existingRating;
   const canRate = eligible;
 
@@ -272,6 +465,154 @@ export async function checkCreatorRatingEligibility(
 export async function calculateCreatorRatingSummary(
   creatorProfileIdOrUserId: string
 ): Promise<CreatorRatingSummary> {
+  const cpContainer = getContainer('creatorProfiles');
+
+  if (cpContainer) {
+    // ===== Cosmos DB Implementation =====
+    const { resources: creators } = await cpContainer.items.query<Record<string, any>>({
+      query: 'SELECT * FROM c WHERE c.id = @id OR c.userId = @id',
+      parameters: [{ name: '@id', value: creatorProfileIdOrUserId }],
+    }).fetchAll();
+
+    const creator = creators[0] || null;
+
+    if (!creator) {
+      return {
+        totalRatings: 0,
+        averageRating: 0,
+        bayesianScore: 0,
+        confidenceLevel: 'LIMITED_DATA',
+        isLimitedData: true,
+        dimensionAverages: {
+          contentQuality: 0,
+          valueRating: 0,
+          creativityRating: 0,
+          entertainmentRating: 0,
+          consistencyRating: 0,
+        },
+        ratingBreakdown: { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 },
+        reviews: [],
+      };
+    }
+
+    const ratingsContainer = getContainer('creatorRatings');
+    let ratings: Array<Record<string, any>> = [];
+    if (ratingsContainer) {
+      const { resources: rList } = await ratingsContainer.items.query<Record<string, any>>({
+        query: 'SELECT * FROM c WHERE c.creatorId = @cid ORDER BY c.createdAt DESC',
+        parameters: [{ name: '@cid', value: creator.id }],
+      }).fetchAll();
+      ratings = rList;
+    }
+
+    const totalRatings = ratings.length;
+
+    if (totalRatings === 0) {
+      return {
+        totalRatings: 0,
+        averageRating: 0,
+        bayesianScore: 0,
+        confidenceLevel: 'LIMITED_DATA',
+        isLimitedData: true,
+        dimensionAverages: {
+          contentQuality: 0,
+          valueRating: 0,
+          creativityRating: 0,
+          entertainmentRating: 0,
+          consistencyRating: 0,
+        },
+        ratingBreakdown: { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 },
+        reviews: [],
+      };
+    }
+
+    const sumOverall = ratings.reduce((sum, r) => {
+      const score = r.overallRating || (r.rating ? r.rating * 2 : 5);
+      return sum + score;
+    }, 0);
+    const averageRating = Math.round((sumOverall / totalRatings) * 10) / 10;
+
+    const PRIOR_WEIGHT = 5;
+    const PRIOR_MEAN = 7.5;
+    const bayesianScore =
+      Math.round(((PRIOR_WEIGHT * PRIOR_MEAN + sumOverall) / (PRIOR_WEIGHT + totalRatings)) * 10) / 10;
+
+    const confidenceLevel =
+      totalRatings >= 10 ? 'ESTABLISHED' : totalRatings >= 3 ? 'MODERATE' : 'LIMITED_DATA';
+
+    const sumQuality = ratings.reduce((s, r) => s + (r.contentQuality || 7), 0);
+    const sumValue = ratings.reduce((s, r) => s + (r.valueRating || 7), 0);
+    const sumCreativity = ratings.reduce((s, r) => s + (r.creativityRating || 7), 0);
+    const sumEntertainment = ratings.reduce((s, r) => s + (r.entertainmentRating || 7), 0);
+    const sumConsistency = ratings.reduce((s, r) => s + (r.consistencyRating || 7), 0);
+
+    const dimensionAverages = {
+      contentQuality: Math.round((sumQuality / totalRatings) * 10) / 10,
+      valueRating: Math.round((sumValue / totalRatings) * 10) / 10,
+      creativityRating: Math.round((sumCreativity / totalRatings) * 10) / 10,
+      entertainmentRating: Math.round((sumEntertainment / totalRatings) * 10) / 10,
+      consistencyRating: Math.round((sumConsistency / totalRatings) * 10) / 10,
+    };
+
+    const ratingBreakdown = { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 };
+    for (const r of ratings) {
+      const score = r.overallRating || (r.rating ? r.rating * 2 : 5);
+      if (score >= 9) ratingBreakdown[5]++;
+      else if (score >= 7) ratingBreakdown[4]++;
+      else if (score >= 5) ratingBreakdown[3]++;
+      else if (score >= 3) ratingBreakdown[2]++;
+      else ratingBreakdown[1]++;
+    }
+
+    const usersContainer = getContainer('users');
+    const reviews = await Promise.all(
+      ratings.map(async (r) => {
+        let reviewUser: Record<string, any> | null = null;
+        if (usersContainer && r.userId) {
+          const { resources: uList } = await usersContainer.items.query<Record<string, any>>({
+            query: 'SELECT c.id, c.displayName, c.username, c.avatarUrl FROM c WHERE c.id = @uid',
+            parameters: [{ name: '@uid', value: r.userId }],
+          }).fetchAll();
+          reviewUser = uList[0] || null;
+        }
+
+        const ru = reviewUser || { id: r.userId, displayName: 'User', username: null, avatarUrl: null };
+
+        return {
+          id: r.id,
+          overallRating: r.overallRating || (r.rating ? r.rating * 2 : 5),
+          rating: r.rating || 5,
+          contentQuality: r.contentQuality,
+          valueRating: r.valueRating,
+          creativityRating: r.creativityRating,
+          entertainmentRating: r.entertainmentRating,
+          consistencyRating: r.consistencyRating,
+          review: r.review,
+          tags: r.tags ? (typeof r.tags === 'string' ? r.tags.split(',') : r.tags) : [],
+          createdAt: r.createdAt,
+          user: {
+            id: ru.id,
+            displayName: ru.displayName || 'User',
+            username: ru.username || (ru.displayName ? ru.displayName.toLowerCase().replace(/[^a-z0-9_]/g, '') : 'user'),
+            avatarUrl: ru.avatarUrl || null,
+          },
+        };
+      })
+    );
+
+    return {
+      totalRatings,
+      averageRating,
+      bayesianScore,
+      confidenceLevel,
+      isLimitedData: totalRatings < 5,
+      dimensionAverages,
+      ratingBreakdown,
+      reviews,
+    };
+  }
+
+  // ===== Prisma Fallback =====
   const creator = await db.creatorProfile.findFirst({
     where: {
       OR: [{ id: creatorProfileIdOrUserId }, { userId: creatorProfileIdOrUserId }],
@@ -334,25 +675,20 @@ export async function calculateCreatorRatingSummary(
     };
   }
 
-  // Arithmetic average on 1.0 - 10.0 scale (or convert 1-5 legacy to 1-10 if overallRating not populated)
   const sumOverall = ratings.reduce((sum, r) => {
     const score = r.overallRating || (r.rating ? r.rating * 2 : 5);
     return sum + score;
   }, 0);
   const averageRating = Math.round((sumOverall / totalRatings) * 10) / 10;
 
-  // Bayesian average formula: (C * m + sum) / (C + n)
-  // C = 5 prior ratings, m = 7.5 (prior expected mean)
   const PRIOR_WEIGHT = 5;
   const PRIOR_MEAN = 7.5;
   const bayesianScore =
     Math.round(((PRIOR_WEIGHT * PRIOR_MEAN + sumOverall) / (PRIOR_WEIGHT + totalRatings)) * 10) / 10;
 
-  // Confidence classification
   const confidenceLevel =
     totalRatings >= 10 ? 'ESTABLISHED' : totalRatings >= 3 ? 'MODERATE' : 'LIMITED_DATA';
 
-  // Sub-dimension averages
   const sumQuality = ratings.reduce((s, r) => s + (r.contentQuality || 7), 0);
   const sumValue = ratings.reduce((s, r) => s + (r.valueRating || 7), 0);
   const sumCreativity = ratings.reduce((s, r) => s + (r.creativityRating || 7), 0);
@@ -367,7 +703,6 @@ export async function calculateCreatorRatingSummary(
     consistencyRating: Math.round((sumConsistency / totalRatings) * 10) / 10,
   };
 
-  // Star breakdown (normalized to 5 buckets)
   const ratingBreakdown = { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 };
   for (const r of ratings) {
     const score = r.overallRating || (r.rating ? r.rating * 2 : 5);

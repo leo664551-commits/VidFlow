@@ -108,25 +108,42 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         }
       }
 
+      const usersContainer = getContainer('users');
+      const usersMap: Record<string, any> = {};
+
+      const userIds = [...new Set(sortedComments.map((c: any) => c.userId).filter(Boolean))];
+      if (usersContainer && userIds.length > 0) {
+        for (const uid of userIds) {
+          const { resources: uList } = await usersContainer.items.query<Record<string, any>>({
+            query: 'SELECT c.id, c.displayName, c.username, c.avatarUrl FROM c WHERE c.id = @uid',
+            parameters: [{ name: '@uid', value: uid }]
+          }).fetchAll();
+          if (uList[0]) usersMap[uid] = uList[0];
+        }
+      }
+
       return NextResponse.json({
         creatorId: video.creatorId,
         pinnedCommentId: video.pinnedCommentId,
-        data: sortedComments.map((c) => ({
-          id: c.id,
-          content: c.content,
-          status: c.status,
-          replyCount: c._count?.replies || 0,
-          likeCount: c._count?.likes || 0,
-          ...(user ? { userLiked: userCommentLikes.has(c.id) } : {}),
-          createdAt: typeof c.createdAt === 'string' ? c.createdAt : c.createdAt?.toISOString(),
-          updatedAt: typeof c.updatedAt === 'string' ? c.updatedAt : c.updatedAt?.toISOString(),
-          user: {
-            id: c.user.id,
-            displayName: c.user.displayName,
-            username: c.user.username || null,
-            avatarUrl: c.user.avatarUrl || null,
-          },
-        })),
+        data: sortedComments.map((c: any) => {
+          const u = usersMap[c.userId] || c.user || { id: c.userId, displayName: 'User', username: null, avatarUrl: null };
+          return {
+            id: c.id,
+            content: c.content,
+            status: c.status,
+            replyCount: c._count?.replies || 0,
+            likeCount: c._count?.likes || 0,
+            ...(user ? { userLiked: userCommentLikes.has(c.id) } : {}),
+            createdAt: typeof c.createdAt === 'string' ? c.createdAt : c.createdAt?.toISOString(),
+            updatedAt: typeof c.updatedAt === 'string' ? c.updatedAt : c.updatedAt?.toISOString(),
+            user: {
+              id: u.id,
+              displayName: u.displayName || 'User',
+              username: u.username || null,
+              avatarUrl: u.avatarUrl || null,
+            },
+          };
+        }),
         pagination: {
           page,
           limit,
