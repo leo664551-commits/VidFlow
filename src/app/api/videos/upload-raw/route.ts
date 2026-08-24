@@ -50,30 +50,52 @@ export async function POST(request: NextRequest) {
       } else {
         blobName = `videos/${user.id}/${Date.now()}-${sanitizedName}`;
 
-        // Ensure CreatorProfile exists to satisfy foreign key constraint on Video.creatorId
-        await db.creatorProfile.upsert({
-          where: { userId: user.id },
-          update: {},
-          create: {
-            userId: user.id,
-            creatorName: user.displayName || user.username || 'Creator',
-            description: user.bio || '',
-            category: user.category || 'Comedy',
-          },
-        });
+        // Ensure CreatorProfile exists in Cosmos DB
+        const cpContainer = (await import('@/lib/cosmos')).getContainer('creatorProfiles');
+        if (cpContainer) {
+          const { resources: existing } = await cpContainer.items
+            .query({ query: 'SELECT * FROM c WHERE c.userId = @uid', parameters: [{ name: '@uid', value: user.id }] })
+            .fetchAll();
+          if (existing.length === 0) {
+            const { v4: uuidv4 } = await import('uuid');
+            await cpContainer.items.create({
+              id: uuidv4(),
+              userId: user.id,
+              creatorName: user.displayName || user.username || 'Creator',
+              description: user.bio || '',
+              category: user.category || 'Comedy',
+              createdAt: new Date().toISOString(),
+              updatedAt: new Date().toISOString(),
+            });
+          }
+        } else {
+          await db.creatorProfile.upsert({
+            where: { userId: user.id },
+            update: {},
+            create: {
+              userId: user.id,
+              creatorName: user.displayName || user.username || 'Creator',
+              description: user.bio || '',
+              category: user.category || 'Comedy',
+            },
+          });
+        }
 
         // Auto-create video record in UPLOADING status
-        const video = await db.video.create({
-          data: {
-            creatorId: user.id,
-            title: file.name.replace(/\.[^.]+$/, ''),
-            publisher: user.displayName || 'Creator',
-            producer: user.displayName || 'Creator',
-            genre: 'OTHER',
-            ageRating: 'PG',
-            storageBlobName: blobName,
-            status: 'UPLOADING',
-          },
+        const { createVideo } = await import('@/lib/repositories/video-repository');
+        const video = await createVideo({
+          creatorId: user.id,
+          title: file.name.replace(/\.[^.]+$/, ''),
+          publisher: user.displayName || 'Creator',
+          producer: user.displayName || 'Creator',
+          genre: 'OTHER',
+          ageRating: 'PG',
+          storageBlobName: blobName,
+          thumbnailBlobName: null,
+          duration: null,
+          description: null,
+          status: 'UPLOADING',
+          pinnedCommentId: null,
         });
         videoId = video.id;
       }

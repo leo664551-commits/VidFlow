@@ -3,9 +3,11 @@ import { getSession } from '@/lib/auth';
 import { apiSuccess, apiError } from '@/lib/api-response';
 import { videoMetadataSchema } from '@/lib/validation';
 import { exists } from '@/services/storage';
-import { db } from '@/lib/db';
 import { logger } from '@/lib/logger';
 import { createAuditLog } from '@/services/audit';
+import { findVideoById, updateVideo } from '@/lib/repositories/video-repository';
+import { getContainer } from '@/lib/cosmos';
+import type { Genre, AgeRating } from '@/types';
 
 export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const user = await getSession(request);
@@ -15,7 +17,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   const { id } = await params;
 
   try {
-    const video = await db.video.findUnique({ where: { id } });
+    const video = await findVideoById(id);
     if (!video) return apiError('VIDEO_NOT_FOUND');
 
     // Check ownership or admin
@@ -33,17 +35,25 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       return apiError('VALIDATION_ERROR', metadata.error.issues[0].message);
     }
 
-    // Ensure CreatorProfile exists
-    await db.creatorProfile.upsert({
-      where: { userId: user.id },
-      update: {},
-      create: {
-        userId: user.id,
-        creatorName: user.displayName || user.username || 'Creator',
-        description: user.bio || '',
-        category: user.category || 'Comedy',
-      },
-    });
+    // Ensure CreatorProfile exists in Cosmos DB
+    const cpContainer = getContainer('creatorProfiles');
+    if (cpContainer) {
+      const { resources: existing } = await cpContainer.items
+        .query({ query: 'SELECT * FROM c WHERE c.userId = @uid', parameters: [{ name: '@uid', value: user.id }] })
+        .fetchAll();
+      if (existing.length === 0) {
+        const { v4: uuidv4 } = await import('uuid');
+        await cpContainer.items.create({
+          id: uuidv4(),
+          userId: user.id,
+          creatorName: user.displayName || user.username || 'Creator',
+          description: user.bio || '',
+          category: user.category || 'Comedy',
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        });
+      }
+    }
 
     // Verify file exists (for local dev, skip strict check)
     if (video.storageBlobName) {
@@ -54,47 +64,55 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     }
 
     // Update video record
-    const updated = await db.video.update({
-      where: { id },
-      data: {
-        title: metadata.data.title,
-        publisher: metadata.data.publisher,
-        producer: metadata.data.producer,
-        genre: metadata.data.genre,
-        ageRating: metadata.data.ageRating,
-        description: metadata.data.description ?? null,
-        thumbnailBlobName: metadata.data.thumbnailBlobName ?? body.thumbnailBlobName ?? null,
-        duration: body.duration ?? null,
-        status: 'READY',
-      },
-      include: {
-        creator: { select: { id: true, creatorName: true } },
-      },
+    const updated = await updateVideo(id, {
+      title: metadata.data.title,
+      publisher: metadata.data.publisher,
+      producer: metadata.data.producer,
+      genre: metadata.data.genre as Genre,
+      ageRating: metadata.data.ageRating as AgeRating,
+      description: metadata.data.description ?? null,
+      thumbnailBlobName: metadata.data.thumbnailBlobName ?? body.thumbnailBlobName ?? null,
+      duration: body.duration ?? null,
+      status: 'READY',
     });
+
+    if (!updated) return apiError('INTERNAL_SERVER_ERROR', 'Failed to update video');
 
     await createAuditLog(user.id, 'VIDEO_UPLOAD_COMPLETED', 'Video', id, { title: updated.title });
     logger.info('Upload completed', { videoId: id, userId: user.id });
 
     // Notify all followers of this creator
     try {
-      const followers = await db.follow.findMany({
-        where: { followingId: user.id },
-        select: { followerId: true },
-      });
+      const followsContainer = getContainer('follows');
+      if (followsContainer) {
+        const { resources: followers } = await followsContainer.items
+          .query({
+            query: 'SELECT c.followerId FROM c WHERE c.followingId = @uid',
+            parameters: [{ name: '@uid', value: user.id }],
+          })
+          .fetchAll();
 
-      if (followers.length > 0) {
-        const creatorName = updated.creator?.creatorName || user.displayName || user.username || 'A creator you follow';
-        await db.notification.createMany({
-          data: followers.map((f) => ({
-            userId: f.followerId,
-            actorId: user.id,
-            type: 'NEW_VIDEO',
-            title: 'New Video Uploaded',
-            message: `${creatorName} uploaded a new video: "${updated.title}"`,
-            entityType: 'Video',
-            entityId: updated.id,
-          })),
-        });
+        if (followers.length > 0) {
+          const creatorName = user.displayName || user.username || 'A creator you follow';
+          const notifContainer = getContainer('notifications');
+          if (notifContainer) {
+            const { v4: uuidv4 } = await import('uuid');
+            for (const f of followers) {
+              await notifContainer.items.create({
+                id: uuidv4(),
+                userId: f.followerId,
+                actorId: user.id,
+                type: 'NEW_VIDEO',
+                title: 'New Video Uploaded',
+                message: `${creatorName} uploaded a new video: "${updated.title}"`,
+                entityType: 'Video',
+                entityId: updated.id,
+                read: false,
+                createdAt: new Date().toISOString(),
+              });
+            }
+          }
+        }
       }
     } catch (notifErr) {
       logger.error('Failed to notify followers of new video', { error: (notifErr as Error).message, videoId: id });

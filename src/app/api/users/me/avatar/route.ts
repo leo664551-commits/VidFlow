@@ -77,11 +77,9 @@ export async function POST(request: NextRequest) {
       await fs.writeFile(filePath, buffer);
     }
 
-    // Update user in database
-    await db.user.update({
-      where: { id: user.id },
-      data: { avatarUrl },
-    });
+    // Update user in database / Cosmos DB
+    const { updateUser } = await import('@/lib/repositories/user-repository');
+    await updateUser(user.id, { avatarUrl });
 
     return apiSuccess({
       avatarUrl,
@@ -98,10 +96,8 @@ export async function DELETE(request: NextRequest) {
   if (!user) return apiError('UNAUTHORIZED');
 
   try {
-    await db.user.update({
-      where: { id: user.id },
-      data: { avatarUrl: null },
-    });
+    const { updateUser } = await import('@/lib/repositories/user-repository');
+    await updateUser(user.id, { avatarUrl: null });
 
     return apiSuccess({
       avatarUrl: null,
