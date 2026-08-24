@@ -3,6 +3,7 @@ import { db } from '@/lib/db';
 import { getSession } from '@/lib/auth';
 import { getContainer } from '@/lib/cosmos';
 import { apiError, apiSuccess } from '@/lib/api-response';
+import { getDownloadUrl } from '@/services/storage';
 import {
   checkCreatorRatingEligibility,
   calculateCreatorRatingSummary,
@@ -223,8 +224,8 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
           genre: v.genre,
           ageRating: v.ageRating,
           description: v.description,
-          thumbnailBlobName: v.thumbnailBlobName,
-          storageBlobName: v.storageBlobName,
+          thumbnailBlobName: v.thumbnailBlobName ? getDownloadUrl(v.thumbnailBlobName) : null,
+          storageBlobName: getDownloadUrl(v.storageBlobName),
           duration: v.duration,
           status: 'READY' as const,
           viewCount: v.viewCount,

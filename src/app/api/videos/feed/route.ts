@@ -5,6 +5,7 @@ import { apiPaginated, apiError } from '@/lib/api-response';
 import { z } from 'zod';
 import { GENRES } from '@/config';
 import { getContainer } from '@/lib/cosmos';
+import { getDownloadUrl } from '@/services/storage';
 
 const feedPaginationSchema = z.object({
   page: z.coerce.number().int().min(1).default(1),
@@ -188,8 +189,8 @@ export async function GET(request: NextRequest) {
           producer: v.producer,
           genre: v.genre,
           ageRating: v.ageRating,
-          thumbnailBlobName: v.thumbnailBlobName,
-          storageBlobName: v.storageBlobName,
+          thumbnailBlobName: v.thumbnailBlobName ? getDownloadUrl(v.thumbnailBlobName as string) : null,
+          storageBlobName: getDownloadUrl(v.storageBlobName as string),
           duration: v.duration,
           viewCount: v.viewCount || 0,
           likeCount: v.likeCount || 0,

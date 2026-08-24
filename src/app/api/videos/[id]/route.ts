@@ -4,7 +4,7 @@ import { db } from '@/lib/db';
 import { getContainer } from '@/lib/cosmos';
 import { apiSuccess, apiNoContent, apiError } from '@/lib/api-response';
 import { videoMetadataSchema } from '@/lib/validation';
-import { deleteBlob } from '@/services/storage';
+import { deleteBlob, getDownloadUrl } from '@/services/storage';
 import { logger } from '@/lib/logger';
 import { createAuditLog } from '@/services/audit';
 import { v4 as uuidv4 } from 'uuid';
@@ -143,8 +143,8 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         genre: video.genre,
         ageRating: video.ageRating,
         description: video.description,
-        storageBlobName: video.storageBlobName,
-        thumbnailBlobName: video.thumbnailBlobName,
+        storageBlobName: getDownloadUrl(video.storageBlobName),
+        thumbnailBlobName: video.thumbnailBlobName ? getDownloadUrl(video.thumbnailBlobName) : null,
         duration: video.duration,
         status: video.status,
         viewCount: effectiveViewCount,

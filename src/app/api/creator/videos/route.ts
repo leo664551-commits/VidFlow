@@ -4,6 +4,7 @@ import { apiPaginated, apiError } from '@/lib/api-response';
 import { paginationSchema } from '@/lib/validation';
 import { getContainer } from '@/lib/cosmos';
 import { db } from '@/lib/db';
+import { getDownloadUrl } from '@/services/storage';
 
 export async function GET(request: NextRequest) {
   const user = await getSession(request);
@@ -50,8 +51,8 @@ export async function GET(request: NextRequest) {
           viewCount: v.viewCount || 0,
           likeCount: v.likeCount || 0,
           commentCount: v.commentCount || 0,
-          storageBlobName: v.storageBlobName,
-          thumbnailBlobName: v.thumbnailBlobName,
+          storageBlobName: getDownloadUrl(v.storageBlobName as string),
+          thumbnailBlobName: v.thumbnailBlobName ? getDownloadUrl(v.thumbnailBlobName as string) : null,
           duration: v.duration,
           description: v.description,
           createdAt: v.createdAt,
