@@ -1,15 +1,7 @@
 import { NextRequest } from 'next/server';
 import { getSession } from '@/lib/auth';
-import { db } from '@/lib/db';
 import { apiSuccess, apiError } from '@/lib/api-response';
-import fs from 'fs/promises';
 import path from 'path';
-
-const AVATAR_DIR = path.join(process.cwd(), 'public', 'uploads', 'avatars');
-
-async function ensureAvatarDir() {
-  await fs.mkdir(AVATAR_DIR, { recursive: true });
-}
 
 export async function POST(request: NextRequest) {
   const user = await getSession(request);
@@ -35,8 +27,6 @@ export async function POST(request: NextRequest) {
       return apiError('FILE_TOO_LARGE', 'Image size must be less than 5MB');
     }
 
-    await ensureAvatarDir();
-
     // Generate safe filename
     const ext = path.extname(file.name).toLowerCase() || (file.type === 'image/png' ? '.png' : '.jpg');
     const safeExt = ['.jpg', '.jpeg', '.png', '.webp', '.gif'].includes(ext) ? ext : '.jpg';
@@ -46,9 +36,9 @@ export async function POST(request: NextRequest) {
 
     let avatarUrl = `/uploads/avatars/${filename}`;
 
-    // Upload to Azure Blob Storage if configured
     const azureConn = process.env.AZURE_STORAGE_CONNECTION_STRING;
     const avatarContainer = process.env.AZURE_STORAGE_AVATAR_CONTAINER || 'avatars';
+
     if (azureConn) {
       try {
         const { BlobServiceClient } = await import('@azure/storage-blob');
@@ -67,19 +57,64 @@ export async function POST(request: NextRequest) {
           ? `${customDomain.replace(/\/$/, '')}/${avatarContainer}/${filename}`
           : blockBlobClient.url;
       } catch (azureErr) {
-        console.error('Failed to upload avatar to Azure Storage, falling back to local disk:', azureErr);
-        const filePath = path.join(AVATAR_DIR, filename);
-        await fs.writeFile(filePath, buffer);
+        console.error('Failed to upload avatar to Azure Storage container avatars, attempting fallback container videos:', azureErr);
+        // Fallback to the main videos storage container
+        try {
+          const { BlobServiceClient } = await import('@azure/storage-blob');
+          const blobServiceClient = BlobServiceClient.fromConnectionString(azureConn);
+          const fallbackContainer = process.env.AZURE_STORAGE_CONTAINER_NAME || 'videos';
+          const containerClient = blobServiceClient.getContainerClient(fallbackContainer);
+          await containerClient.createIfNotExists({ access: 'blob' }).catch(() => {});
+          const blobPath = `avatars/${filename}`;
+          const blockBlobClient = containerClient.getBlockBlobClient(blobPath);
+          await blockBlobClient.uploadData(buffer, {
+            blobHTTPHeaders: {
+              blobContentType: file.type || 'image/jpeg',
+              blobCacheControl: 'public, max-age=31536000, immutable',
+            },
+          });
+          avatarUrl = blockBlobClient.url;
+        } catch (fallbackErr) {
+          console.error('Both Azure Storage containers failed for avatar:', fallbackErr);
+          throw new Error('Could not upload avatar image to cloud storage.');
+        }
       }
     } else {
-      // Write file to local disk
-      const filePath = path.join(AVATAR_DIR, filename);
-      await fs.writeFile(filePath, buffer);
+      // Local development disk storage fallback only when Azure is not configured
+      try {
+        const fs = await import('fs/promises');
+        const localDir = path.join(process.cwd(), 'public', 'uploads', 'avatars');
+        await fs.mkdir(localDir, { recursive: true });
+        const filePath = path.join(localDir, filename);
+        await fs.writeFile(filePath, buffer);
+      } catch (localErr) {
+        console.warn('Local disk write skipped or failed:', localErr);
+      }
     }
 
     // Update user in database / Cosmos DB
     const { updateUser } = await import('@/lib/repositories/user-repository');
     await updateUser(user.id, { avatarUrl });
+
+    // Also update creator profile if present in Cosmos DB
+    try {
+      const { getContainer } = await import('@/lib/cosmos');
+      const cpContainer = getContainer('creatorProfiles');
+      if (cpContainer) {
+        const { resources } = await cpContainer.items
+          .query({ query: 'SELECT * FROM c WHERE c.userId = @uid', parameters: [{ name: '@uid', value: user.id }] })
+          .fetchAll();
+        if (resources[0]) {
+          await cpContainer.item(resources[0].id, user.id).replace({
+            ...resources[0],
+            avatarUrl,
+            updatedAt: new Date().toISOString(),
+          });
+        }
+      }
+    } catch (cpErr) {
+      console.warn('Could not update avatar in creatorProfiles container:', cpErr);
+    }
 
     return apiSuccess({
       avatarUrl,
@@ -87,7 +122,7 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     console.error('Avatar upload error:', error);
-    return apiError('INTERNAL_SERVER_ERROR', 'Failed to upload avatar');
+    return apiError('INTERNAL_SERVER_ERROR', (error as Error).message || 'Failed to upload avatar');
   }
 }
 
