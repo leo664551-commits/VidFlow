@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server';
 import { getSession } from '@/lib/auth';
 import { db } from '@/lib/db';
+import { getContainer } from '@/lib/cosmos';
 import { apiSuccess, apiError } from '@/lib/api-response';
 import { pinCommentSchema } from '@/lib/validation';
 import { logger } from '@/lib/logger';
@@ -13,43 +14,83 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   const { id } = await params;
 
   try {
-    const video = await db.video.findUnique({
-      where: { id },
-      select: { id: true, creatorId: true },
-    });
-    if (!video) return apiError('VIDEO_NOT_FOUND');
+    const videoContainer = getContainer('videos');
+    if (videoContainer) {
+      const { resources: videos } = await videoContainer.items
+        .query({ query: 'SELECT * FROM c WHERE c.id = @id', parameters: [{ name: '@id', value: id }] })
+        .fetchAll();
+      const video = videos[0];
+      if (!video) return apiError('VIDEO_NOT_FOUND');
 
-    // Only the video's creator or an admin can pin
-    if (user.role === 'CREATOR' && video.creatorId !== user.id) {
-      return apiError('FORBIDDEN');
-    }
-
-    const body = await request.json();
-    const parsed = pinCommentSchema.safeParse(body);
-    if (!parsed.success) {
-      return apiError('VALIDATION_ERROR', parsed.error.issues[0].message);
-    }
-
-    const commentId = parsed.data.commentId ?? null;
-
-    // If pinning (not unpinning), validate the comment belongs to this video
-    if (commentId) {
-      const comment = await db.comment.findUnique({
-        where: { id: commentId },
-        select: { id: true, videoId: true },
-      });
-      if (!comment || comment.videoId !== id) {
-        return apiError('VALIDATION_ERROR', 'Comment not found or does not belong to this video.');
+      if (user.role === 'CREATOR' && video.creatorId !== user.id) {
+        return apiError('FORBIDDEN');
       }
+
+      const body = await request.json();
+      const parsed = pinCommentSchema.safeParse(body);
+      if (!parsed.success) {
+        return apiError('VALIDATION_ERROR', parsed.error.issues[0].message);
+      }
+
+      const commentId = parsed.data.commentId ?? null;
+
+      if (commentId) {
+        const commentContainer = getContainer('comments');
+        if (commentContainer) {
+          const { resources: comments } = await commentContainer.items
+            .query({ query: 'SELECT * FROM c WHERE c.id = @cid', parameters: [{ name: '@cid', value: commentId }] })
+            .fetchAll();
+          const comment = comments[0];
+          if (!comment || comment.videoId !== id) {
+            return apiError('VALIDATION_ERROR', 'Comment not found or does not belong to this video.');
+          }
+        }
+      }
+
+      const item = videoContainer.item(video.id, video.genre);
+      await item.replace({ ...video, pinnedCommentId: commentId });
+
+      return apiSuccess({ pinnedCommentId: commentId });
+
+    } else {
+      const video = await db.video.findUnique({
+        where: { id },
+        select: { id: true, creatorId: true },
+      });
+      if (!video) return apiError('VIDEO_NOT_FOUND');
+
+      // Only the video's creator or an admin can pin
+      if (user.role === 'CREATOR' && video.creatorId !== user.id) {
+        return apiError('FORBIDDEN');
+      }
+
+      const body = await request.json();
+      const parsed = pinCommentSchema.safeParse(body);
+      if (!parsed.success) {
+        return apiError('VALIDATION_ERROR', parsed.error.issues[0].message);
+      }
+
+      const commentId = parsed.data.commentId ?? null;
+
+      // If pinning (not unpinning), validate the comment belongs to this video
+      if (commentId) {
+        const comment = await db.comment.findUnique({
+          where: { id: commentId },
+          select: { id: true, videoId: true },
+        });
+        if (!comment || comment.videoId !== id) {
+          return apiError('VALIDATION_ERROR', 'Comment not found or does not belong to this video.');
+        }
+      }
+
+      const updated = await db.video.update({
+        where: { id },
+        data: { pinnedCommentId: commentId },
+        select: { pinnedCommentId: true },
+      });
+
+      return apiSuccess({ pinnedCommentId: updated.pinnedCommentId });
     }
-
-    const updated = await db.video.update({
-      where: { id },
-      data: { pinnedCommentId: commentId },
-      select: { pinnedCommentId: true },
-    });
-
-    return apiSuccess({ pinnedCommentId: updated.pinnedCommentId });
   } catch (error) {
     logger.error('Pin comment failed', { error: (error as Error).message, videoId: id });
     return apiError('INTERNAL_SERVER_ERROR');
