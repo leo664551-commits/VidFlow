@@ -8,6 +8,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
+    "postinstall": "prisma generate",
     "db:push": "prisma db push",
     "db:generate": "prisma generate",
     "db:seed": "npx tsx prisma/seed.ts",
@@ -15,6 +16,7 @@
     "db:reset": "prisma migrate reset"
   },
   "dependencies": {
+    "@azure/storage-blob": "^12.33.0",
     "@dnd-kit/core": "^6.3.1",
     "@dnd-kit/sortable": "^10.0.0",
     "@dnd-kit/utilities": "^3.2.2",

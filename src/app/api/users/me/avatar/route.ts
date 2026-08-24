@@ -41,14 +41,41 @@ export async function POST(request: NextRequest) {
     const ext = path.extname(file.name).toLowerCase() || (file.type === 'image/png' ? '.png' : '.jpg');
     const safeExt = ['.jpg', '.jpeg', '.png', '.webp', '.gif'].includes(ext) ? ext : '.jpg';
     const filename = `${user.id}-${Date.now()}${safeExt}`;
-    const filePath = path.join(AVATAR_DIR, filename);
-
-    // Write file to disk
     const arrayBuffer = await file.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
-    await fs.writeFile(filePath, buffer);
 
-    const avatarUrl = `/uploads/avatars/${filename}`;
+    let avatarUrl = `/uploads/avatars/${filename}`;
+
+    // Upload to Azure Blob Storage if configured
+    const azureConn = process.env.AZURE_STORAGE_CONNECTION_STRING;
+    const avatarContainer = process.env.AZURE_STORAGE_AVATAR_CONTAINER || 'avatars';
+    if (azureConn) {
+      try {
+        const { BlobServiceClient } = await import('@azure/storage-blob');
+        const blobServiceClient = BlobServiceClient.fromConnectionString(azureConn);
+        const containerClient = blobServiceClient.getContainerClient(avatarContainer);
+        await containerClient.createIfNotExists({ access: 'blob' }).catch(() => {});
+        const blockBlobClient = containerClient.getBlockBlobClient(filename);
+        await blockBlobClient.uploadData(buffer, {
+          blobHTTPHeaders: {
+            blobContentType: file.type || 'image/jpeg',
+            blobCacheControl: 'public, max-age=31536000, immutable',
+          },
+        });
+        const customDomain = process.env.AZURE_STORAGE_CUSTOM_DOMAIN;
+        avatarUrl = customDomain
+          ? `${customDomain.replace(/\/$/, '')}/${avatarContainer}/${filename}`
+          : blockBlobClient.url;
+      } catch (azureErr) {
+        console.error('Failed to upload avatar to Azure Storage, falling back to local disk:', azureErr);
+        const filePath = path.join(AVATAR_DIR, filename);
+        await fs.writeFile(filePath, buffer);
+      }
+    } else {
+      // Write file to local disk
+      const filePath = path.join(AVATAR_DIR, filename);
+      await fs.writeFile(filePath, buffer);
+    }
 
     // Update user in database
     await db.user.update({
