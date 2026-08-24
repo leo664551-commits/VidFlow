@@ -23,16 +23,39 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
       if (!video) return apiError('VIDEO_NOT_FOUND');
 
+      const creatorsContainer = getContainer('creatorProfiles');
+      const usersContainer = getContainer('users');
+
+      let creatorProfile: Record<string, any> | null = null;
+      if (creatorsContainer && video.creatorId) {
+        const { resources: profiles } = await creatorsContainer.items.query<Record<string, any>>({
+          query: 'SELECT * FROM c WHERE c.id = @cid OR c.userId = @cid',
+          parameters: [{ name: '@cid', value: video.creatorId }]
+        }).fetchAll();
+        creatorProfile = profiles[0] || null;
+      }
+
+      const creatorUserId = creatorProfile?.userId || video.creatorId;
+
+      let creatorUser: Record<string, any> | null = null;
+      if (usersContainer && creatorUserId) {
+        const { resources: uList } = await usersContainer.items.query<Record<string, any>>({
+          query: 'SELECT * FROM c WHERE c.id = @uid',
+          parameters: [{ name: '@uid', value: creatorUserId }]
+        }).fetchAll();
+        creatorUser = uList[0] || null;
+      }
+
       if (video.status !== 'READY') {
         if (!user || (user.role !== 'CREATOR' && user.role !== 'ADMIN')) {
           return apiError('VIDEO_NOT_FOUND');
         }
-        if (user.role === 'CREATOR' && video.creator.id !== user.id && video.creatorId !== user.id) {
+        if (user.role === 'CREATOR' && creatorUserId !== user.id && video.creatorId !== user.id) {
           return apiError('VIDEO_NOT_FOUND');
         }
       }
 
-      let effectiveViewCount = video.viewCount;
+      let effectiveViewCount = video.viewCount || 0;
       if (user && video.status === 'READY') {
         const viewContainer = getContainer('videoViews');
         if (viewContainer) {
@@ -68,7 +91,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       const commentContainer = getContainer('comments');
       let commentCount = 0;
       if (commentContainer) {
-        const { resources: cCount } = await commentContainer.items.query({
+        const { resources: cCount } = await commentContainer.items.query<number>({
           query: 'SELECT VALUE COUNT(1) FROM c WHERE c.videoId = @vid AND c.status = "VISIBLE" AND IS_NULL(c.parentCommentId)',
           parameters: [{ name: '@vid', value: id }]
         }).fetchAll();
@@ -77,10 +100,9 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
       let userLiked = false;
       let isFollowingCreator = false;
-      let isCreatorSelf = false;
+      const isCreatorSelf = user ? user.id === creatorUserId : false;
 
       if (user) {
-        isCreatorSelf = user.id === video.creator.user.id;
         const likeContainer = getContainer('videoLikes');
         if (likeContainer) {
           const { resources: likes } = await likeContainer.items.query({
@@ -91,10 +113,10 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         }
 
         const followContainer = getContainer('follows');
-        if (followContainer) {
+        if (followContainer && creatorUserId) {
           const { resources: follows } = await followContainer.items.query({
             query: 'SELECT * FROM c WHERE c.followerId = @fid AND c.followingId = @tid',
-            parameters: [{ name: '@fid', value: user.id }, { name: '@tid', value: video.creator.user.id }]
+            parameters: [{ name: '@fid', value: user.id }, { name: '@tid', value: creatorUserId }]
           }).fetchAll();
           if (follows.length > 0) isFollowingCreator = true;
         }
@@ -103,12 +125,15 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       const likeContainer = getContainer('videoLikes');
       let likeCount = 0;
       if (likeContainer) {
-        const { resources: lCount } = await likeContainer.items.query({
+        const { resources: lCount } = await likeContainer.items.query<number>({
           query: 'SELECT VALUE COUNT(1) FROM c WHERE c.videoId = @vid',
           parameters: [{ name: '@vid', value: id }]
         }).fetchAll();
         likeCount = lCount[0] || 0;
       }
+
+      const cp = creatorProfile || { id: video.creatorId, creatorName: video.publisher || 'Creator' };
+      const cu = creatorUser || { displayName: video.publisher || 'Creator', username: null, avatarUrl: null };
 
       return apiSuccess({
         id: video.id,
@@ -127,7 +152,11 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         createdAt: video.createdAt,
         updatedAt: video.updatedAt,
         creator: {
-          ...video.creator,
+          id: cp.id,
+          creatorName: cp.creatorName || cu.displayName,
+          displayName: cu.displayName || cp.creatorName,
+          username: cu.username || null,
+          avatarUrl: cu.avatarUrl || null,
           isFollowing: isFollowingCreator,
           isSelf: isCreatorSelf,
         },
