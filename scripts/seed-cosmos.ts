@@ -122,9 +122,26 @@ async function seedCosmos() {
   };
   await videosContainer.items.upsert(sampleVideo);
 
+  console.log('Seeding sample Consumer...');
+  const consumerPassword = await hashPassword('Consumer123!@#');
+  const consumerUser = {
+    id: uuidv4(),
+    email: 'user@vidflow.com',
+    username: 'samviewer',
+    displayName: 'Sam Viewer',
+    password: consumerPassword,
+    role: 'CONSUMER',
+    status: 'ACTIVE',
+    bio: 'Avid video watcher and animation fan.',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  };
+  await usersContainer.items.upsert(consumerUser);
+
   console.log('=== Azure Cosmos DB Seeding Complete! ===');
   console.log('Admin login: admin@vidflow.com / Admin123!@#');
   console.log('Creator login: creator@vidflow.com / Creator123!@#');
+  console.log('Consumer login: user@vidflow.com / Consumer123!@#');
 }
 
 seedCosmos().catch((err) => {
