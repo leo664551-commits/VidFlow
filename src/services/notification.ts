@@ -1,5 +1,4 @@
-import { db } from '@/lib/db';
-import { logger } from '@/lib/logger';
+import { createNotification as createRepoNotification } from '@/lib/repositories/notification-repository';
 
 export interface CreateNotificationParams {
   userId: string;
@@ -23,28 +22,5 @@ export interface CreateNotificationParams {
 }
 
 export async function createNotification(params: CreateNotificationParams) {
-  const { userId, actorId, type, title, message, entityType, entityId } = params;
-
-  // Don't notify oneself
-  if (actorId && userId === actorId) {
-    return null;
-  }
-
-  try {
-    const notification = await db.notification.create({
-      data: {
-        userId,
-        actorId: actorId ?? null,
-        type,
-        title: title ?? null,
-        message,
-        entityType: entityType ?? null,
-        entityId: entityId ?? null,
-      },
-    });
-    return notification;
-  } catch (error) {
-    logger.error('Failed to create notification', { error: (error as Error).message, userId, type });
-    return null;
-  }
+  return createRepoNotification(params);
 }

@@ -17,11 +17,10 @@ export const authOptions: NextAuthOptions = {
           return null;
         }
 
-        const user = await db.user.findUnique({
-          where: { email: credentials.email },
-        });
+        const { findUserByEmail } = await import('@/lib/repositories/user-repository');
+        const user = await findUserByEmail(credentials.email);
 
-        if (!user || user.status !== 'ACTIVE') {
+        if (!user || user.status !== 'ACTIVE' || !user.password) {
           return null;
         }
 

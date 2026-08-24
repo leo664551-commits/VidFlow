@@ -1,4 +1,4 @@
-import { db } from '@/lib/db';
+import { createAuditLog as createRepoAuditLog } from '@/lib/repositories/audit-repository';
 
 export async function createAuditLog(
   actorUserId: string,
@@ -7,13 +7,5 @@ export async function createAuditLog(
   entityId: string,
   metadata?: Record<string, unknown>
 ) {
-  await db.auditLog.create({
-    data: {
-      actorUserId,
-      action,
-      entityType,
-      entityId,
-      metadata: metadata ? JSON.stringify(metadata) : null,
-    },
-  });
+  return createRepoAuditLog(actorUserId, action, entityType, entityId, metadata);
 }

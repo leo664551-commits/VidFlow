@@ -28,18 +28,8 @@ export async function getSession(request: NextRequest): Promise<AuthUser | null>
       return null;
     }
 
-    const user = await db.user.findUnique({
-      where: { email: sessionUser.user.email as string },
-      include: {
-        creatorProfile: {
-          select: {
-            id: true,
-            creatorName: true,
-            description: true,
-          },
-        },
-      },
-    });
+    const { findUserByEmail } = await import('@/lib/repositories/user-repository');
+    const user = await findUserByEmail(sessionUser.user.email as string);
 
     if (!user || user.status !== 'ACTIVE') {
       return null;
