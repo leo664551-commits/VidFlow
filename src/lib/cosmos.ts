@@ -1,14 +1,12 @@
-﻿import { CosmosClient, Database, Container } from '@azure/cosmos';
+import { CosmosClient, Database, Container } from '@azure/cosmos';
 import { logger } from '@/lib/logger';
-
-const endpoint = process.env.COSMOS_ENDPOINT || '';
-const key = process.env.COSMOS_KEY || '';
-const databaseId = process.env.COSMOS_DATABASE || 'vidflow';
 
 let cosmosClientInstance: CosmosClient | null = null;
 let databaseInstance: Database | null = null;
 
 export function getCosmosClient(): CosmosClient | null {
+  const endpoint = process.env.COSMOS_ENDPOINT || '';
+  const key = process.env.COSMOS_KEY || '';
   if (!endpoint || !key) return null;
   if (!cosmosClientInstance) {
     cosmosClientInstance = new CosmosClient({
@@ -30,6 +28,7 @@ export function getCosmosClient(): CosmosClient | null {
 export function getCosmosDatabase(): Database | null {
   const client = getCosmosClient();
   if (!client) return null;
+  const databaseId = process.env.COSMOS_DATABASE || 'vidflow';
   if (!databaseInstance) {
     databaseInstance = client.database(databaseId);
   }
@@ -95,7 +94,42 @@ export async function initializeCosmosContainers(): Promise<boolean> {
   }
 
   try {
-    const { database } = await client.databases.createIfNotExists({ id: databaseId });
+    const databaseId = process.env.COSMOS_DATABASE || 'vidflow';
+    
+    // Check if database exists, if not create with shared 400 RU/s throughput
+    let database: Database;
+    try {
+      const db = client.database(databaseId);
+      const { resource } = await db.read();
+      if (resource) {
+        // Verify if database has shared throughput offer
+        const offer = await db.readOffer();
+        if (!offer?.resource) {
+          // Database was created without shared throughput; drop and recreate with shared throughput
+          await db.delete();
+          const { database: newDb } = await client.databases.create({
+            id: databaseId,
+            throughput: 400,
+          });
+          database = newDb;
+        } else {
+          database = db;
+        }
+      } else {
+        const { database: newDb } = await client.databases.create({
+          id: databaseId,
+          throughput: 400,
+        });
+        database = newDb;
+      }
+    } catch {
+      const { database: newDb } = await client.databases.createIfNotExists({
+        id: databaseId,
+        throughput: 400,
+      });
+      database = newDb;
+    }
+
     databaseInstance = database;
 
     for (const [name, partitionKey] of Object.entries(CONTAINER_PARTITION_KEYS)) {
@@ -105,7 +139,7 @@ export async function initializeCosmosContainers(): Promise<boolean> {
       });
     }
 
-    logger.info('Cosmos DB database and containers initialized successfully.');
+    logger.info('Cosmos DB database and containers initialized successfully with shared throughput.');
     return true;
   } catch (error) {
     logger.error('Failed to initialize Cosmos DB containers', { error: (error as Error).message });

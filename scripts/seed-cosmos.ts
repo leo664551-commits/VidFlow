@@ -1,4 +1,34 @@
-﻿import { initializeCosmosContainers, getContainer } from '../src/lib/cosmos';
+import fs from 'fs';
+import path from 'path';
+
+function loadEnv(filePath: string) {
+  if (!fs.existsSync(filePath)) return;
+  try {
+    const content = fs.readFileSync(filePath, 'utf8');
+    for (const line of content.split('\n')) {
+      const trimmed = line.trim();
+      if (!trimmed || trimmed.startsWith('#')) continue;
+      const match = trimmed.match(/^([^=]+)=(.*)$/);
+      if (match) {
+        const key = match[1].trim();
+        let val = match[2].trim();
+        if ((val.startsWith('"') && val.endsWith('"')) || (val.startsWith("'") && val.endsWith("'"))) {
+          val = val.slice(1, -1);
+        }
+        if (!process.env[key]) {
+          process.env[key] = val;
+        }
+      }
+    }
+  } catch {}
+}
+
+const envLocalPath = path.join(process.cwd(), '.env.local');
+const envPath = path.join(process.cwd(), '.env');
+loadEnv(envLocalPath);
+loadEnv(envPath);
+
+import { initializeCosmosContainers, getContainer } from '../src/lib/cosmos';
 import { hashPassword } from '../src/lib/auth';
 import { v4 as uuidv4 } from 'uuid';
 
